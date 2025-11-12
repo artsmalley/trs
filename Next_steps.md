@@ -23,27 +23,46 @@ All 7 agent UIs are now complete and functional with mock data!
 - ✅ Build error fixes (Tailwind v4→v3, TypeScript, imports)
 - ✅ UI enhancement (professional blue theme, gradient header)
 
-### NEXT IMMEDIATE: Update Research Page UI
-- [ ] Review current Research Agent UI
-- [ ] Update styling to match new blue theme
-- [ ] Ensure research_terms.md integration is clear
-- [ ] Test search term generation flow
-- [ ] Verify mock data display
+### ✅ COMPLETED: Session 3 - Research Agent V1 (2025-11-12)
+- ✅ Cascading dropdown UI (categories → terms)
+- ✅ 228 curated Japanese/English terms from research_terms.md
+- ✅ Multi-select term picker with search
+- ✅ Google Custom Search API integration
+- ✅ Web search results display (5 per page)
+- ✅ Load More pagination
+- ✅ Targeted search buttons (J-STAGE, Patents, Scholar, Google JP)
+- ✅ Dual search modes (guided + free-form)
+- ✅ Blue theme styling throughout
 
-**Outcome**: Research Agent visually consistent with new design
+**Outcome**: Research Agent V1 FUNCTIONING - Successfully found 4 high-quality Japanese articles that regular Google search missed. Bypasses SEO/ad corruption.
 
-### Option 1: Implement Upload Agent (Next priority after Research UI)
+### ✅ COMPLETED: Session 3 - Upload Agent Implementation (2025-11-12)
 - ✅ Set up `.env.local` with Google AI API key
-- [ ] Install PDF/DOCX text extraction libraries (pdf-parse, mammoth)
-- [ ] Implement `/api/upload` backend:
-  - [ ] Text extraction from PDF/DOCX/TXT
-  - [ ] Gemini metadata extraction (real API call)
-  - [ ] Upload to File Search
-  - [ ] Store metadata in Vercel KV
-- [ ] Test full upload → review → approve workflow
-- [ ] Upload 5-10 test documents
+- ✅ Install PDF/DOCX text extraction libraries (pdf-parse, mammoth)
+- ✅ Implement `/api/upload` backend:
+  - ✅ Text extraction from PDF/DOCX/TXT
+  - ✅ Gemini metadata extraction (real API call)
+  - ✅ Upload to File Search (Google Gemini File API)
+  - ⏳ Store metadata in Vercel KV (next step)
+- ✅ Created text extraction utility (`lib/text-extraction.ts`)
+- ✅ Created AI metadata extraction (`lib/metadata-extraction.ts`)
+- ✅ Created File Search integration (`lib/file-search.ts`)
+- ✅ Updated API route with full pipeline
 
-**Outcome**: Documents in corpus, ready for RAG queries
+**Outcome**: Upload pipeline functional - extracts text, generates metadata, uploads to File Search. Documents stored in Google's cloud, ready for RAG queries.
+
+### CURRENT: Vercel Deployment & KV Setup
+- [ ] Push code to GitHub
+- [ ] Connect GitHub repo to Vercel
+- [ ] Deploy to Vercel
+- [ ] Create Vercel KV database in dashboard
+- [ ] Add KV credentials to Vercel environment variables
+- [ ] Add Google AI API key to Vercel environment variables
+- [ ] Add Google Custom Search credentials to Vercel environment variables
+- [ ] Implement metadata persistence in KV
+- [ ] Test upload flow in production
+
+**Outcome**: TRS deployed and functional with persistent metadata storage
 
 ### Option 2: Implement Summary Agent (Requires Option 1 first)
 - [ ] Study File Search documentation
@@ -112,4 +131,4 @@ None - ready to proceed in any direction
 ---
 
 **Last Updated**: 2025-11-12
-**Session**: 2
+**Session**: 3 - Research Agent V1 & Upload Agent Complete, Ready for Vercel Deployment

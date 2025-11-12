@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { extractText } from "@/lib/text-extraction";
+import { extractMetadata } from "@/lib/metadata-extraction";
+import { uploadToFileSearch } from "@/lib/file-search";
 
 // POST /api/upload - Upload and process document
 export async function POST(req: NextRequest) {
@@ -13,33 +16,73 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // TODO: Implement document processing:
-    // 1. Save file temporarily
-    // 2. Extract text
-    // 3. Use Gemini to extract metadata
-    // 4. Upload to File Search
-    // 5. Store metadata in Vercel KV
-    // 6. Return for human review
+    // Validate file type
+    const supportedTypes = [
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/msword",
+      "text/plain",
+    ];
 
-    // Mock response for now
+    if (!supportedTypes.includes(file.type)) {
+      return NextResponse.json(
+        { error: `Unsupported file type: ${file.type}. Supported: PDF, DOCX, TXT` },
+        { status: 400 }
+      );
+    }
+
+    // Convert file to buffer
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    // Step 1: Extract text from document
+    console.log(`Extracting text from ${file.name}...`);
+    const extraction = await extractText(buffer, file.type);
+
+    // Step 2: Extract metadata using Gemini
+    console.log(`Extracting metadata with Gemini...`);
+    const metadata = await extractMetadata(extraction.text, file.name);
+
+    // Step 3: Upload to File Search
+    console.log(`Uploading to File Search...`);
+    const uploadedFile = await uploadToFileSearch(
+      buffer,
+      file.name,
+      file.type,
+      metadata.title
+    );
+
+    // Step 4: Return metadata for human review
+    // TODO: Store in Vercel KV when ready
     return NextResponse.json({
-      fileId: "mock-file-id-" + Date.now(),
-      status: "processing",
+      success: true,
+      fileId: uploadedFile.name, // Use Gemini file name as ID
+      fileUri: uploadedFile.uri,
+      status: "pending_review",
       extractedMetadata: {
-        title: file.name,
-        year: new Date().getFullYear(),
-        summary: "Pending extraction...",
-        topics: [],
-        track: "PE",
-        language: "en",
+        title: metadata.title,
+        authors: metadata.authors,
+        year: metadata.year,
+        track: metadata.track,
+        language: metadata.language,
+        keywords: metadata.keywords,
+        summary: metadata.summary,
+        documentType: metadata.documentType,
+        confidence: metadata.confidence,
+        wordCount: extraction.wordCount,
+        pageCount: extraction.pageCount,
         uploadedAt: new Date().toISOString(),
       },
       needsReview: true,
+      message: "Document processed successfully. Please review the metadata before approving.",
     });
   } catch (error) {
     console.error("Upload API error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Internal server error",
+      },
       { status: 500 }
     );
   }

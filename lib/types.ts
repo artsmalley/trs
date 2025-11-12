@@ -12,8 +12,6 @@ export interface DocumentMetadata {
   language: "Japanese" | "English" | "Mixed";
   documentType?: string; // e.g., "Academic Paper", "Company Report", "Technical Document", "Patent", "Other"
   confidence: "high" | "medium" | "low"; // AI confidence in metadata extraction
-  wordCount?: number;
-  pageCount?: number;
   source?: string; // Where this document came from (J-STAGE, patent, etc.)
   context?: string; // Additional notes from user
   status: "pending_review" | "approved" | "rejected";

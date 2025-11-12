@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { extractText } from "@/lib/text-extraction";
-import { extractMetadata } from "@/lib/metadata-extraction";
+import { extractMetadataFromFile } from "@/lib/metadata-extraction";
 import { uploadToFileSearch } from "@/lib/file-search";
 import { storeDocumentMetadata } from "@/lib/kv";
 
@@ -36,24 +35,24 @@ export async function POST(req: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Step 1: Extract text from document
-    console.log(`Extracting text from ${file.name}...`);
-    const extraction = await extractText(buffer, file.type);
-
-    // Step 2: Extract metadata using Gemini
-    console.log(`Extracting metadata with Gemini...`);
-    const metadata = await extractMetadata(extraction.text, file.name);
-
-    // Step 3: Upload to File Search
+    // Step 1: Upload to File Search (Gemini Files API)
     console.log(`Uploading to File Search...`);
     const uploadedFile = await uploadToFileSearch(
       buffer,
       file.name,
       file.type,
-      metadata.title
+      file.name // Use filename as display name initially
     );
 
-    // Step 4: Store metadata in KV (pending review status)
+    // Step 2: Extract metadata using Gemini (reads file directly)
+    console.log(`Extracting metadata with Gemini...`);
+    const metadata = await extractMetadataFromFile(
+      uploadedFile.uri,
+      file.type,
+      file.name
+    );
+
+    // Step 3: Store metadata in KV (pending review status)
     const documentMetadata = {
       fileId: uploadedFile.name,
       fileUri: uploadedFile.uri,
@@ -67,8 +66,6 @@ export async function POST(req: NextRequest) {
       summary: metadata.summary,
       documentType: metadata.documentType,
       confidence: metadata.confidence,
-      wordCount: extraction.wordCount,
-      pageCount: extraction.pageCount,
       status: "pending_review" as const,
       uploadedAt: new Date().toISOString(),
       approvedAt: null,
@@ -77,7 +74,7 @@ export async function POST(req: NextRequest) {
     console.log(`Storing metadata in KV...`);
     await storeDocumentMetadata(uploadedFile.name, documentMetadata);
 
-    // Step 5: Return metadata for human review
+    // Step 4: Return metadata for human review
     return NextResponse.json({
       success: true,
       fileId: uploadedFile.name,

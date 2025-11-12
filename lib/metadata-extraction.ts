@@ -70,10 +70,12 @@ Document Text (first 10000 characters):
 ---`;
 
 /**
- * Extract metadata from document text using Gemini
+ * Extract metadata from document file using Gemini
+ * Gemini reads the file directly (PDF/DOCX/TXT)
  */
-export async function extractMetadata(
-  text: string,
+export async function extractMetadataFromFile(
+  fileUri: string,
+  mimeType: string,
   fileName: string
 ): Promise<DocumentMetadata> {
   const apiKey = process.env.GOOGLE_AI_API_KEY;
@@ -90,15 +92,23 @@ export async function extractMetadata(
   });
 
   try {
-    // Truncate text to first 10000 characters to stay within limits
-    const truncatedText = text.substring(0, 10000);
-
+    // Remove the {{TEXT}} placeholder since we're using file input
     const prompt = METADATA_EXTRACTION_PROMPT.replace(
-      "{{TEXT}}",
-      truncatedText
+      "Document Text (first 10000 characters):\n---\n{{TEXT}}\n---",
+      ""
     );
 
-    const result = await model.generateContent(prompt);
+    // Use Gemini's file reading capability
+    const result = await model.generateContent([
+      {
+        fileData: {
+          fileUri: fileUri,
+          mimeType: mimeType
+        }
+      },
+      { text: prompt }
+    ]);
+
     const response = result.response;
     const responseText = response.text();
 
@@ -137,7 +147,7 @@ export async function extractMetadata(
       authors: [],
       year: null,
       track: "Unknown",
-      language: detectLanguageFromText(text),
+      language: "Mixed", // Default since we don't have text to analyze
       keywords: [],
       summary: "Metadata extraction failed. Please review manually.",
       documentType: "Other",

@@ -1,6 +1,9 @@
 import { kv } from "@vercel/kv";
 import type { DocumentMetadata } from "./types";
 
+// Note: @vercel/kv automatically detects KV environment variables
+// Works with both KV_URL (native Vercel KV) and KV_REDIS_URL (marketplace Redis)
+
 // Store document metadata
 export async function storeDocumentMetadata(
   fileId: string,
@@ -62,6 +65,6 @@ export async function getDocumentsByYearRange(
 ): Promise<DocumentMetadata[]> {
   const allDocs = await listAllDocuments();
   return allDocs.filter(
-    (doc) => doc.year >= startYear && doc.year <= endYear
+    (doc) => doc.year !== null && doc.year >= startYear && doc.year <= endYear
   );
 }

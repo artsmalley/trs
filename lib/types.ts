@@ -1,16 +1,24 @@
 // Document metadata stored in Vercel KV
 export interface DocumentMetadata {
   fileId: string; // File Search file ID
+  fileUri: string; // Gemini File API URI
+  fileName: string; // Original filename
   title: string;
-  year: number;
+  authors: string[]; // Extracted authors
+  year: number | null; // Extracted year, null if not found
   summary: string;
-  topics: string[];
-  track: "PE" | "PD" | "Ops" | "Purchasing" | "Supplier Dev" | "Other";
-  language: "en" | "ja" | "mixed";
+  keywords: string[]; // AI-extracted keywords
+  track: "PD" | "PE" | "TPS" | "Cross-Cutting" | "Unknown";
+  language: "Japanese" | "English" | "Mixed";
+  documentType?: string; // e.g., "Academic Paper", "Company Report", "Technical Document", "Patent", "Other"
+  confidence: "high" | "medium" | "low"; // AI confidence in metadata extraction
+  wordCount?: number;
+  pageCount?: number;
   source?: string; // Where this document came from (J-STAGE, patent, etc.)
   context?: string; // Additional notes from user
+  status: "pending_review" | "approved" | "rejected";
   uploadedAt: string; // ISO timestamp
-  processedAt?: string; // ISO timestamp when processing completed
+  approvedAt: string | null; // ISO timestamp when approved/rejected
   needsReview?: boolean; // Whether human review is needed
 }
 

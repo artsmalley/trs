@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { extractText } from "@/lib/text-extraction";
 import { extractMetadata } from "@/lib/metadata-extraction";
 import { uploadToFileSearch } from "@/lib/file-search";
+import { storeDocumentMetadata } from "@/lib/kv";
 
 // POST /api/upload - Upload and process document
 export async function POST(req: NextRequest) {
@@ -52,29 +53,39 @@ export async function POST(req: NextRequest) {
       metadata.title
     );
 
-    // Step 4: Return metadata for human review
-    // TODO: Store in Vercel KV when ready
+    // Step 4: Store metadata in KV (pending review status)
+    const documentMetadata = {
+      fileId: uploadedFile.name,
+      fileUri: uploadedFile.uri,
+      fileName: file.name,
+      title: metadata.title,
+      authors: metadata.authors,
+      year: metadata.year,
+      track: metadata.track,
+      language: metadata.language,
+      keywords: metadata.keywords,
+      summary: metadata.summary,
+      documentType: metadata.documentType,
+      confidence: metadata.confidence,
+      wordCount: extraction.wordCount,
+      pageCount: extraction.pageCount,
+      status: "pending_review" as const,
+      uploadedAt: new Date().toISOString(),
+      approvedAt: null,
+    };
+
+    console.log(`Storing metadata in KV...`);
+    await storeDocumentMetadata(uploadedFile.name, documentMetadata);
+
+    // Step 5: Return metadata for human review
     return NextResponse.json({
       success: true,
-      fileId: uploadedFile.name, // Use Gemini file name as ID
+      fileId: uploadedFile.name,
       fileUri: uploadedFile.uri,
       status: "pending_review",
-      extractedMetadata: {
-        title: metadata.title,
-        authors: metadata.authors,
-        year: metadata.year,
-        track: metadata.track,
-        language: metadata.language,
-        keywords: metadata.keywords,
-        summary: metadata.summary,
-        documentType: metadata.documentType,
-        confidence: metadata.confidence,
-        wordCount: extraction.wordCount,
-        pageCount: extraction.pageCount,
-        uploadedAt: new Date().toISOString(),
-      },
+      extractedMetadata: documentMetadata,
       needsReview: true,
-      message: "Document processed successfully. Please review the metadata before approving.",
+      message: "Document processed and metadata stored. Please review before approving.",
     });
   } catch (error) {
     console.error("Upload API error:", error);

@@ -7,7 +7,7 @@ export async function GET() {
 
   try {
     // Create Redis client
-    redis = new Redis(process.env.KV_URL!);
+    redis = new Redis(process.env.KV_REDIS_URL!);
 
     // Test write
     await redis.set("test:ping", JSON.stringify({ message: "Hello from Redis!", timestamp: Date.now() }));
@@ -24,7 +24,7 @@ export async function GET() {
       message: "Redis is working with ioredis!",
       data: result,
       envVars: {
-        hasKV_URL: !!process.env.KV_URL,
+        hasKV_REDIS_URL: !!process.env.KV_REDIS_URL,
         usingPackage: "ioredis (direct connection)",
       }
     });
@@ -34,7 +34,7 @@ export async function GET() {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
         envVars: {
-          hasKV_URL: !!process.env.KV_URL,
+          hasKV_REDIS_URL: !!process.env.KV_REDIS_URL,
         }
       },
       { status: 500 }

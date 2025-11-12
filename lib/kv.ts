@@ -2,8 +2,8 @@ import Redis from "ioredis";
 import type { DocumentMetadata } from "./types";
 
 // Create Redis client using direct connection URL
-// Works with KV_URL from Vercel marketplace Redis (Upstash)
-const redis = new Redis(process.env.KV_URL!, {
+// Uses KV_REDIS_URL automatically created by Vercel marketplace Redis integration
+const redis = new Redis(process.env.KV_REDIS_URL!, {
   maxRetriesPerRequest: 3,
   lazyConnect: true,
 });

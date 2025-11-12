@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     // 1. Save file temporarily
     // 2. Extract text
     // 3. Use Gemini to extract metadata
-    // 4. Upload to Google AI File API
+    // 4. Upload to File Search
     // 5. Store metadata in Vercel KV
     // 6. Return for human review
 

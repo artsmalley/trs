@@ -43,7 +43,9 @@ export function EditorAgent() {
 
   const applySuggestion = (suggestion: Suggestion) => {
     if (suggestion.original && suggestion.suggested) {
-      setText((prev) => prev.replace(suggestion.original, suggestion.suggested));
+      const original = suggestion.original;
+      const suggested = suggestion.suggested;
+      setText((prev) => prev.replace(original, suggested));
     }
   };
 
@@ -51,7 +53,9 @@ export function EditorAgent() {
     let updatedText = text;
     suggestions.forEach((suggestion) => {
       if (suggestion.original && suggestion.suggested) {
-        updatedText = updatedText.replace(suggestion.original, suggestion.suggested);
+        const original = suggestion.original;
+        const suggested = suggestion.suggested;
+        updatedText = updatedText.replace(original, suggested);
       }
     });
     setText(updatedText);

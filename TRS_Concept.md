@@ -12,7 +12,7 @@ Building a **Fortune 50-quality Toyota Research System** - a multi-agent AI plat
 
 **Think NotebookLM for Toyota Research** - but specialized, multi-agent, and user-controlled:
 - Upload documents (journals, patents, technical reports, personal notes)
-- AI understands corpus with RAG (Google AI File API)
+- AI understands corpus with RAG (File Search)
 - Ask questions → Get grounded answers with citations
 - **Plus**: Specialized agents (Research, Upload, Summary, Outline, Analyze, Editor)
 - **Plus**: Toyota domain expertise (understands 生産技術, kosaku-zumen, PE/PD/Ops)
@@ -66,7 +66,7 @@ Building a **Fortune 50-quality Toyota Research System** - a multi-agent AI plat
 │  └────────────────────────────────────────────────────┘    │
 │                                                              │
 │  ┌────────────────────────────────────────────────────┐    │
-│  │  Google AI File API (Managed RAG)                  │    │
+│  │  File Search (Managed RAG)                  │    │
 │  │  - Vector database (managed)                       │    │
 │  │  - Document storage                                │    │
 │  │  - Semantic search / grounding                     │    │
@@ -122,14 +122,14 @@ Building a **Fortune 50-quality Toyota Research System** - a multi-agent AI plat
 | Component | Technology | API | Purpose |
 |-----------|-----------|-----|---------|
 | Primary AI | Gemini Flash 2.5 → 3.0 | Google AI SDK | All agents |
-| RAG/Vector DB | Google AI File API | Google AI SDK | Document storage & retrieval |
+| RAG/Vector DB | File Search | Google AI SDK | Document storage & retrieval |
 | Secondary AI | Claude Sonnet 4.5 | Anthropic SDK | Optional specialized tasks |
 | Tertiary AI | GPT-4 | OpenAI SDK | Optional where beneficial |
 
 ### Data Storage
 | Component | Technology | Purpose |
 |-----------|-----------|---------|
-| Document Files | Google AI File API | Managed by Google |
+| Document Files | File Search | Managed by Google |
 | Metadata (optional) | Vercel KV (Redis) | Document metadata, user prefs |
 | Conversation Export | User's local filesystem | Download as JSON/Markdown |
 
@@ -155,6 +155,8 @@ Each agent is a specialized AI assistant with:
 ### Agent 1: Research Agent
 
 **Purpose**: Help find and download articles from J-STAGE, patents, etc.
+
+**Reference**: See `research_terms.md` for master list of Japanese/English search terms organized by track (PD/PE/TPS), critical mistranslations, supplier names, and J-STAGE/patent search strategies.
 
 **Capabilities**:
 - Suggest Japanese search terms for J-STAGE
@@ -184,13 +186,13 @@ Priority: Start with #1 and #3 (most specific)"
 
 ### Agent 2: Upload Agent
 
-**Purpose**: Ingest documents into Google AI File API with automatic processing
+**Purpose**: Ingest documents into File Search with automatic processing
 
 **Capabilities**:
 - Accept PDF, DOCX, TXT files
 - Extract metadata automatically (title, year, topics)
 - Chunk large documents (avoid timeouts)
-- Upload to Google AI File API
+- Upload to File Search
 - Log processing status
 
 **UI Elements**:
@@ -209,7 +211,7 @@ Priority: Start with #1 and #3 (most specific)"
    a. Extract text (PyPDF2 or similar)
    b. Chunk if large (10-20 page chunks)
    c. AI extraction (title, year, summary, topics)
-   d. Upload to Google AI File API
+   d. Upload to File Search
    e. Log metadata
 4. Show in review dashboard
 5. User can edit metadata or approve
@@ -225,7 +227,7 @@ Priority: Start with #1 and #3 (most specific)"
 **Purpose**: Answer questions about what the corpus contains
 
 **Capabilities**:
-- Query corpus via Google AI File API
+- Query corpus via File Search
 - Synthesize across multiple documents
 - Provide citations
 - Identify knowledge gaps
@@ -260,7 +262,7 @@ KNOWLEDGE GAPS:
 - Testing validation criteria (mentioned but not detailed)"
 ```
 
-**RAG Integration**: Uses Google AI File API grounding
+**RAG Integration**: Uses File Search grounding
 
 ### Agent 4: Outline Agent
 
@@ -346,7 +348,7 @@ Source: TTR Vol64 Article 5, p.92
 [3 more quotes with sources]
 ```
 
-**RAG Integration**: Heavy use of Google AI File API semantic search
+**RAG Integration**: Heavy use of File Search semantic search
 
 ### Agent 6: Editor Agent
 
@@ -426,7 +428,7 @@ Apply all? Or review individually?"
        │
        ▼
 ┌─────────────────────────────────┐
-│  Google AI File API             │
+│  File Search             │
 │  Upload document + metadata     │
 │  Returns: file_id               │
 └──────┬──────────────────────────┘
@@ -462,7 +464,7 @@ Apply all? Or review individually?"
        ▼
 ┌─────────────────────────────────┐
 │  Gemini Flash 2.5               │
-│  + Google AI File API Grounding │
+│  + File Search Grounding │
 │  - Retrieves relevant passages  │
 │  - Generates response           │
 │  - Includes citations           │
@@ -733,7 +735,7 @@ app/
 2. Save to temp storage
 3. Extract text (use appropriate library for file type)
 4. Call Gemini Flash 2.5 for metadata extraction
-5. Upload to Google AI File API
+5. Upload to File Search
 6. Return for human review
 7. Clean up temp storage
 
@@ -771,7 +773,7 @@ app/
 
 **Processing Steps**:
 1. Construct Gemini prompt with query + history
-2. Enable Google AI File API grounding
+2. Enable File Search grounding
 3. Apply filters if provided
 4. Generate response with citations
 5. Extract referenced document IDs
@@ -837,7 +839,7 @@ app/
 
 ---
 
-## Google AI File API Integration
+## File Search Integration
 
 ### SDK Setup
 
@@ -947,7 +949,7 @@ export async function listCorpusDocuments() {
 - Next.js project setup
 - Tab navigation working
 - Upload Agent functional
-- Google AI File API integration tested
+- File Search integration tested
 
 **Tasks**:
 1. Initialize Next.js with TypeScript + Tailwind
@@ -955,10 +957,10 @@ export async function listCorpusDocuments() {
 3. Create tab layout structure
 4. Build Upload Agent UI (drag-drop)
 5. Implement `/api/upload` route
-6. Test document upload to Google AI File API
+6. Test document upload to File Search
 7. Build review dashboard
 
-**Deliverable**: Can upload documents and see them in Google AI File API
+**Deliverable**: Can upload documents and see them in File Search
 
 ### Phase 2: Summary Agent (Week 2)
 
@@ -1075,7 +1077,7 @@ Only set up if Vercel timeout limits are hit for document processing.
 | Document processing | $0.02/doc | 100 docs | $2 |
 | Queries (RAG) | $0.001/query | 1000 queries | $1 |
 | Conversation turns | $0.10/1M input tokens | 500k tokens | $0.05 |
-| Google AI File API storage | $0.001/GB/day | 10GB | $0.30 |
+| File Search storage | $0.001/GB/day | 10GB | $0.30 |
 
 **Total: ~$5-10/month for active research use**
 
@@ -1096,7 +1098,7 @@ Only set up if Vercel timeout limits are hit for document processing.
 
 ### Phase 1 Success:
 - [ ] Upload 20 documents successfully
-- [ ] All appear in Google AI File API
+- [ ] All appear in File Search
 - [ ] Metadata extraction 80%+ accurate
 - [ ] Review dashboard functional
 

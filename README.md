@@ -1,6 +1,17 @@
 # Toyota Research System (TRS) V2.0
 
-A multi-agent AI platform for researching, analyzing, and writing about Toyota's practices using RAG (Retrieval Augmented Generation) with Google's Gemini File Search API.
+A multi-agent AI platform for researching, analyzing, and writing about Toyota's practices using RAG (Retrieval Augmented Generation) with Google File Search.
+
+## 🔍 RAG Implementation Strategy
+
+**This project uses Google File Search** as its RAG solution. File Search is a fully managed retrieval system built directly into the Gemini API that:
+
+- **Handles embeddings automatically** - No manual vector management required
+- **Stores documents natively** - No separate vector database (Pinecone, Weaviate, etc.) needed
+- **Provides semantic search & grounding** - Gemini models can directly ground responses in uploaded documents
+- **Simplifies architecture** - Google-managed infrastructure eliminates complex RAG setup
+
+**Why File Search?** Seamless Gemini integration, simplified deployment, and Google-managed scaling make it ideal for this research-focused application.
 
 ## 🚀 Current Status
 
@@ -128,8 +139,8 @@ trs/
 ### Immediate Tasks
 
 1. **Complete remaining agent UIs** (Image Upload, Summary, Outline, Analyze, Editor)
-2. **Implement Google File Search integration**
-   - Study the File Search API documentation
+2. **Implement File Search integration**
+   - Study the File Search documentation
    - Implement document upload to File Search
    - Implement RAG queries with grounding
 3. **Connect Vercel KV**
@@ -149,7 +160,7 @@ trs/
 
 - **Frontend**: Next.js 16, React 19, TypeScript, Tailwind CSS
 - **UI Components**: Shadcn/ui (Radix UI + Tailwind)
-- **AI**: Google Gemini 2.5 Flash + File Search API
+- **AI**: Google Gemini 2.5 Flash + File Search
 - **Storage**: Vercel KV (Redis) for metadata
 - **Deployment**: Vercel (Pro plan, $20/month)
 - **File Upload**: react-dropzone
@@ -166,7 +177,7 @@ With the dev server running:
 ## 📊 Corpus Management
 
 Documents will be:
-- **Stored**: Google AI File Search (vector database + file storage)
+- **Stored**: File Search (managed document storage & retrieval)
 - **Metadata**: Vercel KV (custom taxonomy: PE/PD/Ops, year, topics, etc.)
 - **Languages**: English, Japanese, and mixed documents supported
 
@@ -180,7 +191,12 @@ Documents will be:
 
 ## 📚 Resources
 
-- [Google Gemini File Search API](https://ai.google.dev/gemini-api/docs/file-search)
+### Project Documentation
+- `research_terms.md` - Master list of Japanese/English search terms organized by track (PD/PE/TPS)
+- `TRS_Concept.md` - Full technical specification
+
+### External Resources
+- [Google File Search Documentation](https://ai.google.dev/gemini-api/docs/file-search)
 - [Shadcn/ui Documentation](https://ui.shadcn.com)
 - [Next.js App Router](https://nextjs.org/docs/app)
 - [Vercel KV](https://vercel.com/docs/storage/vercel-kv)

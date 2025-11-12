@@ -1,6 +1,6 @@
 // Document metadata stored in Vercel KV
 export interface DocumentMetadata {
-  fileId: string; // Google AI File API file ID
+  fileId: string; // File Search file ID
   title: string;
   year: number;
   summary: string;

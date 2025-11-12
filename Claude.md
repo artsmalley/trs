@@ -40,10 +40,14 @@ lib/
 ## Tech Stack
 
 - Next.js 16 + TypeScript
-- Tailwind + Shadcn/ui
-- Google Gemini 2.5 Flash + File Search API
+- Tailwind CSS v3 + Shadcn/ui (NOTE: v4 causes build issues - stay on v3)
+- Google Gemini 2.5 Flash + File Search
 - Vercel KV (Redis) for metadata
 - react-dropzone for file uploads
+
+## RAG Implementation
+
+**Uses Google File Search** - a fully managed RAG system built into Gemini API that handles embeddings, storage, and grounding automatically. No separate vector database (Pinecone, Weaviate, etc.) needed.
 
 ## 7 Agents Overview
 
@@ -62,7 +66,7 @@ lib/
 - No authentication (single user on desktop)
 - AI-assisted metadata with human review workflow
 - Gemini 2.5 Flash for all operations (upgrade to 3.0 when available)
-- File Search API for RAG (text-only currently)
+- File Search for RAG (text-only currently)
 - Separate image handling: Vision analysis → text → File Search
 - Session-based conversations (no persistence initially)
 
@@ -70,6 +74,7 @@ lib/
 
 - `TRS_Concept.md` - Original specification
 - `Next_steps.md` - Current work queue
+- `research_terms.md` - Master list of Japanese/English search terms for Research Agent
 - `docs/progress/` - Session logs by date
 - `README.md` - Full project documentation
 

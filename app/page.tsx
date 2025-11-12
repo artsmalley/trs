@@ -9,19 +9,29 @@ import { EditorAgent } from "@/components/agents/editor-agent";
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-slate-50">
       {/* Header */}
-      <header className="border-b bg-background">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Toyota Research System</h1>
-          <div className="text-sm text-muted-foreground">V2.0</div>
+      <header className="border-b bg-gradient-to-r from-primary to-blue-600 text-primary-foreground shadow-md">
+        <div className="container mx-auto px-4 py-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-lg flex items-center justify-center font-bold text-lg">
+              T
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold">Toyota Research System</h1>
+              <p className="text-xs text-primary-foreground/80">Multi-Agent AI Research Platform</p>
+            </div>
+          </div>
+          <div className="text-sm bg-white/20 backdrop-blur px-3 py-1 rounded-full font-medium">
+            V2.0
+          </div>
         </div>
       </header>
 
       {/* Main Content with Tabs */}
-      <main className="flex-1 container mx-auto px-4 py-6">
+      <main className="flex-1 container mx-auto px-4 py-6 bg-slate-50">
         <Tabs defaultValue="research" className="h-full">
-          <TabsList className="grid w-full grid-cols-7 mb-6">
+          <TabsList className="grid w-full grid-cols-7 mb-6 bg-white shadow-sm p-1">
             <TabsTrigger value="research">Research</TabsTrigger>
             <TabsTrigger value="upload">Upload</TabsTrigger>
             <TabsTrigger value="images">Images</TabsTrigger>

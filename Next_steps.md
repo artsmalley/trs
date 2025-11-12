@@ -51,20 +51,35 @@ All 7 agent UIs are now complete and functional with mock data!
 
 **Outcome**: Upload pipeline functional - extracts text, generates metadata, uploads to File Search. Documents stored in Google's cloud, ready for RAG queries.
 
-### CURRENT: Vercel Deployment & KV Setup
-- ✅ Push code to GitHub (commit b68e59d)
-- [ ] Connect GitHub repo to Vercel
-- [ ] Deploy to Vercel
-- [ ] Create Vercel KV database in dashboard
-- [ ] Add KV credentials to Vercel environment variables
-- [ ] Add Google AI API key to Vercel environment variables
-- [ ] Add Google Custom Search credentials to Vercel environment variables
-- [ ] Implement metadata persistence in KV
-- [ ] Test upload flow in production
+### ✅ COMPLETED: Session 4 - Vercel Deployment & Upload Agent Fix (2025-11-12)
 
-**Outcome**: TRS deployed and functional with persistent metadata storage
+**Vercel Deployment:**
+- ✅ Connected GitHub repo to Vercel
+- ✅ Deployed to https://trs-mocha.vercel.app
+- ✅ Created Vercel Redis database (30MB free tier)
+- ✅ Configured environment variables (KV_REDIS_URL, API keys)
+- ✅ Switched from @vercel/kv to ioredis (direct Redis connection)
 
-### Option 2: Implement Summary Agent (Requires Option 1 first)
+**Upload Agent Fix:**
+- ✅ Diagnosed pdf-parse DOMMatrix error in serverless
+- ✅ Removed text extraction - Gemini reads PDFs directly
+- ✅ Updated metadata extraction to use Gemini file reading API
+- ✅ Simplified flow: Upload → Gemini reads → Metadata → Redis
+- ✅ Tested in production - Upload working perfectly!
+- ⏳ Approve button UI exists but not wired up yet
+
+**Outcome**: Upload Agent V1 FULLY FUNCTIONAL in production. Documents upload successfully, Gemini extracts accurate metadata, stored in Redis, displayed in Review Dashboard.
+
+### CURRENT PRIORITIES:
+
+**Option 1: Wire Up Approve Button (Quick Win)**
+- [ ] Connect Approve button to `/api/approve` endpoint
+- [ ] Update metadata status from "pending_review" → "approved"
+- [ ] Update Redis with approval timestamp
+- [ ] Remove from Review Dashboard after approval
+- [ ] Test approval workflow
+
+**Option 2: Implement Summary Agent (Next Major Feature)
 - [ ] Study File Search documentation
 - [ ] Implement `/api/summary` backend:
   - [ ] Gemini + File Search grounding
@@ -131,4 +146,4 @@ None - ready to proceed in any direction
 ---
 
 **Last Updated**: 2025-11-12
-**Session**: 3 - Research Agent V1 & Upload Agent Complete, Ready for Vercel Deployment
+**Session**: 4 - Deployed to Vercel, Upload Agent V1 Working in Production

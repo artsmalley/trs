@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
     // STEP 2: Smart routing based on file type
     let documentMetadata: DocumentMetadata;
 
-    if (isDocument) {
+    if (isDocument || isImage) {  // TEST: Sending images to File Search to test support
       // === DOCUMENT FLOW ===
       console.log(`📄 Document detected - routing to File Search + metadata extraction`);
 

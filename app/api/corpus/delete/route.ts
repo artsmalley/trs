@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { deleteDocumentMetadata } from "@/lib/kv";
+import { deleteDocumentMetadata, getDocumentMetadata } from "@/lib/kv";
+import { deleteFromBlob } from "@/lib/blob-storage";
+import { GoogleAIFileManager } from "@google/generative-ai/server";
 
-// POST /api/corpus/delete - Delete a document from the corpus
+// POST /api/corpus/delete - Delete a file from Blob, File Search, and Redis
 export async function POST(req: NextRequest) {
   try {
     const { fileId } = await req.json();
@@ -10,17 +12,58 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "fileId is required" }, { status: 400 });
     }
 
-    // Delete from Redis
-    await deleteDocumentMetadata(fileId);
+    // Get document metadata to access blobUrl and fileType
+    const doc = await getDocumentMetadata(fileId);
+    if (!doc) {
+      return NextResponse.json(
+        { error: "Document not found" },
+        { status: 404 }
+      );
+    }
 
-    // Note: We're NOT deleting from Google Files API / File Search
-    // The document remains there but is no longer tracked in our metadata store
-    // This is intentional - if you want to fully delete from File Search,
-    // you would need to call the Gemini Files API delete endpoint as well
+    const deletionResults = {
+      blob: false,
+      fileSearch: false,
+      redis: false,
+    };
+
+    // 1. Delete from Blob storage (if blobUrl exists)
+    if (doc.blobUrl) {
+      try {
+        await deleteFromBlob(doc.blobUrl);
+        deletionResults.blob = true;
+        console.log(`✅ Deleted from Blob: ${doc.blobUrl}`);
+      } catch (error) {
+        console.warn(`⚠️ Failed to delete from Blob: ${error}`);
+        // Continue even if Blob deletion fails
+      }
+    }
+
+    // 2. Delete from File Search (documents only, if fileUri exists)
+    if (doc.fileType === "document" && doc.fileUri && doc.fileId.startsWith("files/")) {
+      try {
+        const apiKey = process.env.GOOGLE_AI_API_KEY;
+        if (apiKey) {
+          const fileManager = new GoogleAIFileManager(apiKey);
+          await fileManager.deleteFile(doc.fileId);
+          deletionResults.fileSearch = true;
+          console.log(`✅ Deleted from File Search: ${doc.fileId}`);
+        }
+      } catch (error) {
+        console.warn(`⚠️ Failed to delete from File Search: ${error}`);
+        // Continue even if File Search deletion fails
+      }
+    }
+
+    // 3. Delete metadata from Redis
+    await deleteDocumentMetadata(fileId);
+    deletionResults.redis = true;
+    console.log(`✅ Deleted metadata from Redis: ${fileId}`);
 
     return NextResponse.json({
       success: true,
-      message: "Document metadata deleted successfully",
+      message: "File deleted successfully",
+      deletionResults,
     });
   } catch (error) {
     console.error("Delete API error:", error);

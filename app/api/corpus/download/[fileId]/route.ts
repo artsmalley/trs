@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDocumentMetadata } from "@/lib/kv";
-import { GoogleAIFileManager } from "@google/generative-ai/server";
 
-// GET /api/corpus/download/[fileId] - Download document file
+// GET /api/corpus/download/[fileId] - Download file from Blob storage
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ fileId: string }> }
@@ -10,45 +9,44 @@ export async function GET(
   try {
     const { fileId } = await params;
 
-    // Get document metadata from Redis
+    // Get file metadata from Redis
     const doc = await getDocumentMetadata(fileId);
     if (!doc) {
       return NextResponse.json(
-        { error: "Document not found" },
+        { error: "File not found" },
         { status: 404 }
       );
     }
 
-    const apiKey = process.env.GOOGLE_AI_API_KEY;
-    if (!apiKey) {
-      throw new Error("GOOGLE_AI_API_KEY is not set");
-    }
-
-    // Get file from Google Files API
-    const fileManager = new GoogleAIFileManager(apiKey);
-    const file = await fileManager.getFile(doc.fileId);
-
-    if (!file || !file.uri) {
+    // Check if blobUrl exists
+    if (!doc.blobUrl) {
       return NextResponse.json(
-        { error: "File not found in Google Files API" },
+        {
+          error: "File not available for download",
+          message: "This file was uploaded before Blob storage was enabled. Please re-upload to enable downloads."
+        },
         { status: 404 }
       );
     }
 
-    // Fetch the file content from Google's URI
-    // Note: Google Files API doesn't provide direct download URLs
-    // We need to redirect to the fileUri or provide metadata
+    // Fetch file from Vercel Blob
+    const response = await fetch(doc.blobUrl);
 
-    // Return file metadata for now (actual file download requires Google Cloud Storage access)
-    return NextResponse.json({
-      fileName: doc.fileName,
-      mimeType: doc.mimeType,
-      fileUri: file.uri,
-      message: "File download not yet implemented - requires Google Cloud Storage access",
-      // In a full implementation, you would:
-      // 1. Download file from Google's internal storage
-      // 2. Stream it back to the client
-      // 3. Or provide a signed download URL
+    if (!response.ok) {
+      throw new Error(`Failed to fetch file from Blob: ${response.statusText}`);
+    }
+
+    // Get file as buffer
+    const fileBuffer = await response.arrayBuffer();
+
+    // Return file with proper headers for download
+    return new NextResponse(fileBuffer, {
+      status: 200,
+      headers: {
+        "Content-Type": doc.mimeType || "application/octet-stream",
+        "Content-Disposition": `attachment; filename="${doc.fileName}"`,
+        "Content-Length": fileBuffer.byteLength.toString(),
+      },
     });
 
   } catch (error) {

@@ -22,6 +22,9 @@ import type { Message } from "@/lib/types";
 interface Document {
   fileId: string;
   fileName: string;
+  mimeType: string;
+  blobUrl: string;
+  fileType: "document" | "image";
   title: string;
   authors: string[];
   year: number;
@@ -34,6 +37,12 @@ interface Document {
   status: string;
   uploadedAt: string;
   approvedAt: string | null;
+  visionAnalysis?: {
+    description: string;
+    extractedText: string;
+    objects: string[];
+    concepts: string[];
+  };
 }
 
 export function BrowseQueryAgent() {
@@ -51,6 +60,7 @@ export function BrowseQueryAgent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("approved");
   const [trackFilter, setTrackFilter] = useState("all");
+  const [fileTypeFilter, setFileTypeFilter] = useState("all");
   const [sortBy, setSortBy] = useState("uploadedAt-desc");
   const [displayCount, setDisplayCount] = useState(20);
   const [modalOpen, setModalOpen] = useState(false);
@@ -63,7 +73,7 @@ export function BrowseQueryAgent() {
   // Filter and sort documents when filters change
   useEffect(() => {
     filterDocuments();
-  }, [documents, searchQuery, statusFilter, trackFilter, sortBy]);
+  }, [documents, searchQuery, statusFilter, trackFilter, fileTypeFilter, sortBy]);
 
   const fetchDocuments = async () => {
     setDocsLoading(true);
@@ -89,6 +99,11 @@ export function BrowseQueryAgent() {
     // Track filter
     if (trackFilter !== "all") {
       filtered = filtered.filter((doc) => doc.track === trackFilter);
+    }
+
+    // File type filter
+    if (fileTypeFilter !== "all") {
+      filtered = filtered.filter((doc) => doc.fileType === fileTypeFilter);
     }
 
     // Search filter
@@ -289,6 +304,19 @@ export function BrowseQueryAgent() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="w-48">
+                  <label className="text-sm font-medium mb-2 block">Type</label>
+                  <Select value={fileTypeFilter} onValueChange={setFileTypeFilter}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Files</SelectItem>
+                      <SelectItem value="document">📄 Documents</SelectItem>
+                      <SelectItem value="image">🖼️ Images</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="w-56">
                   <label className="text-sm font-medium mb-2 block">Sort By</label>
                   <Select value={sortBy} onValueChange={setSortBy}>
@@ -382,19 +410,39 @@ export function BrowseQueryAgent() {
                       >
                         <CardContent className="pt-6">
                           <div className="flex items-start justify-between gap-4">
+                            {/* Image thumbnail for images */}
+                            {doc.fileType === "image" && doc.blobUrl && (
+                              <div className="w-32 h-24 flex-shrink-0">
+                                <img
+                                  src={doc.blobUrl}
+                                  alt={doc.title}
+                                  className="w-full h-full object-cover rounded border"
+                                />
+                              </div>
+                            )}
+
                             <div className="flex-1 space-y-2">
                               <div className="flex items-start gap-2">
-                                <h4 className="font-semibold text-base">{doc.title}</h4>
+                                <span className="text-lg">{doc.fileType === "image" ? "🖼️" : "📄"}</span>
+                                <h4 className="font-semibold text-base flex-1">{doc.title}</h4>
                                 <Badge variant={doc.status === "approved" ? "default" : "secondary"}>
                                   {doc.status === "approved" ? "Approved" : "Pending"}
                                 </Badge>
                               </div>
                               <p className="text-sm text-muted-foreground line-clamp-2">{doc.summary}</p>
                               <div className="flex gap-3 text-xs text-muted-foreground">
-                                <span>{doc.authors.join(", ") || "Unknown"}</span>
-                                <span>•</span>
-                                <span>{doc.year}</span>
-                                <span>•</span>
+                                {doc.authors.length > 0 && (
+                                  <>
+                                    <span>{doc.authors.join(", ")}</span>
+                                    <span>•</span>
+                                  </>
+                                )}
+                                {doc.year && (
+                                  <>
+                                    <span>{doc.year}</span>
+                                    <span>•</span>
+                                  </>
+                                )}
                                 <Badge variant="outline" className="text-xs">
                                   {doc.track}
                                 </Badge>
@@ -426,15 +474,18 @@ export function BrowseQueryAgent() {
                 </ScrollArea>
               )}
 
-              {/* Document Detail Modal */}
+              {/* Document/Image Detail Modal */}
               <Dialog open={modalOpen} onOpenChange={setModalOpen}>
                 <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
                   {selectedDoc && (
                     <>
                       <DialogHeader>
-                        <DialogTitle>{selectedDoc.title}</DialogTitle>
+                        <DialogTitle>
+                          {selectedDoc.fileType === "image" ? "🖼️" : "📄"} {selectedDoc.title}
+                        </DialogTitle>
                         <DialogDescription>
-                          {selectedDoc.authors.join(", ") || "Unknown"} • {selectedDoc.year}
+                          {selectedDoc.authors.join(", ") || "No author"}
+                          {selectedDoc.year && ` • ${selectedDoc.year}`}
                         </DialogDescription>
                       </DialogHeader>
 
@@ -446,11 +497,64 @@ export function BrowseQueryAgent() {
                           </Badge>
                         </div>
 
-                        {/* Summary */}
+                        {/* Image Preview (for images) */}
+                        {selectedDoc.fileType === "image" && selectedDoc.blobUrl && (
+                          <div className="rounded-lg overflow-hidden border">
+                            <img
+                              src={selectedDoc.blobUrl}
+                              alt={selectedDoc.title}
+                              className="w-full h-auto max-h-96 object-contain bg-muted"
+                            />
+                          </div>
+                        )}
+
+                        {/* Summary / Description */}
                         <div>
-                          <h5 className="font-semibold text-sm mb-2">Summary</h5>
+                          <h5 className="font-semibold text-sm mb-2">
+                            {selectedDoc.fileType === "image" ? "Description" : "Summary"}
+                          </h5>
                           <p className="text-sm text-muted-foreground leading-relaxed">{selectedDoc.summary}</p>
                         </div>
+
+                        {/* Vision Analysis (for images) */}
+                        {selectedDoc.fileType === "image" && selectedDoc.visionAnalysis && (
+                          <>
+                            {selectedDoc.visionAnalysis.extractedText && (
+                              <div>
+                                <h5 className="font-semibold text-sm mb-2">Extracted Text (OCR)</h5>
+                                <p className="text-sm text-muted-foreground leading-relaxed font-mono bg-muted p-3 rounded">
+                                  {selectedDoc.visionAnalysis.extractedText}
+                                </p>
+                              </div>
+                            )}
+
+                            {selectedDoc.visionAnalysis.objects.length > 0 && (
+                              <div>
+                                <h5 className="font-semibold text-sm mb-2">Detected Objects</h5>
+                                <div className="flex gap-2 flex-wrap">
+                                  {selectedDoc.visionAnalysis.objects.map((obj, i) => (
+                                    <Badge key={i} variant="outline">
+                                      {obj}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {selectedDoc.visionAnalysis.concepts.length > 0 && (
+                              <div>
+                                <h5 className="font-semibold text-sm mb-2">Concepts</h5>
+                                <div className="flex gap-2 flex-wrap">
+                                  {selectedDoc.visionAnalysis.concepts.map((concept, i) => (
+                                    <Badge key={i} variant="secondary">
+                                      {concept}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
 
                         {/* Metadata Grid */}
                         <div className="grid grid-cols-2 gap-4 text-sm">
@@ -508,11 +612,12 @@ export function BrowseQueryAgent() {
                         <Button
                           variant="outline"
                           onClick={() => {
-                            alert("Download feature coming soon!\n\nCurrently, documents are stored in Google's File API for RAG queries only. To enable downloads, we'll need to add file storage (Vercel Blob, S3, etc.)");
+                            // Download from Blob storage
+                            window.open(`/api/corpus/download/${selectedDoc.fileId}`, '_blank');
                           }}
-                          title="Download feature coming soon"
+                          title={`Download ${selectedDoc.fileType === "image" ? "image" : "document"}`}
                         >
-                          Download Document
+                          Download {selectedDoc.fileType === "image" ? "Image" : "Document"}
                         </Button>
                         <Button
                           variant="destructive"
@@ -522,7 +627,7 @@ export function BrowseQueryAgent() {
                             setModalOpen(false);
                           }}
                         >
-                          Delete Document
+                          Delete {selectedDoc.fileType === "image" ? "Image" : "Document"}
                         </Button>
                       </DialogFooter>
                     </>

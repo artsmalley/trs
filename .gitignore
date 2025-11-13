@@ -38,3 +38,6 @@ next-env.d.ts
 
 # temporary backup
 temp_backup/
+
+.vercel
+.env*.local

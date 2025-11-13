@@ -111,6 +111,10 @@ export function UploadAgent() {
       "application/pdf": [".pdf"],
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
       "text/plain": [".txt"],
+      "image/jpeg": [".jpg", ".jpeg"],
+      "image/png": [".png"],
+      "image/gif": [".gif"],
+      "image/webp": [".webp"],
     },
   });
 
@@ -119,9 +123,9 @@ export function UploadAgent() {
       {/* Upload Zone */}
       <Card>
         <CardHeader>
-          <CardTitle>Upload Documents</CardTitle>
+          <CardTitle>Upload Documents & Images</CardTitle>
           <CardDescription>
-            Upload PDF, DOCX, or TXT files. AI will automatically extract metadata for your review.
+            Upload documents (PDF, DOCX, TXT) or images (JPG, PNG, GIF). AI will automatically extract metadata and analyze content for your review.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -139,7 +143,7 @@ export function UploadAgent() {
                 {isDragActive ? "Drop files here..." : "Drag & drop files here"}
               </p>
               <p className="text-sm text-muted-foreground">or click to browse</p>
-              <p className="text-xs text-muted-foreground">Supports: PDF, DOCX, TXT</p>
+              <p className="text-xs text-muted-foreground">Documents: PDF, DOCX, TXT • Images: JPG, PNG, GIF, WEBP</p>
             </div>
           </div>
         </CardContent>
@@ -196,17 +200,60 @@ export function UploadAgent() {
                   <Card key={file.id}>
                     <CardContent className="pt-6">
                       <div className="space-y-3">
+                        {/* Image Preview for images */}
+                        {file.metadata.fileType === "image" && file.metadata.blobUrl && (
+                          <div className="w-full max-w-md mx-auto">
+                            <img
+                              src={file.metadata.blobUrl}
+                              alt={file.metadata.title}
+                              className="w-full h-auto max-h-64 object-contain rounded border"
+                            />
+                          </div>
+                        )}
+
                         <div>
-                          <h4 className="font-semibold">{file.metadata.title}</h4>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-xl">{file.metadata.fileType === "image" ? "🖼️" : "📄"}</span>
+                            <h4 className="font-semibold">{file.metadata.title}</h4>
+                          </div>
                           <p className="text-sm text-muted-foreground mt-1">
                             {file.metadata.summary}
                           </p>
                         </div>
-                        <div className="flex gap-4 text-sm">
-                          <div>
-                            <span className="text-muted-foreground">Year:</span>{" "}
-                            <span className="font-medium">{file.metadata.year}</span>
+
+                        {/* Show vision analysis for images */}
+                        {file.metadata.fileType === "image" && file.metadata.visionAnalysis && (
+                          <div className="space-y-2">
+                            {file.metadata.visionAnalysis.extractedText && (
+                              <div>
+                                <p className="text-xs font-semibold text-muted-foreground">Extracted Text:</p>
+                                <p className="text-xs bg-muted p-2 rounded font-mono">
+                                  {file.metadata.visionAnalysis.extractedText}
+                                </p>
+                              </div>
+                            )}
+                            {file.metadata.visionAnalysis.objects.length > 0 && (
+                              <div>
+                                <p className="text-xs font-semibold text-muted-foreground mb-1">Objects:</p>
+                                <div className="flex gap-1 flex-wrap">
+                                  {file.metadata.visionAnalysis.objects.map((obj: string, i: number) => (
+                                    <Badge key={i} variant="outline" className="text-xs">
+                                      {obj}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
+                        )}
+
+                        <div className="flex gap-4 text-sm flex-wrap">
+                          {file.metadata.year && (
+                            <div>
+                              <span className="text-muted-foreground">Year:</span>{" "}
+                              <span className="font-medium">{file.metadata.year}</span>
+                            </div>
+                          )}
                           <div>
                             <span className="text-muted-foreground">Track:</span>{" "}
                             <Badge variant="outline">{file.metadata.track}</Badge>
@@ -214,6 +261,10 @@ export function UploadAgent() {
                           <div>
                             <span className="text-muted-foreground">Language:</span>{" "}
                             <Badge variant="secondary">{file.metadata.language}</Badge>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Type:</span>{" "}
+                            <Badge variant="secondary">{file.metadata.documentType}</Badge>
                           </div>
                         </div>
                         <div className="flex gap-2">

@@ -3,6 +3,7 @@ export interface DocumentMetadata {
   fileId: string; // File Search file ID
   fileUri: string; // Gemini File API URI
   fileName: string; // Original filename
+  mimeType: string; // MIME type (application/pdf, application/vnd.openxmlformats-officedocument.wordprocessingml.document, etc.)
   title: string;
   authors: string[]; // Extracted authors
   year: number | null; // Extracted year, null if not found

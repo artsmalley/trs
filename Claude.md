@@ -58,7 +58,8 @@ lib/
 
 1. **Research** ✅ WORKING - 228 curated terms, Google Custom Search, targeted search (J-STAGE, Patents, Scholar)
 2. **Upload** ✅ WORKING - Gemini reads PDFs directly, AI metadata extraction, Redis storage, review dashboard, approve workflow
-3. **Browse** ✅ WORKING - Two-tab agent: Browse Documents (list/filter/search/delete) + Query Corpus (RAG Q&A with citations)
+3. **Browse** ✅ WORKING (localhost only) - Two-tab agent: Browse Documents (list/filter/search/delete) + Query Corpus (RAG Q&A with citations)
+   - ⚠️ Vercel deployment issue: Works perfectly locally but crashes on production (Session 7 priority)
 4. **Images** ⏸️ DEFERRED - Waiting for Gemini 3.0 & improved File Search image support (shows "coming soon" UI)
 5. **Brainstorm** 🔨 TODO - Corpus-aware ideation and outlining assistant (renamed from Outline)
 6. **Analyze** 🔨 TODO - Draft article reviewer that finds corpus support (revised purpose)

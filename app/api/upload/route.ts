@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
       fileId: uploadedFile.name,
       fileUri: uploadedFile.uri,
       fileName: file.name,
+      mimeType: file.type,
       title: metadata.title,
       authors: metadata.authors,
       year: metadata.year,

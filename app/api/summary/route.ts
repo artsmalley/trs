@@ -37,8 +37,8 @@ export async function POST(req: NextRequest) {
       model: "gemini-2.0-flash-exp",
     });
 
-    // Construct prompt with document context
-    const contextPrompt = `You are a research assistant specializing in Toyota production engineering and manufacturing.
+    // Construct system instruction
+    const systemInstruction = `You are a research assistant specializing in Toyota production engineering and manufacturing.
 
 You have access to the following approved documents in the corpus:
 
@@ -48,18 +48,18 @@ ${approvedDocs
       `[${idx + 1}] ${doc.title}
 Track: ${doc.track}
 Year: ${doc.year || "Unknown"}
-Summary: ${doc.summary}
-Keywords: ${doc.keywords.join(", ")}
+${doc.summary ? `Summary: ${doc.summary}` : ""}
+${doc.keywords.length > 0 ? `Keywords: ${doc.keywords.join(", ")}` : ""}
 ---`
   )
   .join("\n\n")}
 
-Answer the user's question based on the above documents. If you reference information from a specific document, cite it using the format [Document #].
+IMPORTANT: Read the full content of the uploaded documents to answer questions. Do not rely only on the summaries above. If you find relevant information in a document, cite it using [Document #] format and quote the specific passages.`;
 
-User Question: ${query}`;
-
-    // Build conversation history
+    // Build conversation history with file references
     const contents = [];
+
+    // Add conversation history if present
     if (history && history.length > 0) {
       for (const msg of history) {
         contents.push({
@@ -68,15 +68,42 @@ User Question: ${query}`;
         });
       }
     }
-    // Add current query with context
-    contents.push({
-      role: "user",
-      parts: [{ text: contextPrompt }],
-    });
 
-    // Generate response
+    // Helper function to detect MIME type from filename
+    const getMimeType = (doc: any): string => {
+      if (doc.mimeType) return doc.mimeType;
+      // Fallback for old documents without mimeType
+      const ext = doc.fileName.toLowerCase().split('.').pop();
+      const mimeTypes: Record<string, string> = {
+        'pdf': 'application/pdf',
+        'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'doc': 'application/msword',
+        'txt': 'text/plain',
+      };
+      return mimeTypes[ext || 'pdf'] || 'application/pdf';
+    };
+
+    // Add current query with file URIs for grounding
+    const currentMessage: any = {
+      role: "user",
+      parts: [
+        { text: query },
+        // Add all approved document files for Gemini to read
+        ...approvedDocs.map((doc) => ({
+          fileData: {
+            mimeType: getMimeType(doc),
+            fileUri: doc.fileUri,
+          },
+        })),
+      ],
+    };
+
+    contents.push(currentMessage);
+
+    // Generate response with file grounding
     const result = await model.generateContent({
       contents,
+      systemInstruction: systemInstruction,
     });
 
     const response = result.response;

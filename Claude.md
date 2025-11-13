@@ -58,6 +58,28 @@ lib/
 - Google Custom Search API for web search
 - react-dropzone for file uploads
 
+## ⚠️ CRITICAL: Gemini Model Policy
+
+**ALWAYS USE: `gemini-2.5-flash`** (current stable model)
+
+**NEVER USE:**
+- ❌ `gemini-1.5-*` (deprecated, inferior performance)
+- ❌ `gemini-2.0-*` (deprecated, being phased out)
+- ❌ `gemini-2.2-*` (does not exist)
+- ❌ Any `-exp` experimental models (unstable)
+
+**Why this matters:**
+Claude's training data is dated. When encountering errors, Claude may incorrectly assume older models (1.5, 2.0) are "more stable" - this is almost never the case. Google deprecates older models because they don't work as well.
+
+**Migration path:**
+- Current: `gemini-2.5-flash` (stable, production-ready)
+- Future: `gemini-3.0-flash` (when available via API key in ~2 weeks)
+
+**If you see model errors:**
+1. Check model name is exactly `gemini-2.5-flash`
+2. Do NOT downgrade to 1.5 or 2.0
+3. Check Google AI Studio for current model availability
+
 ## RAG Implementation
 
 **Uses Google File Search** - a fully managed RAG system built into Gemini API that handles embeddings, storage, and grounding automatically. No separate vector database (Pinecone, Weaviate, etc.) needed.

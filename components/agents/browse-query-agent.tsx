@@ -103,7 +103,21 @@ export function BrowseQueryAgent() {
 
     // File type filter
     if (fileTypeFilter !== "all") {
-      filtered = filtered.filter((doc) => doc.fileType === fileTypeFilter);
+      filtered = filtered.filter((doc) => {
+        // Check fileType field if it exists (new uploads)
+        if (doc.fileType) {
+          return doc.fileType === fileTypeFilter;
+        }
+
+        // Fallback: detect from mimeType (backward compatibility)
+        if (fileTypeFilter === "image") {
+          return doc.mimeType?.startsWith("image/");
+        } else if (fileTypeFilter === "document") {
+          return doc.mimeType?.startsWith("application/") || doc.mimeType?.startsWith("text/");
+        }
+
+        return false;
+      });
     }
 
     // Search filter
@@ -411,7 +425,7 @@ export function BrowseQueryAgent() {
                         <CardContent className="pt-6">
                           <div className="flex items-start justify-between gap-4">
                             {/* Image thumbnail for images */}
-                            {doc.fileType === "image" && doc.blobUrl && (
+                            {(doc.fileType === "image" || doc.mimeType?.startsWith("image/")) && doc.blobUrl && (
                               <div className="w-32 h-24 flex-shrink-0">
                                 <img
                                   src={doc.blobUrl}
@@ -423,7 +437,7 @@ export function BrowseQueryAgent() {
 
                             <div className="flex-1 space-y-2">
                               <div className="flex items-start gap-2">
-                                <span className="text-lg">{doc.fileType === "image" ? "🖼️" : "📄"}</span>
+                                <span className="text-lg">{(doc.fileType === "image" || doc.mimeType?.startsWith("image/")) ? "🖼️" : "📄"}</span>
                                 <h4 className="font-semibold text-base flex-1">{doc.title}</h4>
                                 <Badge variant={doc.status === "approved" ? "default" : "secondary"}>
                                   {doc.status === "approved" ? "Approved" : "Pending"}
@@ -481,7 +495,7 @@ export function BrowseQueryAgent() {
                     <>
                       <DialogHeader>
                         <DialogTitle>
-                          {selectedDoc.fileType === "image" ? "🖼️" : "📄"} {selectedDoc.title}
+                          {(selectedDoc.fileType === "image" || selectedDoc.mimeType?.startsWith("image/")) ? "🖼️" : "📄"} {selectedDoc.title}
                         </DialogTitle>
                         <DialogDescription>
                           {selectedDoc.authors.join(", ") || "No author"}
@@ -498,7 +512,7 @@ export function BrowseQueryAgent() {
                         </div>
 
                         {/* Image Preview (for images) */}
-                        {selectedDoc.fileType === "image" && selectedDoc.blobUrl && (
+                        {(selectedDoc.fileType === "image" || selectedDoc.mimeType?.startsWith("image/")) && selectedDoc.blobUrl && (
                           <div className="rounded-lg overflow-hidden border">
                             <img
                               src={selectedDoc.blobUrl}
@@ -511,13 +525,13 @@ export function BrowseQueryAgent() {
                         {/* Summary / Description */}
                         <div>
                           <h5 className="font-semibold text-sm mb-2">
-                            {selectedDoc.fileType === "image" ? "Description" : "Summary"}
+                            {(selectedDoc.fileType === "image" || selectedDoc.mimeType?.startsWith("image/")) ? "Description" : "Summary"}
                           </h5>
                           <p className="text-sm text-muted-foreground leading-relaxed">{selectedDoc.summary}</p>
                         </div>
 
                         {/* Vision Analysis (for images) */}
-                        {selectedDoc.fileType === "image" && selectedDoc.visionAnalysis && (
+                        {(selectedDoc.fileType === "image" || selectedDoc.mimeType?.startsWith("image/")) && selectedDoc.visionAnalysis && (
                           <>
                             {selectedDoc.visionAnalysis.extractedText && (
                               <div>
@@ -615,9 +629,9 @@ export function BrowseQueryAgent() {
                             // Download from Blob storage (URL-encode fileId to handle slashes)
                             window.open(`/api/corpus/download/${encodeURIComponent(selectedDoc.fileId)}`, '_blank');
                           }}
-                          title={`Download ${selectedDoc.fileType === "image" ? "image" : "document"}`}
+                          title={`Download ${(selectedDoc.fileType === "image" || selectedDoc.mimeType?.startsWith("image/")) ? "image" : "document"}`}
                         >
-                          Download {selectedDoc.fileType === "image" ? "Image" : "Document"}
+                          Download {(selectedDoc.fileType === "image" || selectedDoc.mimeType?.startsWith("image/")) ? "Image" : "Document"}
                         </Button>
                         <Button
                           variant="destructive"
@@ -627,7 +641,7 @@ export function BrowseQueryAgent() {
                             setModalOpen(false);
                           }}
                         >
-                          Delete {selectedDoc.fileType === "image" ? "Image" : "Document"}
+                          Delete {(selectedDoc.fileType === "image" || selectedDoc.mimeType?.startsWith("image/")) ? "Image" : "Document"}
                         </Button>
                       </DialogFooter>
                     </>

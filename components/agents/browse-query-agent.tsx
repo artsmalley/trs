@@ -9,6 +9,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { Message } from "@/lib/types";
 
 interface Document {
@@ -43,16 +51,19 @@ export function BrowseQueryAgent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("approved");
   const [trackFilter, setTrackFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("uploadedAt-desc");
+  const [displayCount, setDisplayCount] = useState(20);
+  const [modalOpen, setModalOpen] = useState(false);
 
   // Fetch documents on mount
   useEffect(() => {
     fetchDocuments();
   }, []);
 
-  // Filter documents when filters change
+  // Filter and sort documents when filters change
   useEffect(() => {
     filterDocuments();
-  }, [documents, searchQuery, statusFilter, trackFilter]);
+  }, [documents, searchQuery, statusFilter, trackFilter, sortBy]);
 
   const fetchDocuments = async () => {
     setDocsLoading(true);
@@ -91,7 +102,43 @@ export function BrowseQueryAgent() {
       );
     }
 
+    // Sorting
+    const [sortField, sortDirection] = sortBy.split("-");
+    filtered.sort((a, b) => {
+      let aVal: any, bVal: any;
+
+      switch (sortField) {
+        case "title":
+          aVal = a.title.toLowerCase();
+          bVal = b.title.toLowerCase();
+          break;
+        case "uploadedAt":
+          aVal = new Date(a.uploadedAt).getTime();
+          bVal = new Date(b.uploadedAt).getTime();
+          break;
+        case "approvedAt":
+          aVal = a.approvedAt ? new Date(a.approvedAt).getTime() : 0;
+          bVal = b.approvedAt ? new Date(b.approvedAt).getTime() : 0;
+          break;
+        case "year":
+          aVal = a.year || 0;
+          bVal = b.year || 0;
+          break;
+        case "author":
+          aVal = a.authors[0]?.toLowerCase() || "";
+          bVal = b.authors[0]?.toLowerCase() || "";
+          break;
+        default:
+          return 0;
+      }
+
+      if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+
     setFilteredDocs(filtered);
+    setDisplayCount(20); // Reset display count when filters change
   };
 
   const deleteDocument = async (fileId: string) => {
@@ -242,6 +289,23 @@ export function BrowseQueryAgent() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="w-56">
+                  <label className="text-sm font-medium mb-2 block">Sort By</label>
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="uploadedAt-desc">Date Uploaded (Newest)</SelectItem>
+                      <SelectItem value="uploadedAt-asc">Date Uploaded (Oldest)</SelectItem>
+                      <SelectItem value="title-asc">Title (A-Z)</SelectItem>
+                      <SelectItem value="title-desc">Title (Z-A)</SelectItem>
+                      <SelectItem value="year-desc">Year (Newest)</SelectItem>
+                      <SelectItem value="year-asc">Year (Oldest)</SelectItem>
+                      <SelectItem value="author-asc">Author (A-Z)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <Button onClick={fetchDocuments} variant="outline">
                   Refresh
                 </Button>
@@ -281,6 +345,13 @@ export function BrowseQueryAgent() {
                 </CardContent>
               </Card>
 
+              {/* Document Count Indicator */}
+              {!docsLoading && filteredDocs.length > 0 && (
+                <div className="text-sm text-muted-foreground">
+                  Showing {Math.min(displayCount, filteredDocs.length)} of {filteredDocs.length} documents
+                </div>
+              )}
+
               {/* Document List */}
               {docsLoading ? (
                 <div className="text-center py-12 text-muted-foreground">Loading documents...</div>
@@ -289,15 +360,25 @@ export function BrowseQueryAgent() {
                   No documents found. Try adjusting your filters or upload some documents.
                 </div>
               ) : (
-                <ScrollArea className="h-[500px]">
+                <ScrollArea
+                  className="h-[500px]"
+                  onScrollCapture={(e) => {
+                    const target = e.target as HTMLDivElement;
+                    const bottom = target.scrollHeight - target.scrollTop - target.clientHeight < 100;
+                    if (bottom && displayCount < filteredDocs.length) {
+                      setDisplayCount(prev => Math.min(prev + 20, filteredDocs.length));
+                    }
+                  }}
+                >
                   <div className="space-y-3">
-                    {filteredDocs.map((doc) => (
+                    {filteredDocs.slice(0, displayCount).map((doc) => (
                       <Card
                         key={doc.fileId}
-                        className={`cursor-pointer transition-colors hover:bg-muted/50 ${
-                          selectedDoc?.fileId === doc.fileId ? "border-primary" : ""
-                        }`}
-                        onClick={() => setSelectedDoc(doc)}
+                        className="cursor-pointer transition-colors hover:bg-muted/50"
+                        onClick={() => {
+                          setSelectedDoc(doc);
+                          setModalOpen(true);
+                        }}
                       >
                         <CardContent className="pt-6">
                           <div className="flex items-start justify-between gap-4">
@@ -332,86 +413,122 @@ export function BrowseQueryAgent() {
                                 </div>
                               )}
                             </div>
-                            {selectedDoc?.fileId === doc.fileId && (
-                              <div className="flex gap-2">
-                                <Button size="sm" variant="destructive" onClick={() => deleteDocument(doc.fileId)}>
-                                  Delete
-                                </Button>
-                              </div>
-                            )}
                           </div>
                         </CardContent>
                       </Card>
                     ))}
+                    {displayCount < filteredDocs.length && (
+                      <div className="text-center py-4 text-sm text-muted-foreground">
+                        Loading more...
+                      </div>
+                    )}
                   </div>
                 </ScrollArea>
               )}
 
-              {/* Document Detail Modal/Panel (when document is selected) */}
-              {selectedDoc && (
-                <Card className="border-primary">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <CardTitle>{selectedDoc.title}</CardTitle>
-                        <CardDescription className="mt-2">
+              {/* Document Detail Modal */}
+              <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+                <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+                  {selectedDoc && (
+                    <>
+                      <DialogHeader>
+                        <DialogTitle>{selectedDoc.title}</DialogTitle>
+                        <DialogDescription>
                           {selectedDoc.authors.join(", ") || "Unknown"} • {selectedDoc.year}
-                        </CardDescription>
-                      </div>
-                      <Button size="sm" variant="ghost" onClick={() => setSelectedDoc(null)}>
-                        Close
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <h5 className="font-semibold text-sm mb-1">Summary</h5>
-                      <p className="text-sm text-muted-foreground">{selectedDoc.summary}</p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="font-semibold">Track:</span>{" "}
-                        <Badge variant="outline">{selectedDoc.track}</Badge>
-                      </div>
-                      <div>
-                        <span className="font-semibold">Language:</span>{" "}
-                        <Badge variant="outline">{selectedDoc.language}</Badge>
-                      </div>
-                      <div>
-                        <span className="font-semibold">Type:</span> {selectedDoc.documentType}
-                      </div>
-                      <div>
-                        <span className="font-semibold">Confidence:</span> {selectedDoc.confidence}
-                      </div>
-                      <div>
-                        <span className="font-semibold">Uploaded:</span>{" "}
-                        {new Date(selectedDoc.uploadedAt).toLocaleDateString()}
-                      </div>
-                      {selectedDoc.approvedAt && (
+                        </DialogDescription>
+                      </DialogHeader>
+
+                      <div className="space-y-6 py-4">
+                        {/* Status Badge */}
                         <div>
-                          <span className="font-semibold">Approved:</span>{" "}
-                          {new Date(selectedDoc.approvedAt).toLocaleDateString()}
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <h5 className="font-semibold text-sm mb-2">Keywords</h5>
-                      <div className="flex gap-2 flex-wrap">
-                        {selectedDoc.keywords.map((keyword, i) => (
-                          <Badge key={i} variant="secondary">
-                            {keyword}
+                          <Badge variant={selectedDoc.status === "approved" ? "default" : "secondary"}>
+                            {selectedDoc.status === "approved" ? "Approved" : "Pending Review"}
                           </Badge>
-                        ))}
+                        </div>
+
+                        {/* Summary */}
+                        <div>
+                          <h5 className="font-semibold text-sm mb-2">Summary</h5>
+                          <p className="text-sm text-muted-foreground leading-relaxed">{selectedDoc.summary}</p>
+                        </div>
+
+                        {/* Metadata Grid */}
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="font-semibold">Track:</span>{" "}
+                            <Badge variant="outline">{selectedDoc.track}</Badge>
+                          </div>
+                          <div>
+                            <span className="font-semibold">Language:</span>{" "}
+                            <Badge variant="outline">{selectedDoc.language}</Badge>
+                          </div>
+                          <div>
+                            <span className="font-semibold">Type:</span> {selectedDoc.documentType}
+                          </div>
+                          <div>
+                            <span className="font-semibold">Confidence:</span> {selectedDoc.confidence}
+                          </div>
+                          <div>
+                            <span className="font-semibold">Uploaded:</span>{" "}
+                            {new Date(selectedDoc.uploadedAt).toLocaleDateString()}
+                          </div>
+                          {selectedDoc.approvedAt && (
+                            <div>
+                              <span className="font-semibold">Approved:</span>{" "}
+                              {new Date(selectedDoc.approvedAt).toLocaleDateString()}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Keywords */}
+                        {selectedDoc.keywords.length > 0 && (
+                          <div>
+                            <h5 className="font-semibold text-sm mb-2">Keywords</h5>
+                            <div className="flex gap-2 flex-wrap">
+                              {selectedDoc.keywords.map((keyword, i) => (
+                                <Badge key={i} variant="secondary">
+                                  {keyword}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* File Information */}
+                        <div>
+                          <h5 className="font-semibold text-sm mb-2">File Information</h5>
+                          <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground"><span className="font-semibold">Filename:</span> {selectedDoc.fileName}</p>
+                            <p className="text-xs text-muted-foreground font-mono"><span className="font-semibold">File ID:</span> {selectedDoc.fileId}</p>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div>
-                      <h5 className="font-semibold text-sm mb-1">File Information</h5>
-                      <p className="text-xs text-muted-foreground font-mono">{selectedDoc.fileId}</p>
-                      <p className="text-xs text-muted-foreground">{selectedDoc.fileName}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+
+                      <DialogFooter className="gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            alert("Download feature coming soon!\n\nCurrently, documents are stored in Google's File API for RAG queries only. To enable downloads, we'll need to add file storage (Vercel Blob, S3, etc.)");
+                          }}
+                          title="Download feature coming soon"
+                        >
+                          Download Document
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            await deleteDocument(selectedDoc.fileId);
+                            setModalOpen(false);
+                          }}
+                        >
+                          Delete Document
+                        </Button>
+                      </DialogFooter>
+                    </>
+                  )}
+                </DialogContent>
+              </Dialog>
             </TabsContent>
 
             {/* QUERY CORPUS TAB */}

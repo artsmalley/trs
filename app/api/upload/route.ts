@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
     // STEP 2: Smart routing based on file type
     let documentMetadata: DocumentMetadata;
 
-    if (isDocument || isImage) {  // TEST: Sending images to File Search to test support
+    if (isDocument) {
       // === DOCUMENT FLOW ===
       console.log(`📄 Document detected - routing to File Search + metadata extraction`);
 
@@ -112,10 +112,19 @@ export async function POST(req: NextRequest) {
         approvedAt: null,
       };
     } else if (isImage) {
-      // === IMAGE FLOW ===
-      console.log(`🖼️ Image detected - routing to Vision API + content analysis`);
+      // === HYBRID IMAGE FLOW ===
+      console.log(`🖼️ Image detected - routing to File Search + Vision API (hybrid approach)`);
 
-      // Analyze image with Gemini Vision
+      // STEP 1: Upload to File Search for RAG queries
+      console.log(`  → Uploading to File Search for RAG...`);
+      const uploadedFile = await uploadToFileSearch(
+        buffer,
+        file.name,
+        file.type,
+        file.name
+      );
+
+      // STEP 2: Analyze image with Gemini Vision for metadata
       console.log(`  → Analyzing image with Gemini Vision...`);
       const visionAnalysis = await analyzeImageWithVision(
         buffer,
@@ -123,17 +132,14 @@ export async function POST(req: NextRequest) {
         file.name
       );
 
-      // Extract metadata from vision analysis
-      console.log(`  → Extracting searchable metadata...`);
+      // STEP 3: Extract metadata from vision analysis
+      console.log(`  → Extracting searchable metadata from Vision analysis...`);
       const metadata = extractMetadataFromVision(visionAnalysis, file.name);
 
-      // Generate unique ID for images (no File Search ID)
-      const imageId = `img_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-
-      // Build image metadata
+      // Build hybrid image metadata (File Search fileId + Vision analysis)
       documentMetadata = {
-        fileId: imageId,
-        fileUri: "", // No File Search URI for images
+        fileId: uploadedFile.name, // Use File Search ID (starts with "files/")
+        fileUri: uploadedFile.uri, // File Search URI for RAG
         fileName: file.name,
         mimeType: file.type,
         blobUrl: blobUrl,
@@ -148,7 +154,7 @@ export async function POST(req: NextRequest) {
         summary: metadata.summary,
         documentType: metadata.documentType,
         confidence: visionAnalysis.confidence,
-        visionAnalysis: visionAnalysis,
+        visionAnalysis: visionAnalysis, // Store Vision analysis for display in modal
         status: "pending_review",
         uploadedAt: new Date().toISOString(),
         approvedAt: null,

@@ -94,9 +94,37 @@ All 7 agent UIs are now complete and functional with mock data!
 
 **Outcome**: Summary Agent V1 WORKING. Full RAG workflow functional: Upload → Review → Approve → Query with AI-powered answers and citations.
 
-### CURRENT PRIORITIES: Implement Remaining 3 Priority Agents
+### 🐛 URGENT: Fix Vercel Deployment Issue (Session 7 - Morning Priority)
 
-**Status**: 3/7 agents complete (Research, Upload, Summary) ✅ | 1 deferred (Images) ⏸️
+**Problem**: Browse/Query Agent works perfectly on localhost but crashes on Vercel with "client-side exception" error.
+
+**Status**:
+- ✅ Code is correct (builds successfully, works locally)
+- ✅ Environment variables are set correctly in Vercel
+- ✅ All dependencies committed (including @radix-ui/react-select)
+- ❌ Vercel deployment shows application error
+
+**Next Steps to Debug**:
+1. Check Vercel function logs for detailed server-side errors
+2. Review React hydration issues (possible SSR/client mismatch)
+3. Test with disabled useEffect hooks to isolate the issue
+4. Check if issue is specific to /api/corpus/list endpoint on Vercel
+5. Consider adding error boundary around Browse/Query component
+6. Test with simplified version of component to isolate problem
+
+**Error Signature**: "Application error: a client-side exception has occurred while loading trs-mocha.vercel.app"
+
+**Console Shows**: Minified React errors in chunks (hydration or rendering issue)
+
+**Workaround**: Use localhost:3000 (fully functional)
+
+**Time Estimate**: 1-2 hours
+
+---
+
+### CURRENT PRIORITIES: Implement Remaining 2 Priority Agents
+
+**Status**: 3/6 agents complete (Research, Upload, Browse) ✅ | 1 deferred (Images) ⏸️ | 1 eliminated (Editor) ❌
 
 **Images Agent**: DEFERRED until Gemini 3.0 release (File Search doesn't support images yet). Shows "coming soon" UI.
 

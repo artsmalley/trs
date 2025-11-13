@@ -4,25 +4,37 @@
 
 Research, Upload (with images), Browse/Query, and Images agents are complete and deployed!
 
-**Latest**: Session 8 completed Unified Blob Storage - documents + images in one system with smart routing
+**Latest**: Session 9 - MAJOR DISCOVERY: File Search supports images (undocumented)! Implemented hybrid approach for multimodal RAG
 
 ### What's Working
 - ✅ Research Agent - 228 curated terms, targeted search (J-STAGE, Patents, Scholar)
-- ✅ Upload Agent - Unified docs+images upload, Vision analysis, Blob storage
-- ✅ Browse/Query Agent - Browse with filters + RAG queries with citations
-- ✅ Images Agent - Integrated into Upload, Vision API, searchable content
+- ✅ Upload Agent - Hybrid approach: docs+images to File Search + Vision analysis
+- ✅ Browse/Query Agent - Browse with filters + RAG queries citing BOTH documents AND images
+- ✅ Images Agent - Full multimodal RAG (File Search grounding + Vision metadata)
 - ✅ Download functionality for all file types
 - ✅ Delete flow (Blob + File Search + Redis)
 - ✅ Image thumbnails and previews
+- ✅ Image type filter working (auto-detection for backward compatibility)
+- ✅ Vision Analysis (OCR, objects, concepts) - Gemini 2.5 Flash
 
 ## Immediate Priorities - Phase 2
 
-### 🔨 NEXT: Session 9 - Debug & Test
-- [ ] Debug image type filter (showing 0 results issue)
-- [ ] Re-upload test files (24 QC Circle JPEGs + 1 PDF)
-- [ ] Test Vision analysis quality (OCR, objects, concepts)
-- [ ] Verify downloads and type filter working
-- [ ] Begin Brainstorm Agent implementation if time permits
+### 🔨 NEXT: Session 10 - Architecture Decision + Brainstorm Agent
+- [ ] Decide image strategy: Keep hybrid or PDF-only for documents?
+- [ ] Begin Brainstorm Agent implementation (~2-3 hours)
+- [ ] Corpus-aware article outlining and ideation
+- [ ] Coverage assessment per section
+
+### ✅ COMPLETED: Session 9 (2025-11-13) - MAJOR DISCOVERY
+- ✅ Fixed image/document type filter (auto-detection from filename)
+- ✅ Fixed Vision analysis model (gemini-2.5-flash)
+- ✅ **DISCOVERED: File Search supports images (undocumented Google API feature!)**
+- ✅ Tested File Search with images - full RAG queries with citations work
+- ✅ Implemented hybrid approach - images go to File Search + Vision API
+- ✅ Validated Vision analysis quality (excellent Japanese OCR)
+- ✅ Compared PDF vs images for multi-page documents (PDF superior)
+
+**Major Achievement**: Proven that Google File Search API accepts image MIME types and enables multimodal RAG queries. Gemini grounds on visual content from images, not just OCR text. This opens new architectural possibilities.
 
 ### ✅ COMPLETED: Session 2 (2025-11-12)
 - ✅ Documentation standardization to "File Search" terminology
@@ -229,4 +241,4 @@ None - ready to proceed in any direction
 ---
 
 **Last Updated**: 2025-11-13
-**Session**: 8 - Unified Blob Storage implemented, Images Agent complete (4/6 agents functional)
+**Session**: 9 - File Search image support discovered, hybrid multimodal RAG implemented (4/6 agents functional)

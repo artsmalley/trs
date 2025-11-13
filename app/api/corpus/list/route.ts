@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
       documents: documents.map((doc) => {
         // Auto-detect missing mimeType and fileType for backward compatibility
         const mimeType = doc.mimeType || detectMimeType(doc.fileName);
-        const fileType = doc.fileType || detectFileType(doc.mimeType, doc.fileName);
+        const fileType = doc.fileType || detectFileType(mimeType, doc.fileName);
 
         return {
           fileId: doc.fileId,

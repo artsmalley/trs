@@ -37,17 +37,18 @@ export async function POST(req: NextRequest) {
       model: "gemini-2.0-flash-exp",
     });
 
-    // Create citation keys for each document (shortened title for easy reference)
+    // Create citation keys for each document using AI-extracted citationName
     const docCitationKeys = approvedDocs.map((doc, idx) => {
-      // Use first author + year if available, otherwise shortened title
-      if (doc.authors.length > 0 && doc.year) {
-        // Use last name for citation (typically the last word in the name)
-        const authorParts = doc.authors[0].trim().split(/\s+/);
-        const lastName = authorParts[authorParts.length - 1];
-        return `${lastName}${doc.year}`;
-      } else if (doc.year) {
+      // Priority 1: Use AI-extracted citationName + year
+      if (doc.citationName && doc.year) {
+        return `${doc.citationName}${doc.year}`;
+      }
+      // Priority 2: Use track + year if no citationName
+      else if (doc.year) {
         return `${doc.track}${doc.year}`;
-      } else {
+      }
+      // Priority 3: Fallback to Doc#
+      else {
         return `Doc${idx + 1}`;
       }
     });

@@ -6,6 +6,7 @@ export interface DocumentMetadata {
   mimeType: string; // MIME type (application/pdf, application/vnd.openxmlformats-officedocument.wordprocessingml.document, etc.)
   title: string;
   authors: string[]; // Extracted authors
+  citationName: string | null; // Family name of first author for citations (e.g., "Takami" for Japanese or "Smith" for Western)
   year: number | null; // Extracted year, null if not found
   summary: string;
   keywords: string[]; // AI-extracted keywords

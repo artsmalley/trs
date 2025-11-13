@@ -8,6 +8,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 export interface DocumentMetadata {
   title: string;
   authors: string[];
+  citationName: string | null; // Family name of first author for citations (e.g., "Takami" for Japanese or "Smith" for Western)
   year: number | null;
   track: "PD" | "PE" | "TPS" | "Cross-Cutting" | "Unknown";
   language: "Japanese" | "English" | "Mixed";
@@ -35,13 +36,18 @@ Analyze the following document text and extract structured metadata in JSON form
 **Instructions:**
 1. Extract title (if not explicitly stated, create a descriptive title based on content)
 2. Identify authors (if mentioned)
-3. Extract or infer publication year
-4. Classify into one of the tracks above based on content
-5. Detect language (Japanese, English, or Mixed)
-6. Extract 5-10 relevant keywords (Japanese and/or English)
-7. Write a 2-3 sentence summary
-8. Classify document type
-9. Provide confidence level for the classification
+3. Extract FAMILY NAME of first author for academic citations:
+   - For Japanese names in "Family Given" order (e.g., "Takami Tatsuro"): Use first word → "Takami"
+   - For Western names in "Given Family" order (e.g., "John Smith"): Use last word → "Smith"
+   - This should be the name that would appear in an academic citation like [FamilyName2024]
+   - If no author, set to null
+4. Extract or infer publication year
+5. Classify into one of the tracks above based on content
+6. Detect language (Japanese, English, or Mixed)
+7. Extract 5-10 relevant keywords (Japanese and/or English)
+8. Write a 2-3 sentence summary
+9. Classify document type
+10. Provide confidence level for the classification
 
 **Important Japanese Terms:**
 - 生産技術 = Production Engineering (PE)
@@ -54,7 +60,8 @@ Analyze the following document text and extract structured metadata in JSON form
 Return ONLY valid JSON in this exact format:
 {
   "title": "Document Title",
-  "authors": ["Author Name"],
+  "authors": ["Full Author Name"],
+  "citationName": "FamilyName",
   "year": 2024,
   "track": "PE",
   "language": "Japanese",
@@ -124,6 +131,7 @@ export async function extractMetadataFromFile(
     return {
       title: metadata.title || fileName,
       authors: Array.isArray(metadata.authors) ? metadata.authors : [],
+      citationName: metadata.citationName || null,
       year: metadata.year || null,
       track: isValidTrack(metadata.track) ? metadata.track : "Unknown",
       language: isValidLanguage(metadata.language)
@@ -145,6 +153,7 @@ export async function extractMetadataFromFile(
     return {
       title: fileName,
       authors: [],
+      citationName: null,
       year: null,
       track: "Unknown",
       language: "Mixed", // Default since we don't have text to analyze

@@ -60,6 +60,7 @@ export async function POST(req: NextRequest) {
       mimeType: file.type,
       title: metadata.title,
       authors: metadata.authors,
+      citationName: metadata.citationName,
       year: metadata.year,
       track: metadata.track,
       language: metadata.language,

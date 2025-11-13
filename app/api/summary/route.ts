@@ -54,7 +54,13 @@ ${doc.keywords.length > 0 ? `Keywords: ${doc.keywords.join(", ")}` : ""}
   )
   .join("\n\n")}
 
-IMPORTANT: Read the full content of the uploaded documents to answer questions. Do not rely only on the summaries above. If you find relevant information in a document, cite it using [Document #] format and quote the specific passages.`;
+IMPORTANT: Read the full content of the uploaded documents to answer questions. Do not rely only on the summaries above.
+
+When citing information:
+- Use format: [Document #, Page #] (e.g., [Document 1, Page 5])
+- Include direct quotes from the source text in quotation marks
+- Be specific about which section or heading the information comes from
+- If page numbers aren't available, cite by section name or heading`;
 
     // Build conversation history with file references
     const contents = [];
@@ -109,29 +115,66 @@ IMPORTANT: Read the full content of the uploaded documents to answer questions. 
     const response = result.response;
     const responseText = response.text();
 
-    // Extract document references from response (matches [1], [2], etc.)
-    const citationMatches = responseText.match(/\[\d+\]/g) || [];
-    const referencedDocIds = [
-      ...new Set(
-        citationMatches.map((match) => {
-          const idx = parseInt(match.match(/\d+/)?.[0] || "0") - 1;
-          return approvedDocs[idx]?.fileId || null;
-        })
-      ),
-    ].filter(Boolean);
+    // Log grounding metadata if available (for debugging)
+    if (response.candidates?.[0]?.groundingMetadata) {
+      console.log('Grounding metadata:', JSON.stringify(response.candidates[0].groundingMetadata, null, 2));
+    }
 
-    // Build citations from referenced documents
-    const citations = [...new Set(citationMatches)]
-      .slice(0, 5) // Limit to 5 citations
-      .map((match) => {
-        const idx = parseInt(match.match(/\d+/)?.[0] || "0") - 1;
-        const doc = approvedDocs[idx];
+    // Extract document references from response
+    // Matches patterns like: [Document 1, Page 5], [Document 1, 5], [1], etc.
+    const citationMatches = responseText.match(/\[Document \d+(?:,\s*(?:Page\s*)?\d+)?\]|\[\d+\]/g) || [];
+
+    // Extract referenced document IDs and page numbers
+    const referencedDocs = new Map<string, Set<number>>();
+    citationMatches.forEach((match) => {
+      // Parse different citation formats
+      let docIdx: number;
+      let pageNum: number | undefined;
+
+      if (match.includes('Document')) {
+        // Format: [Document 1, Page 5] or [Document 1, 5]
+        const parts = match.match(/Document (\d+)(?:,\s*(?:Page\s*)?(\d+))?/);
+        if (parts) {
+          docIdx = parseInt(parts[1]) - 1;
+          pageNum = parts[2] ? parseInt(parts[2]) : undefined;
+        } else {
+          return;
+        }
+      } else {
+        // Format: [1]
+        docIdx = parseInt(match.match(/\d+/)?.[0] || "0") - 1;
+      }
+
+      const doc = approvedDocs[docIdx];
+      if (doc) {
+        if (!referencedDocs.has(doc.fileId)) {
+          referencedDocs.set(doc.fileId, new Set());
+        }
+        if (pageNum !== undefined) {
+          referencedDocs.get(doc.fileId)!.add(pageNum);
+        }
+      }
+    });
+
+    const referencedDocIds = Array.from(referencedDocs.keys());
+
+    // Build citations from referenced documents with page numbers
+    const citations = Array.from(referencedDocs.entries())
+      .slice(0, 5) // Limit to 5 documents
+      .map(([fileId, pages]) => {
+        const doc = approvedDocs.find(d => d.fileId === fileId);
         if (!doc) return null;
+
+        const pageNumbers = Array.from(pages).sort((a, b) => a - b);
+        const pageInfo = pageNumbers.length > 0
+          ? ` (Pages: ${pageNumbers.join(', ')})`
+          : '';
+
         return {
           documentId: doc.fileId,
-          title: doc.title,
+          title: doc.title + pageInfo,
           excerpt: doc.summary.substring(0, 150) + "...",
-          pageNumber: undefined,
+          pageNumber: pageNumbers[0], // Use first page number
         };
       })
       .filter((c) => c !== null);

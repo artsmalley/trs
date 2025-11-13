@@ -11,9 +11,10 @@ npm run dev
 
 **Phase**: 2 - Agent Implementation (IN PROGRESS)
 **Deployed**: https://trs-mocha.vercel.app ✅
-**Working**: Research ✅ | Upload (docs+images) ✅ | Browse/Query ✅ | Images ✅
-**Next**: Debug image filter → Then Brainstorm + Analyze
+**Working**: Research ✅ | Upload (hybrid RAG) ✅ | Browse/Query (multimodal) ✅ | Images ✅
+**Next**: Architecture decision (PDF vs images) → Then Brainstorm + Analyze
 **Complete**: 4/6 agents (Research, Upload, Browse/Query, Images)
+**Major Discovery**: File Search supports images (undocumented Google API feature!) - Multimodal RAG enabled!
 
 ## Environment Setup
 
@@ -51,7 +52,7 @@ lib/
 - Tailwind CSS v3 + Shadcn/ui (NOTE: v4 causes build issues - stay on v3)
 - Google Gemini 2.5 Flash + Vision (reads PDFs directly, analyzes images)
 - Vercel Blob for universal file storage (documents + images)
-- Google File Search for RAG on documents
+- Google File Search for multimodal RAG (documents + images - UNDOCUMENTED FEATURE!)
 - Gemini Vision API for image content analysis (OCR, objects, concepts)
 - ioredis + Vercel Redis for metadata persistence
 - Google Custom Search API for web search
@@ -61,33 +62,43 @@ lib/
 
 **Uses Google File Search** - a fully managed RAG system built into Gemini API that handles embeddings, storage, and grounding automatically. No separate vector database (Pinecone, Weaviate, etc.) needed.
 
+**MAJOR DISCOVERY (Session 9):** File Search supports images! This is an undocumented Google API feature that enables true multimodal RAG. Gemini can ground on visual content from images, not just text.
+
+**Hybrid Architecture for Images:**
+- Vercel Blob: Display/download
+- File Search: RAG queries with citations
+- Vision API: OCR, objects, concepts metadata
+- Redis: Stores both fileUri and visionAnalysis
+
 **Citation System** - Production-ready academic citations:
 - AI-powered family name extraction (handles Japanese vs Western name order)
 - Title-based fallback for documents without authors
 - Format: `[FamilyName2024, p.5]` or `[TitleKeywords]`
 - Page-specific references with direct quotes
+- **Works for both documents AND images!**
 
 ## 6 Active Agents (1 Eliminated)
 
 1. **Research** ✅ COMPLETE - 228 curated terms, Google Custom Search, targeted search (J-STAGE, Patents, Scholar)
-2. **Upload** ✅ COMPLETE - Unified upload for docs+images, Blob storage, Vision analysis, review dashboard, approve workflow
-3. **Browse/Query** ✅ COMPLETE - Browse (sorting, infinite scroll, image thumbnails, type filter) + Query Corpus (RAG with citations)
-4. **Images** ✅ COMPLETE - Integrated into Upload agent, Vision API analysis (OCR, objects, concepts), searchable by content
+2. **Upload** ✅ COMPLETE - Hybrid approach: docs+images to File Search + Vision analysis, review dashboard, approve workflow
+3. **Browse/Query** ✅ COMPLETE - Browse (sorting, infinite scroll, image thumbnails, type filter) + Query Corpus (multimodal RAG with citations from documents AND images)
+4. **Images** ✅ COMPLETE - Hybrid integration: File Search grounding + Vision API metadata (OCR, objects, concepts)
 5. **Brainstorm** 🔨 TODO - Corpus-aware ideation and outlining assistant (renamed from Outline)
 6. **Analyze** 🔨 TODO - Draft article reviewer that finds corpus support
 7. **Editor** ❌ ELIMINATED - Use external tools (Claude.ai, Gemini, ChatGPT) for final polish
 
-**Next Session**: Debug image type filter (mimeType detection) + Test Vision analysis quality on QC Circle images
+**Next Session**: Architecture decision (keep hybrid images or PDF-only?) + Begin Brainstorm Agent implementation
 
 ## Key Design Decisions
 
 - No authentication (single user on desktop)
 - AI-assisted metadata with human review workflow
 - Gemini 2.5 Flash for all operations (upgrade to 3.0 when available)
-- **Dual storage architecture**:
+- **Hybrid multimodal RAG architecture** (DISCOVERED in Session 9):
   - Vercel Blob: Universal storage for ALL files (documents + images)
-  - Google File Search: RAG for text documents only
-  - Gemini Vision API: Content analysis for images
+  - Google File Search: Multimodal RAG for documents AND images (undocumented feature!)
+  - Gemini Vision API: Content analysis metadata (OCR, objects, concepts)
+  - Redis: Stores both fileUri (File Search) and visionAnalysis (Vision API)
 - **Unified upload**: One page accepts any file type, smart routing handles the rest
 - Session-based conversations (no persistence initially)
 

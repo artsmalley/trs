@@ -9,6 +9,10 @@ import {
 } from "@/lib/vision-analysis";
 import { DocumentMetadata } from "@/lib/types";
 
+// Configure larger body size limit for file uploads (50MB)
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 // POST /api/upload - Upload and process documents + images with smart routing
 export async function POST(req: NextRequest) {
   try {

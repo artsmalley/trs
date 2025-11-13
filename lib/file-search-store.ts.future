@@ -1,0 +1,213 @@
+/**
+ * Google File Search Store Integration
+ * Uses @google/genai SDK for RAG-powered document querying
+ */
+
+import { GoogleGenAI } from "@google/genai";
+import fs from "fs";
+import path from "path";
+import os from "os";
+
+const STORE_NAME = "trs-toyota-research-corpus";
+
+// Initialize Google GenAI client
+const ai = new GoogleGenAI({
+  apiKey: process.env.GOOGLE_AI_API_KEY,
+});
+
+/**
+ * Get or create the TRS File Search store
+ */
+export async function getOrCreateStore() {
+  try {
+    // Search for existing store
+    const pager = await ai.fileSearchStores.list({ config: { pageSize: 10 } });
+
+    // Check all pages for our store
+    let fileStore = null;
+    searchLoop: while (true) {
+      for (const store of pager.page) {
+        if (store.displayName === STORE_NAME) {
+          fileStore = store;
+          break searchLoop;
+        }
+      }
+      if (!pager.hasNextPage()) break;
+      await pager.nextPage();
+    }
+
+    // Create store if not found
+    if (!fileStore) {
+      console.log(`Creating new File Search store: ${STORE_NAME}`);
+      const createOp = await ai.fileSearchStores.create({
+        config: { displayName: STORE_NAME },
+      });
+      fileStore = { name: createOp.name, displayName: STORE_NAME };
+      console.log(`Store created: ${fileStore.name}`);
+    } else {
+      console.log(`Using existing store: ${fileStore.name}`);
+    }
+
+    return fileStore;
+  } catch (error) {
+    console.error("Error getting/creating store:", error);
+    throw new Error(
+      `Failed to get or create File Search store: ${error instanceof Error ? error.message : "Unknown error"}`
+    );
+  }
+}
+
+/**
+ * Upload a document to the File Search store
+ */
+export async function uploadToStore(
+  buffer: Buffer,
+  fileName: string,
+  mimeType: string,
+  displayName?: string
+): Promise<string> {
+  try {
+    const store = await getOrCreateStore();
+
+    if (!store.name) {
+      throw new Error("Store name is undefined");
+    }
+
+    // Write buffer to temp file (API requires file path)
+    const tempDir = os.tmpdir();
+    const tempFilePath = path.join(tempDir, `upload-${Date.now()}-${fileName}`);
+    fs.writeFileSync(tempFilePath, buffer);
+
+    // Upload to File Search store
+    console.log(`Uploading ${fileName} to File Search store...`);
+    let operation = await ai.fileSearchStores.uploadToFileSearchStore({
+      file: tempFilePath,
+      fileSearchStoreName: store.name,
+      config: { displayName: displayName || fileName },
+    });
+
+    // Clean up temp file
+    fs.unlinkSync(tempFilePath);
+
+    // Wait for processing to complete
+    while (!operation.done) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      if (!operation.name) {
+        throw new Error("Operation name is undefined");
+      }
+      operation = await ai.operations.get({ operation: operation.name });
+    }
+
+    if (operation.error) {
+      throw new Error(`Upload operation failed: ${operation.error.message}`);
+    }
+
+    console.log(`Upload complete: ${fileName}`);
+    return operation.name || ""; // Return operation name as file ID
+  } catch (error) {
+    console.error("Upload error:", error);
+    throw new Error(
+      `Failed to upload file to store: ${error instanceof Error ? error.message : "Unknown error"}`
+    );
+  }
+}
+
+/**
+ * Query the corpus with File Search RAG
+ */
+export async function queryCorpus(
+  query: string,
+  history?: Array<{ role: string; content: string }>
+) {
+  try {
+    const store = await getOrCreateStore();
+
+    if (!store.name) {
+      throw new Error("Store name is undefined");
+    }
+
+    // Build conversation history
+    const contents = [];
+    if (history && history.length > 0) {
+      for (const msg of history) {
+        contents.push({
+          role: msg.role === "assistant" ? "model" : "user",
+          parts: [{ text: msg.content }],
+        });
+      }
+    }
+    // Add current query
+    contents.push({
+      role: "user",
+      parts: [{ text: query }],
+    });
+
+    // Query with File Search tool
+    console.log(`Querying File Search store with: "${query}"`);
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents,
+      config: {
+        tools: [
+          {
+            fileSearch: {
+              fileSearchStoreNames: [store.name],
+            },
+          },
+        ],
+      },
+    });
+
+    // Extract response text
+    const responseText = response.text || "";
+
+    // Extract grounding metadata (citations)
+    const groundingMetadata =
+      response.candidates?.[0]?.groundingMetadata || null;
+
+    return {
+      answer: responseText,
+      groundingMetadata,
+    };
+  } catch (error) {
+    console.error("Query error:", error);
+    throw new Error(
+      `Failed to query corpus: ${error instanceof Error ? error.message : "Unknown error"}`
+    );
+  }
+}
+
+/**
+ * List all documents in the store
+ */
+export async function listStoreDocuments() {
+  try {
+    const store = await getOrCreateStore();
+    // Note: File Search stores don't expose individual file listing
+    // Files are managed internally for retrieval
+    return {
+      storeName: store.name,
+      displayName: store.displayName,
+    };
+  } catch (error) {
+    console.error("Error listing documents:", error);
+    throw error;
+  }
+}
+
+/**
+ * Delete the entire store (use with caution!)
+ */
+export async function deleteStore() {
+  try {
+    const store = await getOrCreateStore();
+    await ai.fileSearchStores.delete({
+      name: store.name,
+      config: { force: true },
+    });
+    console.log(`Deleted store: ${store.name}`);
+  } catch (error) {
+    console.error("Error deleting store:", error);
+    throw error;
+  }
+}

@@ -1,19 +1,28 @@
 # Next Steps
 
-## ✅ COMPLETED: UI Scaffold Phase
+## ✅ COMPLETED: 4/6 Agents Functional
 
-All 7 agent UIs are now complete and functional with mock data!
+Research, Upload (with images), Browse/Query, and Images agents are complete and deployed!
+
+**Latest**: Session 8 completed Unified Blob Storage - documents + images in one system with smart routing
 
 ### What's Working
-- ✅ All 7 tabs visible and navigable
-- ✅ All agents have complete UI shells
-- ✅ Mock data flowing through all components
-- ✅ File upload (documents + images)
-- ✅ Chat interfaces (Summary, Outline)
-- ✅ Citation displays (Summary, Analyze)
-- ✅ Review dashboards (Upload, Image Upload)
+- ✅ Research Agent - 228 curated terms, targeted search (J-STAGE, Patents, Scholar)
+- ✅ Upload Agent - Unified docs+images upload, Vision analysis, Blob storage
+- ✅ Browse/Query Agent - Browse with filters + RAG queries with citations
+- ✅ Images Agent - Integrated into Upload, Vision API, searchable content
+- ✅ Download functionality for all file types
+- ✅ Delete flow (Blob + File Search + Redis)
+- ✅ Image thumbnails and previews
 
 ## Immediate Priorities - Phase 2
+
+### 🔨 NEXT: Session 9 - Debug & Test
+- [ ] Debug image type filter (showing 0 results issue)
+- [ ] Re-upload test files (24 QC Circle JPEGs + 1 PDF)
+- [ ] Test Vision analysis quality (OCR, objects, concepts)
+- [ ] Verify downloads and type filter working
+- [ ] Begin Brainstorm Agent implementation if time permits
 
 ### ✅ COMPLETED: Session 2 (2025-11-12)
 - ✅ Documentation standardization to "File Search" terminology
@@ -111,139 +120,43 @@ All 7 agent UIs are now complete and functional with mock data!
 
 **Outcome**: RAG system now provides verifiable, academic-quality citations. Browse scales to 100+ documents with professional UX.
 
----
+### ✅ COMPLETED: Session 8 - Unified Blob Storage (2025-11-13)
 
-### IMMEDIATE PRIORITY: Add Vercel Blob Storage for Downloads
+**Unified Storage Architecture:**
+- ✅ Vercel Blob storage for ALL files (documents + images)
+- ✅ Smart routing: Documents → File Search (RAG), Images → Vision API (analysis)
+- ✅ Download functionality for all file types
+- ✅ Image upload with Vision analysis (OCR, objects, concepts)
+- ✅ Image thumbnails and type filter in Browse tab
+- ✅ Multi-layer deletion (Blob + File Search + Redis)
+- ✅ Backward compatibility (mimeType fallback)
+- ✅ Clear-all utility endpoint for testing
 
-**Status**: 3/6 agents complete (Research, Upload, Browse/Query) ✅ | 1 deferred (Images) ⏸️ | 1 eliminated (Editor) ❌
+**New Libraries:**
+- `lib/blob-storage.ts` - Upload/delete/filename generation
+- `lib/vision-analysis.ts` - Gemini Vision integration
 
-**Images Agent**: DEFERRED until Gemini 3.0 release (File Search doesn't support images yet). Shows "coming soon" UI.
+**Known Issue:**
+- ⚠️ Image type filter shows 0 results (metadata migration issue - needs re-upload in Session 9)
 
----
-
-### Priority 0: Unified Blob Storage - Documents + Images (~3-4 hours)
-
-**Why**: Universal file storage with intelligent routing - solves scattered images problem AND enables downloads
-
-**Current Limitations**:
-- Google Files API: Documents for RAG only, no downloads, no image support
-- Visual resources (QC diagrams, shop floor photos, equipment images) scattered across folders
-- Can't search images by content ("find kanban board photos")
-
-**Solution - Unified Upload with Smart Routing**:
-
-**Architecture**:
-```
-User uploads ANY file (PDF, DOCX, JPG, PNG)
-    ↓
-Vercel Blob (universal storage) ← ALL FILES
-    ↓
-Smart routing based on file type:
-    ↓                           ↓
-PDF/DOCX                    Images
-    ↓                           ↓
-Google File Search          Gemini Vision API
-(RAG queries)              (content analysis)
-    ↓                           ↓
-Redis: {blobUrl, fileUri, metadata}
-```
-
-**File Type Handling**:
-
-**Documents (PDF, DOCX, TXT)**:
-1. Upload → Vercel Blob (for download)
-2. Upload → Google File Search (for RAG)
-3. Gemini extracts metadata (title, author, keywords, citation name)
-4. Redis stores: `{blobUrl, fileUri, metadata}`
-5. Query capability: Semantic search with citations `[Takami2014, p.11]`
-
-**Images (JPG, PNG, GIF)**:
-1. Upload → Vercel Blob (for display/download)
-2. Gemini Vision analyzes content (description, visible text, objects)
-3. Extract metadata from vision analysis
-4. Redis stores: `{blobUrl, visionAnalysis, metadata}`
-5. Query capability: Keyword search on AI-generated descriptions
-
-**Implementation Checklist**:
-
-**Setup (5 min)**:
-- [ ] Create Vercel Blob in dashboard (Storage → Create → Blob)
-- [ ] Run `vercel env pull .env.local` to get `BLOB_READ_WRITE_TOKEN`
-- [ ] Install `@vercel/blob` package
-
-**Upload Flow (1.5 hours)**:
-- [ ] Update `/api/upload` to accept images + documents
-- [ ] Add file type detection (MIME types)
-- [ ] Upload all files to Blob first (universal)
-- [ ] Route documents → File Search (existing code)
-- [ ] Route images → Vision API (new code)
-- [ ] Add `blobUrl` field to DocumentMetadata
-- [ ] Update metadata extraction for images
-
-**Vision Integration (1 hour)**:
-- [ ] Create `lib/vision-analysis.ts` for Gemini Vision calls
-- [ ] Extract: content description, visible text, objects/subjects
-- [ ] Generate searchable keywords from vision output
-- [ ] Store vision analysis in Redis metadata
-
-**Download/Display (30 min)**:
-- [ ] Update download route to fetch from Blob
-- [ ] Add image display in Browse modal (show thumbnail + full size)
-- [ ] Add type filter: "All | Documents | Images"
-
-**Delete Flow (30 min)**:
-- [ ] Update delete to remove from Blob
-- [ ] Keep File Search deletion (documents only)
-- [ ] Handle both document and image cleanup
-
-**UI Updates (30 min)**:
-- [ ] Review dashboard shows both types with appropriate preview
-- [ ] Document cards: text metadata + icon
-- [ ] Image cards: thumbnail + vision description
-- [ ] Browse list mixed view with type indicators 📄 🖼️
-
-**Cost**: $0/month (Vercel Blob free tier)
-- 1 GB storage FREE (covers 100-200 files easily)
-- 2,000 uploads/month FREE
-- 10,000 downloads/month FREE
-- Perfect for single-user research workflow
-
-**Benefits**:
-- ✅ Solves scattered images problem (major pain point)
-- ✅ Makes visual resources searchable by content
-- ✅ Enables document downloads
-- ✅ Unified upload experience (one page, any file type)
-- ✅ Unblocks Images Agent (4/6 agents complete!)
-- ✅ No architectural conflicts
-- ✅ Future-proof for Gemini 3.0 (when File Search supports images)
-- ✅ Free on current usage
-
-**Real-World Use Cases Unlocked**:
-- Upload QC circle diagrams → Search "problem solving steps" → Find relevant images
-- Upload shop floor photos → Search "5S organization" → See actual examples
-- Upload operation drawings → Extract visible procedures → Reference in articles
-- Upload equipment photos → AI identifies machines → Organize by type
-
-**Time Estimate**: 3-4 hours (unified implementation, both file types)
+**Outcome**: Images Agent COMPLETE (integrated into Upload). 4/6 agents functional. Unified storage enables downloads and searchable image content.
 
 ---
 
-**Remaining Priority Agents** (by implementation order):
+**Status**: 4/6 agents complete (Research, Upload w/ Images, Browse/Query, Images) ✅ | 2 remaining (Brainstorm, Analyze) | 1 eliminated (Editor) ❌
 
-### Priority 1: Analyze Agent (~2 hours)
-- [ ] Implement `/api/analyze` for citation finding
-- [ ] Accept claim + citation type (quote, example, data)
-- [ ] Query approved documents corpus (like Summary Agent)
-- [ ] Find relevant supporting citations
-- [ ] Calculate relevance scores
-- [ ] Return citations with context and excerpts
-- [ ] Wire up UI controls (claim input, type selector)
-- [ ] Test with actual research claims
+---
 
-**Outcome**: Citation finding functional for supporting research claims
+### ✅ COMPLETED: Priority 0 - Unified Blob Storage
 
-### Priority 2: Outline Agent (~3 hours) - MOST COMPLEX
-- [ ] Implement `/api/outline` for article structure generation
+See Session 8 above for full details. Images Agent integrated into Upload agent.
+
+---
+
+**Remaining Priority Agents** (2/6 remaining):
+
+### Priority 1: Brainstorm Agent (~2-3 hours) - NEXT
+- [ ] Implement `/api/brainstorm` for article structure generation
 - [ ] Accept topic + optional outline hints
 - [ ] Query corpus for coverage assessment
 - [ ] Generate hierarchical outline (levels 1-3)
@@ -253,23 +166,23 @@ Redis: {blobUrl, fileUri, metadata}
 - [ ] Export to Markdown
 - [ ] Test with various article topics
 
-**Outcome**: AI-powered article outlining with corpus coverage analysis
+**Outcome**: Corpus-aware ideation and outlining assistant
 
-### Priority 3: Editor Agent (~2 hours)
-- [ ] Implement `/api/editor` for text refinement
-- [ ] Accept text content for analysis
-- [ ] Generate suggestions in 5 categories:
-  - [ ] Terminology (check against corpus terms)
-  - [ ] Citations (suggest where to add)
-  - [ ] Clarity (improve readability)
-  - [ ] Structure (reorganize flow)
-  - [ ] Style (professional academic tone)
-- [ ] Provide original vs. suggested diffs
-- [ ] Support apply individual or apply all
-- [ ] Wire up split-view UI
+### Priority 2: Analyze Agent (~2 hours)
+- [ ] Implement `/api/analyze` for draft review
+- [ ] Accept draft text for analysis
+- [ ] Find corpus support for claims
+- [ ] Suggest where to add citations
+- [ ] Identify unsupported assertions
+- [ ] Calculate relevance scores
+- [ ] Return citations with context and excerpts
+- [ ] Wire up UI controls
 - [ ] Test with draft research text
 
-**Outcome**: AI-powered text editing with corpus-aware suggestions
+**Outcome**: Draft article reviewer that finds corpus support
+
+### ❌ ELIMINATED: Editor Agent
+**Reason**: Use external tools (Claude.ai, Gemini, ChatGPT) for final text polish. No need to rebuild text editing capabilities.
 
 ## Phase 2 Goals (After Scaffold)
 
@@ -315,5 +228,5 @@ None - ready to proceed in any direction
 
 ---
 
-**Last Updated**: 2025-11-12
-**Session**: 6 - Images Agent deferred (Gemini 3.0 pending), focus on Analyze/Outline/Editor
+**Last Updated**: 2025-11-13
+**Session**: 8 - Unified Blob Storage implemented, Images Agent complete (4/6 agents functional)

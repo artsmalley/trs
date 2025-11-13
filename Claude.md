@@ -11,8 +11,9 @@ npm run dev
 
 **Phase**: 2 - Agent Implementation (IN PROGRESS)
 **Deployed**: https://trs-mocha.vercel.app ✅
-**Working**: Research Agent V1 ✅ | Upload Agent V1 ✅ | Browse/Query Agent V1 ✅
-**Next**: Unified Blob Storage (documents + images) → Completes 4/6 agents | Then Brainstorm + Analyze
+**Working**: Research ✅ | Upload (docs+images) ✅ | Browse/Query ✅ | Images ✅
+**Next**: Debug image filter → Then Brainstorm + Analyze
+**Complete**: 4/6 agents (Research, Upload, Browse/Query, Images)
 
 ## Environment Setup
 
@@ -25,18 +26,22 @@ Required keys:
 - `GOOGLE_CUSTOM_SEARCH_API_KEY` - For Research Agent
 - `GOOGLE_CUSTOM_SEARCH_ENGINE_ID` - For Research Agent
 - `KV_REDIS_URL` - Auto-created when connecting Vercel Redis database
+- `BLOB_READ_WRITE_TOKEN` - Auto-created when connecting Vercel Blob storage
 
 ## Project Structure
 
 ```
 app/
-  api/              ← 9 API routes (stub implementations)
-  page.tsx          ← Main UI with 7 tabs
+  api/              ← API routes for all agents + utilities
+  page.tsx          ← Main UI with 6 tabs (Research, Upload, Browse, Outline, Analyze, Editor)
 components/
-  agents/           ← Research & Upload built, 5 more pending
+  agents/           ← 4 agents complete (Research, Upload, Browse/Query, Images integrated)
 lib/
   gemini.ts         ← Gemini 2.5 Flash client
-  kv.ts             ← Vercel KV operations
+  vision-analysis.ts ← Gemini Vision API for image analysis
+  blob-storage.ts   ← Vercel Blob upload/download/delete
+  file-search.ts    ← Google File Search integration
+  kv.ts             ← Vercel KV (Redis) operations
   types.ts          ← TypeScript definitions
 ```
 
@@ -44,8 +49,10 @@ lib/
 
 - Next.js 16 + TypeScript
 - Tailwind CSS v3 + Shadcn/ui (NOTE: v4 causes build issues - stay on v3)
-- Google Gemini 2.5 Flash (reads PDFs/DOCX directly - no pdf-parse!)
-- Google Files API for document storage
+- Google Gemini 2.5 Flash + Vision (reads PDFs directly, analyzes images)
+- Vercel Blob for universal file storage (documents + images)
+- Google File Search for RAG on documents
+- Gemini Vision API for image content analysis (OCR, objects, concepts)
 - ioredis + Vercel Redis for metadata persistence
 - Google Custom Search API for web search
 - react-dropzone for file uploads
@@ -62,15 +69,15 @@ lib/
 
 ## 6 Active Agents (1 Eliminated)
 
-1. **Research** ✅ WORKING - 228 curated terms, Google Custom Search, targeted search (J-STAGE, Patents, Scholar)
-2. **Upload** ✅ WORKING - Gemini reads PDFs directly, AI metadata extraction, Redis storage, review dashboard, approve workflow
-3. **Browse/Query** ✅ WORKING - Two-tab agent: Browse Documents (sorting, infinite scroll, detail modal) + Query Corpus (RAG Q&A with academic citations)
-4. **Images** 🔨 NEXT - Unified upload with Blob Storage + Gemini Vision analysis (no longer deferred!)
+1. **Research** ✅ COMPLETE - 228 curated terms, Google Custom Search, targeted search (J-STAGE, Patents, Scholar)
+2. **Upload** ✅ COMPLETE - Unified upload for docs+images, Blob storage, Vision analysis, review dashboard, approve workflow
+3. **Browse/Query** ✅ COMPLETE - Browse (sorting, infinite scroll, image thumbnails, type filter) + Query Corpus (RAG with citations)
+4. **Images** ✅ COMPLETE - Integrated into Upload agent, Vision API analysis (OCR, objects, concepts), searchable by content
 5. **Brainstorm** 🔨 TODO - Corpus-aware ideation and outlining assistant (renamed from Outline)
-6. **Analyze** 🔨 TODO - Draft article reviewer that finds corpus support (revised purpose)
+6. **Analyze** 🔨 TODO - Draft article reviewer that finds corpus support
 7. **Editor** ❌ ELIMINATED - Use external tools (Claude.ai, Gemini, ChatGPT) for final polish
 
-**Next Session**: Implement unified Blob Storage (documents + images) - completes Images Agent alongside enabling downloads
+**Next Session**: Debug image type filter (mimeType detection) + Test Vision analysis quality on QC Circle images
 
 ## Key Design Decisions
 

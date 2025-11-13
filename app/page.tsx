@@ -1,7 +1,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResearchAgent } from "@/components/agents/research-agent";
 import { UploadAgent } from "@/components/agents/upload-agent";
-import { ImageUploadAgent } from "@/components/agents/image-upload-agent";
 import { BrowseQueryAgent } from "@/components/agents/browse-query-agent";
 import { OutlineAgent } from "@/components/agents/outline-agent";
 import { AnalyzeAgent } from "@/components/agents/analyze-agent";
@@ -31,10 +30,9 @@ export default function Home() {
       {/* Main Content with Tabs */}
       <main className="flex-1 container mx-auto px-4 py-6 bg-slate-50">
         <Tabs defaultValue="research" className="h-full">
-          <TabsList className="grid w-full grid-cols-7 mb-6 bg-white shadow-sm p-1">
+          <TabsList className="grid w-full grid-cols-6 mb-6 bg-white shadow-sm p-1">
             <TabsTrigger value="research">Research</TabsTrigger>
             <TabsTrigger value="upload">Upload</TabsTrigger>
-            <TabsTrigger value="images">Images</TabsTrigger>
             <TabsTrigger value="browse">Browse</TabsTrigger>
             <TabsTrigger value="outline">Outline</TabsTrigger>
             <TabsTrigger value="analyze">Analyze</TabsTrigger>
@@ -47,10 +45,6 @@ export default function Home() {
 
           <TabsContent value="upload" className="space-y-4">
             <UploadAgent />
-          </TabsContent>
-
-          <TabsContent value="images" className="space-y-4">
-            <ImageUploadAgent />
           </TabsContent>
 
           <TabsContent value="browse" className="space-y-4">

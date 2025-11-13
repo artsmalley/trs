@@ -12,7 +12,7 @@ npm run dev
 **Phase**: 2 - Agent Implementation (IN PROGRESS)
 **Deployed**: https://trs-mocha.vercel.app ✅
 **Working**: Research Agent V1 ✅ | Upload Agent V1 ✅ | Browse/Query Agent V1 ✅
-**Next**: Implement remaining agents (Brainstorm, Analyze) | Add Blob Storage for downloads
+**Next**: Unified Blob Storage (documents + images) → Completes 4/6 agents | Then Brainstorm + Analyze
 
 ## Environment Setup
 
@@ -60,25 +60,28 @@ lib/
 - Format: `[FamilyName2024, p.5]` or `[TitleKeywords]`
 - Page-specific references with direct quotes
 
-## 6 Active Agents (1 Deferred, 1 Eliminated)
+## 6 Active Agents (1 Eliminated)
 
 1. **Research** ✅ WORKING - 228 curated terms, Google Custom Search, targeted search (J-STAGE, Patents, Scholar)
 2. **Upload** ✅ WORKING - Gemini reads PDFs directly, AI metadata extraction, Redis storage, review dashboard, approve workflow
 3. **Browse/Query** ✅ WORKING - Two-tab agent: Browse Documents (sorting, infinite scroll, detail modal) + Query Corpus (RAG Q&A with academic citations)
-4. **Images** ⏸️ DEFERRED - Waiting for Gemini 3.0 & improved File Search image support (shows "coming soon" UI)
+4. **Images** 🔨 NEXT - Unified upload with Blob Storage + Gemini Vision analysis (no longer deferred!)
 5. **Brainstorm** 🔨 TODO - Corpus-aware ideation and outlining assistant (renamed from Outline)
 6. **Analyze** 🔨 TODO - Draft article reviewer that finds corpus support (revised purpose)
 7. **Editor** ❌ ELIMINATED - Use external tools (Claude.ai, Gemini, ChatGPT) for final polish
 
-**Next**: Add Vercel Blob Storage for document downloads, then implement Brainstorm and Analyze agents
+**Next Session**: Implement unified Blob Storage (documents + images) - completes Images Agent alongside enabling downloads
 
 ## Key Design Decisions
 
 - No authentication (single user on desktop)
 - AI-assisted metadata with human review workflow
 - Gemini 2.5 Flash for all operations (upgrade to 3.0 when available)
-- File Search for RAG (text-only documents: PDF, DOCX, TXT)
-- Images Agent deferred until Gemini 3.0 (File Search doesn't support images yet)
+- **Dual storage architecture**:
+  - Vercel Blob: Universal storage for ALL files (documents + images)
+  - Google File Search: RAG for text documents only
+  - Gemini Vision API: Content analysis for images
+- **Unified upload**: One page accepts any file type, smart routing handles the rest
 - Session-based conversations (no persistence initially)
 
 ## Documentation

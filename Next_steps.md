@@ -121,43 +121,110 @@ All 7 agent UIs are now complete and functional with mock data!
 
 ---
 
-### Priority 0: Vercel Blob Storage for Document Downloads (~2-3 hours)
+### Priority 0: Unified Blob Storage - Documents + Images (~3-4 hours)
 
-**Why**: Enable users to download their uploaded documents
+**Why**: Universal file storage with intelligent routing - solves scattered images problem AND enables downloads
 
-**Current Limitation**:
-- Google Files API stores documents for RAG only (no download capability)
-- Users can't retrieve original files after upload
+**Current Limitations**:
+- Google Files API: Documents for RAG only, no downloads, no image support
+- Visual resources (QC diagrams, shop floor photos, equipment images) scattered across folders
+- Can't search images by content ("find kanban board photos")
 
-**Solution - Dual Storage Architecture**:
-1. Upload to Vercel Blob Storage (for downloads)
-2. Upload to Google Files API (for RAG queries)
-3. Store both URLs in Redis metadata
-4. Download route fetches from Blob
-5. Query route uses Files API (unchanged)
+**Solution - Unified Upload with Smart Routing**:
 
-**Implementation**:
+**Architecture**:
+```
+User uploads ANY file (PDF, DOCX, JPG, PNG)
+    ↓
+Vercel Blob (universal storage) ← ALL FILES
+    ↓
+Smart routing based on file type:
+    ↓                           ↓
+PDF/DOCX                    Images
+    ↓                           ↓
+Google File Search          Gemini Vision API
+(RAG queries)              (content analysis)
+    ↓                           ↓
+Redis: {blobUrl, fileUri, metadata}
+```
+
+**File Type Handling**:
+
+**Documents (PDF, DOCX, TXT)**:
+1. Upload → Vercel Blob (for download)
+2. Upload → Google File Search (for RAG)
+3. Gemini extracts metadata (title, author, keywords, citation name)
+4. Redis stores: `{blobUrl, fileUri, metadata}`
+5. Query capability: Semantic search with citations `[Takami2014, p.11]`
+
+**Images (JPG, PNG, GIF)**:
+1. Upload → Vercel Blob (for display/download)
+2. Gemini Vision analyzes content (description, visible text, objects)
+3. Extract metadata from vision analysis
+4. Redis stores: `{blobUrl, visionAnalysis, metadata}`
+5. Query capability: Keyword search on AI-generated descriptions
+
+**Implementation Checklist**:
+
+**Setup (5 min)**:
+- [ ] Create Vercel Blob in dashboard (Storage → Create → Blob)
+- [ ] Run `vercel env pull .env.local` to get `BLOB_READ_WRITE_TOKEN`
 - [ ] Install `@vercel/blob` package
-- [ ] Update upload flow to dual-store (Blob + Files API)
-- [ ] Add `blobUrl` field to DocumentMetadata
-- [ ] Update download route to fetch from Blob
-- [ ] Update delete flow to remove from both storage systems
-- [ ] Backward compatible (old docs without blobUrl show limitation message)
 
-**Cost**: $0/month (stays within Vercel Blob free tier)
-- 1 GB storage FREE
+**Upload Flow (1.5 hours)**:
+- [ ] Update `/api/upload` to accept images + documents
+- [ ] Add file type detection (MIME types)
+- [ ] Upload all files to Blob first (universal)
+- [ ] Route documents → File Search (existing code)
+- [ ] Route images → Vision API (new code)
+- [ ] Add `blobUrl` field to DocumentMetadata
+- [ ] Update metadata extraction for images
+
+**Vision Integration (1 hour)**:
+- [ ] Create `lib/vision-analysis.ts` for Gemini Vision calls
+- [ ] Extract: content description, visible text, objects/subjects
+- [ ] Generate searchable keywords from vision output
+- [ ] Store vision analysis in Redis metadata
+
+**Download/Display (30 min)**:
+- [ ] Update download route to fetch from Blob
+- [ ] Add image display in Browse modal (show thumbnail + full size)
+- [ ] Add type filter: "All | Documents | Images"
+
+**Delete Flow (30 min)**:
+- [ ] Update delete to remove from Blob
+- [ ] Keep File Search deletion (documents only)
+- [ ] Handle both document and image cleanup
+
+**UI Updates (30 min)**:
+- [ ] Review dashboard shows both types with appropriate preview
+- [ ] Document cards: text metadata + icon
+- [ ] Image cards: thumbnail + vision description
+- [ ] Browse list mixed view with type indicators 📄 🖼️
+
+**Cost**: $0/month (Vercel Blob free tier)
+- 1 GB storage FREE (covers 100-200 files easily)
 - 2,000 uploads/month FREE
 - 10,000 downloads/month FREE
-- Single-user research workflow fits comfortably
+- Perfect for single-user research workflow
 
 **Benefits**:
-- ✅ No architectural conflicts (separate storage systems)
-- ✅ RAG functionality unchanged (uses Files API)
-- ✅ Downloads work for new uploads
-- ✅ Clean separation of concerns
-- ✅ Free for this use case
+- ✅ Solves scattered images problem (major pain point)
+- ✅ Makes visual resources searchable by content
+- ✅ Enables document downloads
+- ✅ Unified upload experience (one page, any file type)
+- ✅ Unblocks Images Agent (4/6 agents complete!)
+- ✅ No architectural conflicts
+- ✅ Future-proof for Gemini 3.0 (when File Search supports images)
+- ✅ Free on current usage
 
-**Time Estimate**: 2-3 hours
+**Real-World Use Cases Unlocked**:
+- Upload QC circle diagrams → Search "problem solving steps" → Find relevant images
+- Upload shop floor photos → Search "5S organization" → See actual examples
+- Upload operation drawings → Extract visible procedures → Reference in articles
+- Upload equipment photos → AI identifies machines → Organize by type
+
+**Time Estimate**: 3-4 hours (unified implementation, both file types)
 
 ---
 

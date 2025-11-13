@@ -11,8 +11,8 @@ npm run dev
 
 **Phase**: 2 - Agent Implementation (IN PROGRESS)
 **Deployed**: https://trs-mocha.vercel.app ✅
-**Working**: Research Agent V1 ✅ | Upload Agent V1 ✅ | Summary Agent V1 ✅
-**Next**: Implement remaining agents (Images, Outline, Analyze, Editor)
+**Working**: Research Agent V1 ✅ | Upload Agent V1 ✅ | Browse/Query Agent V1 ✅
+**Next**: Implement remaining agents (Brainstorm, Analyze) | Add Blob Storage for downloads
 
 ## Environment Setup
 
@@ -54,18 +54,23 @@ lib/
 
 **Uses Google File Search** - a fully managed RAG system built into Gemini API that handles embeddings, storage, and grounding automatically. No separate vector database (Pinecone, Weaviate, etc.) needed.
 
+**Citation System** - Production-ready academic citations:
+- AI-powered family name extraction (handles Japanese vs Western name order)
+- Title-based fallback for documents without authors
+- Format: `[FamilyName2024, p.5]` or `[TitleKeywords]`
+- Page-specific references with direct quotes
+
 ## 6 Active Agents (1 Deferred, 1 Eliminated)
 
 1. **Research** ✅ WORKING - 228 curated terms, Google Custom Search, targeted search (J-STAGE, Patents, Scholar)
 2. **Upload** ✅ WORKING - Gemini reads PDFs directly, AI metadata extraction, Redis storage, review dashboard, approve workflow
-3. **Browse** ✅ WORKING (localhost only) - Two-tab agent: Browse Documents (list/filter/search/delete) + Query Corpus (RAG Q&A with citations)
-   - ⚠️ Vercel deployment issue: Works perfectly locally but crashes on production (Session 7 priority)
+3. **Browse/Query** ✅ WORKING - Two-tab agent: Browse Documents (sorting, infinite scroll, detail modal) + Query Corpus (RAG Q&A with academic citations)
 4. **Images** ⏸️ DEFERRED - Waiting for Gemini 3.0 & improved File Search image support (shows "coming soon" UI)
 5. **Brainstorm** 🔨 TODO - Corpus-aware ideation and outlining assistant (renamed from Outline)
 6. **Analyze** 🔨 TODO - Draft article reviewer that finds corpus support (revised purpose)
 7. **Editor** ❌ ELIMINATED - Use external tools (Claude.ai, Gemini, ChatGPT) for final polish
 
-**Next**: Implement Brainstorm Agent (corpus-aware ideation) and Analyze Agent (draft reviewer)
+**Next**: Add Vercel Blob Storage for document downloads, then implement Brainstorm and Analyze agents
 
 ## Key Design Decisions
 

@@ -37,6 +37,23 @@ export async function POST(req: NextRequest) {
       model: "gemini-2.0-flash-exp",
     });
 
+    // Helper function to generate citation key from title
+    const generateTitleCitationKey = (title: string): string => {
+      // Remove common words and take first 2-3 significant words
+      const stopWords = ['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by'];
+      const words = title
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '') // Remove special chars
+        .split(/\s+/)
+        .filter(word => word.length > 2 && !stopWords.includes(word))
+        .slice(0, 3); // Take first 3 significant words
+
+      // Capitalize first letter of each word and join
+      return words
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join('');
+    };
+
     // Create citation keys for each document using AI-extracted citationName
     const docCitationKeys = approvedDocs.map((doc, idx) => {
       // Priority 1: Use AI-extracted citationName + year
@@ -47,7 +64,11 @@ export async function POST(req: NextRequest) {
       else if (doc.year) {
         return `${doc.track}${doc.year}`;
       }
-      // Priority 3: Fallback to Doc#
+      // Priority 3: Generate from title
+      else if (doc.title) {
+        return generateTitleCitationKey(doc.title);
+      }
+      // Priority 4: Fallback to Doc#
       else {
         return `Doc${idx + 1}`;
       }

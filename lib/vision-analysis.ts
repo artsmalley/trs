@@ -13,8 +13,8 @@ export async function analyzeImageWithVision(
   fileName: string
 ): Promise<VisionAnalysisResult> {
   try {
-    // Use Gemini 2.0 Flash for vision analysis (fast and accurate)
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+    // Use Gemini 1.5 Flash for vision analysis (stable and supports multimodal)
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // Convert buffer to base64 for API
     const base64Image = imageBuffer.toString("base64");
@@ -78,11 +78,13 @@ Return ONLY the JSON, no other text.`;
         : "medium",
     };
   } catch (error) {
-    console.error("Vision analysis error:", error);
+    console.error("❌ Vision analysis error for", fileName, ":", error);
+    console.error("Error details:", error instanceof Error ? error.message : String(error));
+    console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
 
     // Return fallback analysis
     return {
-      description: `Image file: ${fileName}`,
+      description: `Image file: ${fileName} (Vision analysis failed - check server logs)`,
       extractedText: "",
       objects: [],
       concepts: [],

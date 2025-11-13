@@ -41,7 +41,10 @@ export async function POST(req: NextRequest) {
     const docCitationKeys = approvedDocs.map((doc, idx) => {
       // Use first author + year if available, otherwise shortened title
       if (doc.authors.length > 0 && doc.year) {
-        return `${doc.authors[0].split(' ')[0]}${doc.year}`;
+        // Use last name for citation (typically the last word in the name)
+        const authorParts = doc.authors[0].trim().split(/\s+/);
+        const lastName = authorParts[authorParts.length - 1];
+        return `${lastName}${doc.year}`;
       } else if (doc.year) {
         return `${doc.track}${doc.year}`;
       } else {

@@ -2,7 +2,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResearchAgent } from "@/components/agents/research-agent";
 import { UploadAgent } from "@/components/agents/upload-agent";
 import { ImageUploadAgent } from "@/components/agents/image-upload-agent";
-import { SummaryAgent } from "@/components/agents/summary-agent";
+import { BrowseQueryAgent } from "@/components/agents/browse-query-agent";
 import { OutlineAgent } from "@/components/agents/outline-agent";
 import { AnalyzeAgent } from "@/components/agents/analyze-agent";
 import { EditorAgent } from "@/components/agents/editor-agent";
@@ -35,7 +35,7 @@ export default function Home() {
             <TabsTrigger value="research">Research</TabsTrigger>
             <TabsTrigger value="upload">Upload</TabsTrigger>
             <TabsTrigger value="images">Images</TabsTrigger>
-            <TabsTrigger value="summary">Summary</TabsTrigger>
+            <TabsTrigger value="browse">Browse</TabsTrigger>
             <TabsTrigger value="outline">Outline</TabsTrigger>
             <TabsTrigger value="analyze">Analyze</TabsTrigger>
             <TabsTrigger value="editor">Editor</TabsTrigger>
@@ -53,8 +53,8 @@ export default function Home() {
             <ImageUploadAgent />
           </TabsContent>
 
-          <TabsContent value="summary" className="space-y-4">
-            <SummaryAgent />
+          <TabsContent value="browse" className="space-y-4">
+            <BrowseQueryAgent />
           </TabsContent>
 
           <TabsContent value="outline" className="space-y-4">

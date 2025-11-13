@@ -1,202 +1,55 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { useDropzone } from "react-dropzone";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-
-interface ImageFile {
-  id: string;
-  name: string;
-  preview: string;
-  status: "pending" | "processing" | "complete" | "error";
-  progress: number;
-  analysis?: any;
-}
 
 export function ImageUploadAgent() {
-  const [images, setImages] = useState<ImageFile[]>([]);
-
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    const newImages: ImageFile[] = acceptedFiles.map((file) => ({
-      id: Date.now() + Math.random().toString(),
-      name: file.name,
-      preview: URL.createObjectURL(file),
-      status: "pending",
-      progress: 0,
-    }));
-
-    setImages((prev) => [...prev, ...newImages]);
-
-    // Process each image
-    for (const [index, file] of acceptedFiles.entries()) {
-      const imageId = newImages[index].id;
-
-      setImages((prev) =>
-        prev.map((img) => (img.id === imageId ? { ...img, status: "processing", progress: 50 } : img))
-      );
-
-      try {
-        const formData = new FormData();
-        formData.append("file", file);
-
-        const response = await fetch("/api/images", {
-          method: "POST",
-          body: formData,
-        });
-
-        const data = await response.json();
-
-        setImages((prev) =>
-          prev.map((img) =>
-            img.id === imageId
-              ? { ...img, status: "complete", progress: 100, analysis: data }
-              : img
-          )
-        );
-      } catch (error) {
-        setImages((prev) =>
-          prev.map((img) => (img.id === imageId ? { ...img, status: "error", progress: 0 } : img))
-        );
-      }
-    }
-  }, []);
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp"],
-    },
-  });
-
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Image Upload Agent</CardTitle>
-          <CardDescription>
-            Upload images for Gemini 2.5 Flash vision analysis. Extracted text will be stored in File Search.
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <Card className="max-w-2xl w-full">
+        <CardHeader className="text-center">
+          <div className="flex justify-center mb-4">
+            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center text-3xl">
+              🖼️
+            </div>
+          </div>
+          <CardTitle className="text-2xl">Images Agent</CardTitle>
+          <CardDescription className="text-base">
+            Vision analysis and OCR for diagrams, charts, and technical drawings
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div
-            {...getRootProps()}
-            className={`
-              border-2 border-dashed rounded-lg p-12 text-center cursor-pointer
-              transition-colors
-              ${isDragActive ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}
-            `}
-          >
-            <input {...getInputProps()} />
-            <div className="space-y-2">
-              <p className="text-lg font-medium">
-                {isDragActive ? "Drop images here..." : "Drag & drop images here"}
-              </p>
-              <p className="text-sm text-muted-foreground">or click to browse</p>
-              <p className="text-xs text-muted-foreground">
-                Supports: PNG, JPG, JPEG, GIF, WEBP
-              </p>
+        <CardContent className="space-y-6">
+          <div className="flex justify-center">
+            <Badge variant="secondary" className="text-sm px-4 py-1">
+              Coming Soon
+            </Badge>
+          </div>
+
+          <div className="space-y-4 text-sm text-muted-foreground">
+            <p>
+              The Images Agent will provide advanced vision analysis capabilities for technical diagrams,
+              workflow charts, and engineering drawings commonly found in Toyota research materials.
+            </p>
+
+            <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+              <h4 className="font-semibold text-foreground">Planned Features:</h4>
+              <ul className="space-y-2 list-disc list-inside">
+                <li>Gemini Vision API integration for diagram analysis</li>
+                <li>OCR text extraction (Japanese and English)</li>
+                <li>Automatic metadata generation and tagging</li>
+                <li>Text-based corpus integration for RAG queries</li>
+                <li>Review and approval workflow</li>
+              </ul>
             </div>
+
+            <p className="text-xs bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded p-3">
+              <span className="font-semibold">Note:</span> Implementation pending Gemini 3.0 release
+              and enhanced image handling capabilities in File Search. Current focus is on text-based
+              document processing (PDF, DOCX, TXT).
+            </p>
           </div>
         </CardContent>
       </Card>
-
-      {images.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Image Gallery & Analysis</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[500px]">
-              <div className="space-y-6">
-                {images.map((image) => (
-                  <Card key={image.id}>
-                    <CardContent className="pt-6">
-                      <div className="grid md:grid-cols-2 gap-4">
-                        {/* Image Preview */}
-                        <div>
-                          <img
-                            src={image.preview}
-                            alt={image.name}
-                            className="w-full h-auto rounded-lg border"
-                          />
-                          <div className="flex items-center justify-between mt-2">
-                            <span className="text-sm font-medium truncate">{image.name}</span>
-                            <Badge
-                              variant={
-                                image.status === "complete"
-                                  ? "default"
-                                  : image.status === "error"
-                                  ? "destructive"
-                                  : "secondary"
-                              }
-                            >
-                              {image.status}
-                            </Badge>
-                          </div>
-                          {image.status === "processing" && (
-                            <Progress value={image.progress} className="mt-2" />
-                          )}
-                        </div>
-
-                        {/* Analysis Results */}
-                        <div className="space-y-3">
-                          {image.analysis && (
-                            <>
-                              <div>
-                                <h4 className="font-semibold text-sm mb-1">Vision Analysis</h4>
-                                <p className="text-sm text-muted-foreground">
-                                  {image.analysis.analysis}
-                                </p>
-                              </div>
-
-                              {image.analysis.extractedText && (
-                                <>
-                                  <Separator />
-                                  <div>
-                                    <h4 className="font-semibold text-sm mb-1">Extracted Text (OCR)</h4>
-                                    <p className="text-xs font-mono bg-muted p-2 rounded">
-                                      {image.analysis.extractedText}
-                                    </p>
-                                  </div>
-                                </>
-                              )}
-
-                              <Separator />
-                              <div>
-                                <h4 className="font-semibold text-sm mb-2">Tags</h4>
-                                <div className="flex flex-wrap gap-2">
-                                  {image.analysis.tags?.map((tag: string, i: number) => (
-                                    <Badge key={i} variant="secondary">
-                                      {tag}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-
-                              <Separator />
-                              <div className="flex gap-2">
-                                <Button size="sm" variant="outline">
-                                  Edit Metadata
-                                </Button>
-                                <Button size="sm">Store in Corpus</Button>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }

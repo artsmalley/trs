@@ -37,6 +37,18 @@ export async function POST(req: NextRequest) {
       model: "gemini-2.0-flash-exp",
     });
 
+    // Create citation keys for each document (shortened title for easy reference)
+    const docCitationKeys = approvedDocs.map((doc, idx) => {
+      // Use first author + year if available, otherwise shortened title
+      if (doc.authors.length > 0 && doc.year) {
+        return `${doc.authors[0].split(' ')[0]}${doc.year}`;
+      } else if (doc.year) {
+        return `${doc.track}${doc.year}`;
+      } else {
+        return `Doc${idx + 1}`;
+      }
+    });
+
     // Construct system instruction
     const systemInstruction = `You are a research assistant specializing in Toyota production engineering and manufacturing.
 
@@ -45,7 +57,9 @@ You have access to the following approved documents in the corpus:
 ${approvedDocs
   .map(
     (doc, idx) =>
-      `[${idx + 1}] ${doc.title}
+      `Document: "${doc.title}"
+Citation Key: [${docCitationKeys[idx]}]
+Authors: ${doc.authors.length > 0 ? doc.authors.join(", ") : "Unknown"}
 Track: ${doc.track}
 Year: ${doc.year || "Unknown"}
 ${doc.summary ? `Summary: ${doc.summary}` : ""}
@@ -57,10 +71,10 @@ ${doc.keywords.length > 0 ? `Keywords: ${doc.keywords.join(", ")}` : ""}
 IMPORTANT: Read the full content of the uploaded documents to answer questions. Do not rely only on the summaries above.
 
 When citing information:
-- Use format: [Document #, Page #] (e.g., [Document 1, Page 5])
+- Use the Citation Key format: [CitationKey, p.#] (e.g., [${docCitationKeys[0] || 'Tanaka2024'}, p.5])
 - Include direct quotes from the source text in quotation marks
 - Be specific about which section or heading the information comes from
-- If page numbers aren't available, cite by section name or heading`;
+- The citation key corresponds to the document listed above`;
 
     // Build conversation history with file references
     const contents = [];
@@ -121,37 +135,36 @@ When citing information:
     }
 
     // Extract document references from response
-    // Matches patterns like: [Document 1, Page 5], [Document 1, 5], [1], etc.
-    const citationMatches = responseText.match(/\[Document \d+(?:,\s*(?:Page\s*)?\d+)?\]|\[\d+\]/g) || [];
+    // Matches patterns like: [Tanaka2024, p.5], [PE2024, p.11], [Doc1], etc.
+    const citationMatches = responseText.match(/\[[\w]+(?:\d{4})?(?:,\s*p\.?\d+)?\]/g) || [];
+
+    // Build a map of citation keys to document indices
+    const citationKeyMap = new Map<string, number>();
+    docCitationKeys.forEach((key, idx) => {
+      citationKeyMap.set(key.toLowerCase(), idx);
+    });
 
     // Extract referenced document IDs and page numbers
     const referencedDocs = new Map<string, Set<number>>();
     citationMatches.forEach((match) => {
-      // Parse different citation formats
-      let docIdx: number;
-      let pageNum: number | undefined;
+      // Parse citation format: [CitationKey, p.5] or [CitationKey]
+      const parts = match.match(/\[([\w\d]+)(?:,\s*p\.?(\d+))?\]/);
+      if (!parts) return;
 
-      if (match.includes('Document')) {
-        // Format: [Document 1, Page 5] or [Document 1, 5]
-        const parts = match.match(/Document (\d+)(?:,\s*(?:Page\s*)?(\d+))?/);
-        if (parts) {
-          docIdx = parseInt(parts[1]) - 1;
-          pageNum = parts[2] ? parseInt(parts[2]) : undefined;
-        } else {
-          return;
-        }
-      } else {
-        // Format: [1]
-        docIdx = parseInt(match.match(/\d+/)?.[0] || "0") - 1;
-      }
+      const citationKey = parts[1].toLowerCase();
+      const pageNum = parts[2] ? parseInt(parts[2]) : undefined;
 
-      const doc = approvedDocs[docIdx];
-      if (doc) {
-        if (!referencedDocs.has(doc.fileId)) {
-          referencedDocs.set(doc.fileId, new Set());
-        }
-        if (pageNum !== undefined) {
-          referencedDocs.get(doc.fileId)!.add(pageNum);
+      // Find document by citation key
+      const docIdx = citationKeyMap.get(citationKey);
+      if (docIdx !== undefined) {
+        const doc = approvedDocs[docIdx];
+        if (doc) {
+          if (!referencedDocs.has(doc.fileId)) {
+            referencedDocs.set(doc.fileId, new Set());
+          }
+          if (pageNum !== undefined) {
+            referencedDocs.get(doc.fileId)!.add(pageNum);
+          }
         }
       }
     });
@@ -162,17 +175,20 @@ When citing information:
     const citations = Array.from(referencedDocs.entries())
       .slice(0, 5) // Limit to 5 documents
       .map(([fileId, pages]) => {
-        const doc = approvedDocs.find(d => d.fileId === fileId);
+        const docIdx = approvedDocs.findIndex(d => d.fileId === fileId);
+        const doc = approvedDocs[docIdx];
         if (!doc) return null;
 
+        const citationKey = docCitationKeys[docIdx];
         const pageNumbers = Array.from(pages).sort((a, b) => a - b);
         const pageInfo = pageNumbers.length > 0
-          ? ` (Pages: ${pageNumbers.join(', ')})`
+          ? `, p.${pageNumbers.join(', ')}`
           : '';
 
+        // Format: [AuthorYear] Title (or [Track/Doc1] Title)
         return {
           documentId: doc.fileId,
-          title: doc.title + pageInfo,
+          title: `[${citationKey}${pageInfo}] ${doc.title}`,
           excerpt: doc.summary.substring(0, 150) + "...",
           pageNumber: pageNumbers[0], // Use first page number
         };

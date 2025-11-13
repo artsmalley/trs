@@ -103,21 +103,37 @@ export function BrowseQueryAgent() {
 
     // File type filter
     if (fileTypeFilter !== "all") {
+      console.log(`🔍 Filtering by fileType: ${fileTypeFilter}`);
+      console.log(`📊 Sample document data:`, documents[0]);
+
       filtered = filtered.filter((doc) => {
+        console.log(`  Checking ${doc.fileName}: fileType=${doc.fileType}, mimeType=${doc.mimeType}`);
+
         // Check fileType field if it exists (new uploads)
         if (doc.fileType) {
-          return doc.fileType === fileTypeFilter;
+          const match = doc.fileType === fileTypeFilter;
+          console.log(`    ✓ Has fileType field, match=${match}`);
+          return match;
         }
 
         // Fallback: detect from mimeType (backward compatibility)
-        if (fileTypeFilter === "image") {
-          return doc.mimeType?.startsWith("image/");
-        } else if (fileTypeFilter === "document") {
-          return doc.mimeType?.startsWith("application/") || doc.mimeType?.startsWith("text/");
+        if (doc.mimeType) {
+          if (fileTypeFilter === "image") {
+            const match = doc.mimeType.startsWith("image/");
+            console.log(`    ✓ Has mimeType, checking for image: ${match}`);
+            return match;
+          } else if (fileTypeFilter === "document") {
+            const match = doc.mimeType.startsWith("application/") || doc.mimeType.startsWith("text/");
+            console.log(`    ✓ Has mimeType, checking for document: ${match}`);
+            return match;
+          }
         }
 
+        console.log(`    ✗ No fileType or mimeType field - filtered out`);
         return false;
       });
+
+      console.log(`📈 Filter result: ${filtered.length} of ${documents.length} documents`);
     }
 
     // Search filter

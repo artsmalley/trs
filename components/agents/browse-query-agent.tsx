@@ -612,8 +612,8 @@ export function BrowseQueryAgent() {
                         <Button
                           variant="outline"
                           onClick={() => {
-                            // Download from Blob storage
-                            window.open(`/api/corpus/download/${selectedDoc.fileId}`, '_blank');
+                            // Download from Blob storage (URL-encode fileId to handle slashes)
+                            window.open(`/api/corpus/download/${encodeURIComponent(selectedDoc.fileId)}`, '_blank');
                           }}
                           title={`Download ${selectedDoc.fileType === "image" ? "image" : "document"}`}
                         >

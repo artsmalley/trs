@@ -7,7 +7,11 @@ export async function GET(
   { params }: { params: Promise<{ fileId: string }> }
 ) {
   try {
-    const { fileId } = await params;
+    const { fileId: rawFileId } = await params;
+
+    // Decode fileId in case it contains URL-encoded characters (e.g., files%2Fxxx → files/xxx)
+    // Next.js usually auto-decodes, but we ensure it here for safety
+    const fileId = decodeURIComponent(rawFileId);
 
     // Get file metadata from Redis
     const doc = await getDocumentMetadata(fileId);

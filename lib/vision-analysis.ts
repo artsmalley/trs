@@ -13,8 +13,8 @@ export async function analyzeImageWithVision(
   fileName: string
 ): Promise<VisionAnalysisResult> {
   try {
-    // Use Gemini 1.5 Flash for vision analysis (stable and supports multimodal)
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // Use Gemini 2.5 Flash for vision analysis (latest and most capable)
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     // Convert buffer to base64 for API
     const base64Image = imageBuffer.toString("base64");

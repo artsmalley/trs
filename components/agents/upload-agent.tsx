@@ -14,9 +14,10 @@ import { Textarea } from "@/components/ui/textarea";
 interface UploadedFile {
   id: string;
   name: string;
-  status: "pending" | "processing" | "complete" | "error";
+  status: "pending" | "processing" | "complete" | "error" | "approved";
   progress: number;
   metadata?: any;
+  fileId?: string; // Gemini File API ID for approval
 }
 
 export function UploadAgent() {
@@ -52,7 +53,7 @@ export function UploadAgent() {
 
         const data = await response.json();
 
-        // Update to complete
+        // Update to complete with fileId for approval
         setFiles((prev) =>
           prev.map((f) =>
             f.id === fileId
@@ -61,6 +62,7 @@ export function UploadAgent() {
                   status: "complete",
                   progress: 100,
                   metadata: data.extractedMetadata,
+                  fileId: data.fileId, // Store for approval
                 }
               : f
           )
@@ -72,6 +74,36 @@ export function UploadAgent() {
       }
     }
   }, []);
+
+  const handleApprove = async (fileId: string, localId: string) => {
+    try {
+      const response = await fetch("/api/approve", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fileId,
+          action: "approve",
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update file status to approved
+        setFiles((prev) =>
+          prev.map((f) => (f.id === localId ? { ...f, status: "approved" } : f))
+        );
+      } else {
+        console.error("Approval failed:", data.error);
+        alert(`Failed to approve: ${data.error}`);
+      }
+    } catch (error) {
+      console.error("Error approving document:", error);
+      alert("Failed to approve document. Please try again.");
+    }
+  };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -212,7 +244,13 @@ export function UploadAgent() {
                               <Button>Save Changes</Button>
                             </DialogContent>
                           </Dialog>
-                          <Button size="sm">Approve</Button>
+                          <Button
+                            size="sm"
+                            onClick={() => file.fileId && handleApprove(file.fileId, file.id)}
+                            disabled={!file.fileId}
+                          >
+                            Approve
+                          </Button>
                         </div>
                       </div>
                     </CardContent>

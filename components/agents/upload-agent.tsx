@@ -43,6 +43,8 @@ export function UploadAgent() {
   const [showWarning, setShowWarning] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [warningMessage, setWarningMessage] = useState("");
+  const [editingMetadata, setEditingMetadata] = useState<{fileId: string; title: string; summary: string; authors: string; year: string; track: string} | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const processingRef = useRef(false);
   const filesRef = useRef<UploadedFile[]>([]); // Track current files state for processQueue
 
@@ -320,6 +322,53 @@ export function UploadAgent() {
     }
   };
 
+  const handleSaveMetadata = async () => {
+    if (!editingMetadata) return;
+
+    try {
+      const response = await fetch("/api/corpus/update", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fileId: editingMetadata.fileId,
+          updates: {
+            title: editingMetadata.title,
+            summary: editingMetadata.summary,
+            authors: editingMetadata.authors.split(',').map(a => a.trim()).filter(a => a),
+            year: editingMetadata.year ? parseInt(editingMetadata.year) : null,
+            track: editingMetadata.track,
+          },
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update local files state with new metadata
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.fileId === editingMetadata.fileId
+              ? { ...f, metadata: { ...f.metadata, ...data.metadata } }
+              : f
+          )
+        );
+
+        // Close dialog
+        setEditDialogOpen(false);
+        setEditingMetadata(null);
+        console.log(`✅ Metadata updated: ${editingMetadata.fileId}`);
+      } else {
+        console.error("Update failed:", data.error);
+        alert(`Failed to update metadata: ${data.error}`);
+      }
+    } catch (error) {
+      console.error("Error updating metadata:", error);
+      alert("Failed to update metadata. Please try again.");
+    }
+  };
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
@@ -367,6 +416,10 @@ export function UploadAgent() {
             <br />
             <span className="text-xs text-muted-foreground mt-1">
               Max file size: 100MB • Large files are queued automatically
+            </span>
+            <br />
+            <span className="text-xs text-amber-600 dark:text-amber-500 mt-2 block">
+              ⚠️ Note: Files larger than ~50MB will upload successfully and be fully searchable, but automatic metadata extraction may fail due to processing constraints. You can manually enter metadata using the &quot;Edit Metadata&quot; button if this occurs.
             </span>
           </CardDescription>
         </CardHeader>
@@ -554,9 +607,23 @@ export function UploadAgent() {
                           </div>
                         </div>
                         <div className="flex gap-2">
-                          <Dialog>
+                          <Dialog open={editDialogOpen && editingMetadata?.fileId === file.fileId} onOpenChange={setEditDialogOpen}>
                             <DialogTrigger asChild>
-                              <Button variant="outline" size="sm">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setEditingMetadata({
+                                    fileId: file.fileId || '',
+                                    title: file.metadata.title || '',
+                                    summary: file.metadata.summary || '',
+                                    authors: Array.isArray(file.metadata.authors) ? file.metadata.authors.join(', ') : '',
+                                    year: file.metadata.year?.toString() || '',
+                                    track: file.metadata.track || 'Unknown',
+                                  });
+                                  setEditDialogOpen(true);
+                                }}
+                              >
                                 Edit Metadata
                               </Button>
                             </DialogTrigger>
@@ -567,18 +634,57 @@ export function UploadAgent() {
                                   Review and correct the AI-extracted metadata
                                 </DialogDescription>
                               </DialogHeader>
-                              <div className="space-y-4 py-4">
-                                <div className="space-y-2">
-                                  <label className="text-sm font-medium">Title</label>
-                                  <Input defaultValue={file.metadata.title} />
+                              {editingMetadata && (
+                                <div className="space-y-4 py-4">
+                                  <div className="space-y-2">
+                                    <label className="text-sm font-medium">Title</label>
+                                    <Input
+                                      value={editingMetadata.title}
+                                      onChange={(e) => setEditingMetadata({ ...editingMetadata, title: e.target.value })}
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <label className="text-sm font-medium">Authors (comma-separated)</label>
+                                    <Input
+                                      value={editingMetadata.authors}
+                                      onChange={(e) => setEditingMetadata({ ...editingMetadata, authors: e.target.value })}
+                                      placeholder="e.g., John Smith, Jane Doe"
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <label className="text-sm font-medium">Year</label>
+                                    <Input
+                                      type="number"
+                                      value={editingMetadata.year}
+                                      onChange={(e) => setEditingMetadata({ ...editingMetadata, year: e.target.value })}
+                                      placeholder="e.g., 2024"
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <label className="text-sm font-medium">Track</label>
+                                    <select
+                                      className="w-full px-3 py-2 border border-input rounded-md"
+                                      value={editingMetadata.track}
+                                      onChange={(e) => setEditingMetadata({ ...editingMetadata, track: e.target.value })}
+                                    >
+                                      <option value="TPS">TPS</option>
+                                      <option value="PE">PE</option>
+                                      <option value="PD">PD</option>
+                                      <option value="Cross-Cutting">Cross-Cutting</option>
+                                      <option value="Unknown">Unknown</option>
+                                    </select>
+                                  </div>
+                                  <div className="space-y-2">
+                                    <label className="text-sm font-medium">Summary</label>
+                                    <Textarea
+                                      value={editingMetadata.summary}
+                                      onChange={(e) => setEditingMetadata({ ...editingMetadata, summary: e.target.value })}
+                                      rows={4}
+                                    />
+                                  </div>
                                 </div>
-                                <div className="space-y-2">
-                                  <label className="text-sm font-medium">Summary</label>
-                                  <Textarea defaultValue={file.metadata.summary} rows={3} />
-                                </div>
-                                {/* Add more fields as needed */}
-                              </div>
-                              <Button>Save Changes</Button>
+                              )}
+                              <Button onClick={handleSaveMetadata}>Save Changes</Button>
                             </DialogContent>
                           </Dialog>
                           <Button

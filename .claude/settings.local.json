@@ -18,7 +18,8 @@
       "WebFetch(domain:ai.google.dev)",
       "WebFetch(domain:googleapis.github.io)",
       "Bash(taskkill /F /PID 20612)",
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "Bash(255\"\n\nSolution:\n- Generate ASCII-safe temp filename (upload-{timestamp}.pdf)\n- Preserve Japanese name in displayName parameter\n- File extension extracted and preserved\n\nAllows re-upload of 6 failed migration documents.\n\n🤖 Generated with Claude Code\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
     ],
     "deny": [],
     "ask": []

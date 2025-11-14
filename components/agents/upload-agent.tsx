@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { upload } from "@vercel/blob/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +23,34 @@ interface UploadedFile {
 
 export function UploadAgent() {
   const [files, setFiles] = useState<UploadedFile[]>([]);
+
+  // Load pending files from Redis on mount (Option 1: Persistence)
+  useEffect(() => {
+    const loadPendingFiles = async () => {
+      try {
+        const response = await fetch('/api/corpus/list?status=pending_review');
+        const data = await response.json();
+
+        if (data.documents && data.documents.length > 0) {
+          const pendingFiles: UploadedFile[] = data.documents.map((doc: any) => ({
+            id: doc.fileId,
+            name: doc.fileName,
+            status: 'complete' as const,
+            progress: 100,
+            metadata: doc,
+            fileId: doc.fileId,
+          }));
+
+          setFiles(pendingFiles);
+          console.log(`✅ Loaded ${pendingFiles.length} pending files from previous sessions`);
+        }
+      } catch (error) {
+        console.error('Failed to load pending files:', error);
+      }
+    };
+
+    loadPendingFiles();
+  }, []);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const newFiles: UploadedFile[] = acceptedFiles.map((file) => ({

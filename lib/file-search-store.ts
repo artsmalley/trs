@@ -108,8 +108,11 @@ export async function uploadToStore(
 
   try {
     // Write buffer to temp file (SDK requires file path)
+    // Use ASCII-safe filename for temp file (SDK can't handle Unicode in file paths)
     const tempDir = os.tmpdir();
-    const tempFilePath = path.join(tempDir, `upload-${Date.now()}-${fileName}`);
+    const fileExt = path.extname(fileName); // e.g., ".pdf"
+    const sanitizedFileName = `upload-${Date.now()}${fileExt}`;
+    const tempFilePath = path.join(tempDir, sanitizedFileName);
     fs.writeFileSync(tempFilePath, buffer);
 
     // Upload to File Search Store with automatic chunking

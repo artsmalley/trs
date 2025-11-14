@@ -1,25 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm install:*)",
-      "Bash(vercel env pull:*)",
-      "Bash(npx vercel env pull:*)",
-      "Bash(npx vercel:*)",
-      "Bash(npm run build)",
       "Bash(git add:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nImplement Unified Blob Storage for documents + images\n\n🎯 Smart Routing Architecture:\n- Universal Vercel Blob storage for ALL files (documents + images)\n- Documents → Blob + File Search (RAG with citations)\n- Images → Blob + Gemini Vision (OCR, object detection, concepts)\n\n✨ New Features:\n- Image upload with AI content analysis\n- Image thumbnails in Browse tab\n- File type filter (All | Documents | Images)\n- Download functionality for all file types\n- Vision analysis display (extracted text, objects, concepts)\n- Unified delete flow (Blob + File Search + Redis)\n\n📦 New Libraries:\n- lib/blob-storage.ts - Upload/delete/filename generation\n- lib/vision-analysis.ts - Gemini Vision integration\n\n🔧 Updated Components:\n- Upload Agent: Accepts images, shows previews in review dashboard\n- Browse/Query Agent: Image thumbnails, type filter, vision analysis\n- Download API: Fetches from Blob storage\n- Delete API: Removes from all storage layers\n\n🎨 UX Improvements:\n- Mixed file type display with 📄 and 🖼️ icons\n- Image previews in upload review and browse modal\n- OCR text extraction for searchable image content\n- Object/concept detection for categorization\n\nCost: $0/month (stays within free tiers)\n\nCompletes 4/6 agents (Research, Upload, Browse/Query, Images)!\n\n🤖 Generated with Claude Code\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
-      "Bash(git push:*)",
-      "Bash(git commit:*)",
-      "Bash(curl:*)",
-      "WebFetch(domain:trs-mocha.vercel.app)",
-      "WebFetch(domain:github.com)",
-      "WebSearch",
-      "WebFetch(domain:medium.com)",
-      "WebFetch(domain:ai.google.dev)",
-      "WebFetch(domain:googleapis.github.io)",
-      "Bash(taskkill /F /PID 20612)",
-      "Bash(npx tsx:*)",
-      "Bash(255\"\n\nSolution:\n- Generate ASCII-safe temp filename (upload-{timestamp}.pdf)\n- Preserve Japanese name in displayName parameter\n- File extension extracted and preserved\n\nAllows re-upload of 6 failed migration documents.\n\n🤖 Generated with Claude Code\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

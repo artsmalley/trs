@@ -3,8 +3,11 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
+import { ChevronDown } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -51,6 +54,10 @@ export function BrowseQueryAgent() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [referencedDocs, setReferencedDocs] = useState<string[]>([]);
+  const [mode, setMode] = useState("standard");
+  const [length, setLength] = useState("medium");
+  const [customInstructions, setCustomInstructions] = useState("");
+  const [showCustomInstructions, setShowCustomInstructions] = useState(false);
 
   // Browse Documents state
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -221,6 +228,9 @@ export function BrowseQueryAgent() {
         body: JSON.stringify({
           query: input,
           history: messages,
+          mode,
+          length,
+          customInstructions,
         }),
       });
 
@@ -713,6 +723,58 @@ export function BrowseQueryAgent() {
                     </div>
                   </CardHeader>
                   <CardContent className="flex-1 flex flex-col">
+                    {/* Query Controls */}
+                    <div className="space-y-3 mb-4 pb-4 border-b">
+                      <div className="flex gap-3">
+                        <div className="flex-1">
+                          <label className="text-xs font-medium mb-1.5 block text-muted-foreground">Mode</label>
+                          <Select value={mode} onValueChange={setMode}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="standard">Standard</SelectItem>
+                              <SelectItem value="find-examples">Find Examples</SelectItem>
+                              <SelectItem value="find-people">Find People</SelectItem>
+                              <SelectItem value="compare">Compare Approaches</SelectItem>
+                              <SelectItem value="timeline">Timeline/History</SelectItem>
+                              <SelectItem value="technical">Technical Deep-Dive</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="flex-1">
+                          <label className="text-xs font-medium mb-1.5 block text-muted-foreground">Length</label>
+                          <Select value={length} onValueChange={setLength}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="brief">Brief (2-3 sentences)</SelectItem>
+                              <SelectItem value="medium">Medium (2-3 paragraphs)</SelectItem>
+                              <SelectItem value="detailed">Detailed (4-6 paragraphs)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      {/* Custom Instructions (Collapsible) */}
+                      <Collapsible open={showCustomInstructions} onOpenChange={setShowCustomInstructions}>
+                        <CollapsibleTrigger className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
+                          <ChevronDown className={`h-3 w-3 transition-transform ${showCustomInstructions ? 'rotate-180' : ''}`} />
+                          Custom Instructions (optional)
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="mt-2">
+                          <Textarea
+                            placeholder="Add specific instructions for this query... (e.g., 'Focus on Japanese implementations from 1990s')"
+                            value={customInstructions}
+                            onChange={(e) => setCustomInstructions(e.target.value)}
+                            rows={3}
+                            className="text-sm"
+                          />
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </div>
+
                     {/* Messages */}
                     <ScrollArea className="flex-1 pr-4">
                       {messages.length === 0 ? (

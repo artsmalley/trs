@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/popover";
 import { Check, X, ExternalLink, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { RESEARCH_CATEGORIES, getTermsForCategory, ResearchTerm } from "@/lib/research-terms-data";
+import { RESEARCH_CATEGORIES, getTermsForCategory, getSubcategoriesForTrack, getTermsForSubcategory, ResearchTerm } from "@/lib/research-terms-data";
 import { generateSearchUrls } from "@/lib/google-search";
 
 interface WebSearchResult {
@@ -41,6 +41,7 @@ interface WebSearchResult {
 
 export function ResearchAgent() {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>("");
   const [selectedTerms, setSelectedTerms] = useState<ResearchTerm[]>([]);
   const [termPickerOpen, setTermPickerOpen] = useState(false);
   const [freeFormTopic, setFreeFormTopic] = useState("");
@@ -54,12 +55,23 @@ export function ResearchAgent() {
   const [nextStartIndex, setNextStartIndex] = useState<number | null>(null);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Get available terms for selected category
-  const availableTerms = selectedCategory ? getTermsForCategory(selectedCategory) : [];
+  // Get available subcategories and terms based on selections
+  const availableSubcategories = selectedCategory ? getSubcategoriesForTrack(selectedCategory) : [];
+  const availableTerms = selectedCategory && selectedSubcategory
+    ? getTermsForSubcategory(selectedCategory, selectedSubcategory)
+    : selectedCategory
+      ? getTermsForCategory(selectedCategory)
+      : [];
 
   const handleCategoryChange = (categoryId: string) => {
     setSelectedCategory(categoryId);
+    setSelectedSubcategory(""); // Clear subcategory when track changes
     setSelectedTerms([]); // Clear selected terms when category changes
+  };
+
+  const handleSubcategoryChange = (subcategoryId: string) => {
+    setSelectedSubcategory(subcategoryId);
+    setSelectedTerms([]); // Clear selected terms when subcategory changes
   };
 
   const toggleTerm = (term: ResearchTerm) => {
@@ -199,14 +211,14 @@ export function ResearchAgent() {
               <div className="h-px bg-gradient-to-l from-blue-200 to-transparent flex-1" />
             </div>
 
-            {/* Category Selector */}
+            {/* Track Selector */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">
-                1. Select Research Category
+                1. Select Research Track
               </label>
               <Select value={selectedCategory} onValueChange={handleCategoryChange}>
                 <SelectTrigger className="w-full border-blue-200 focus:ring-blue-500">
-                  <SelectValue placeholder="Choose a category (PD, PE, TPS, or Cross-Cutting)" />
+                  <SelectValue placeholder="Choose a track (PD, PE, TPS, or Cross-Cutting)" />
                 </SelectTrigger>
                 <SelectContent>
                   {RESEARCH_CATEGORIES.map((category) => (
@@ -218,11 +230,33 @@ export function ResearchAgent() {
               </Select>
             </div>
 
+            {/* Subcategory Selector */}
+            {selectedCategory && availableSubcategories.length > 0 && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  2. Select Subcategory <span className="text-xs text-gray-500">(optional - leave blank for all)</span>
+                </label>
+                <Select value={selectedSubcategory} onValueChange={handleSubcategoryChange}>
+                  <SelectTrigger className="w-full border-blue-200 focus:ring-blue-500">
+                    <SelectValue placeholder="Choose a subcategory or leave blank for all" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Subcategories</SelectItem>
+                    {availableSubcategories.map((subcategory) => (
+                      <SelectItem key={subcategory.id} value={subcategory.id}>
+                        {subcategory.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             {/* Term Multi-Selector */}
             {selectedCategory && (
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">
-                  2. Select Research Terms
+                  3. Select Research Terms
                 </label>
                 <Popover open={termPickerOpen} onOpenChange={setTermPickerOpen}>
                   <PopoverTrigger asChild>
@@ -246,8 +280,9 @@ export function ResearchAgent() {
                       <CommandList>
                         <CommandEmpty>No terms found.</CommandEmpty>
                         <ScrollArea className="h-[300px]">
-                          {RESEARCH_CATEGORIES.find((c) => c.id === selectedCategory)?.subcategories.map(
-                            (subcategory) => (
+                          {RESEARCH_CATEGORIES.find((c) => c.id === selectedCategory)?.subcategories
+                            .filter((subcategory) => !selectedSubcategory || subcategory.id === selectedSubcategory)
+                            .map((subcategory) => (
                               <CommandGroup key={subcategory.id} heading={subcategory.name}>
                                 {subcategory.terms.map((term) => (
                                   <CommandItem

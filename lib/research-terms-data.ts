@@ -300,6 +300,28 @@ export const RESEARCH_CATEGORIES: TermCategory[] = [
 ];
 
 /**
+ * Get subcategories for a specific track
+ */
+export function getSubcategoriesForTrack(trackId: string) {
+  const track = RESEARCH_CATEGORIES.find((c) => c.id === trackId);
+  if (!track) return [];
+  return track.subcategories;
+}
+
+/**
+ * Get terms for a specific subcategory
+ */
+export function getTermsForSubcategory(trackId: string, subcategoryId: string): ResearchTerm[] {
+  const track = RESEARCH_CATEGORIES.find((c) => c.id === trackId);
+  if (!track) return [];
+
+  const subcategory = track.subcategories.find((sub) => sub.id === subcategoryId);
+  if (!subcategory) return [];
+
+  return subcategory.terms;
+}
+
+/**
  * Get all terms for a specific category (flattened)
  */
 export function getTermsForCategory(categoryId: string): ResearchTerm[] {

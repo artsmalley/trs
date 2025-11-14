@@ -76,24 +76,47 @@ Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemi
 
 ### Technical Root Cause
 
+**CRITICAL MISUNDERSTANDING**: We built Files API, not File Search Corpus
+
+**What we claimed**: "Using Google File Search with automatic RAG"
+**What we actually built**: Google Files API (individual file uploads, no semantic retrieval)
+
+**Files API** (what we have):
+- `lib/file-search.ts` uses `GoogleAIFileManager.uploadFile()`
+- Uploads individual files, gets fileUri back
+- **When you send fileUri to Gemini, it reads the ENTIRE file**
+- No automatic retrieval, no filtering, no semantic search
+- Just a file hosting service
+
+**File Search / Corpus API** (what we SHOULD have):
+- Create a Corpus (collection of files)
+- Corpus has built-in semantic retrieval
+- Query references corpus, system auto-retrieves top N relevant chunks
+- Gemini only sees relevant parts (not entire files)
+
 **Code location**: `app/api/summary/route.ts`, lines 131-143
 
 ```typescript
-// BROKEN: Sends ALL approved documents to Gemini
+// BROKEN: Sends ALL file URIs to Gemini (reads entire files!)
 const currentMessage: any = {
   role: "user",
   parts: [
     { text: query },
-    // Add ALL approved document files for Gemini to read
+    // Add ALL approved document files - Gemini reads ENTIRE files!
     ...approvedDocs.map((doc) => ({
       fileData: {
         mimeType: getMimeType(doc),
-        fileUri: doc.fileUri,  // ← Sends EVERY file!
+        fileUri: doc.fileUri,  // ← Sends EVERY file, reads ALL content!
       },
     })),
   ],
 };
 ```
+
+**Why we thought it was working**:
+- With <20 docs, total tokens < 1M limit
+- Seemed like semantic retrieval, but was just brute force within limit
+- Never actually had proper RAG architecture
 
 ### Why This Breaks
 
@@ -165,12 +188,14 @@ const currentMessage: any = {
 - ⚠️ New API to learn (Corpus API vs Files API)
 - ⚠️ Unknown: Does it support multimodal (images)?
 
-**Effort Estimate**: 4-6 hours
-- Research Corpus API (1 hour)
-- Implement corpus creation/management (2 hours)
-- Migrate existing files (1 hour)
-- Update query logic (1 hour)
-- Testing (1 hour)
+**Effort Estimate**: 3-5 hours (medium-sized refactor)
+- Research Corpus API (30 mins - verify image support!)
+- Implement corpus creation in upload flow (1-2 hours)
+- Migrate existing 36 files to corpus (1-2 hours - may need re-upload)
+- Update query logic to use corpus grounding (1 hour - actually simpler!)
+- Testing and verification (1 hour)
+
+**Risk**: 8+ hours if Corpus doesn't support images (need fallback to manual embeddings)
 
 **Resources**:
 - [File Search Documentation](https://ai.google.dev/gemini-api/docs/file-search)
@@ -400,5 +425,41 @@ If Corpus API research reveals blockers (e.g., no multimodal support):
 
 ---
 
-**Last Updated**: 2025-11-13, 11:45 PM
+---
+
+## Summary: What We Fucked Up
+
+**What we thought we built**:
+- "Google File Search with automatic RAG"
+- Semantic retrieval built-in
+- Scalable to 100+ documents
+
+**What we actually built**:
+- Google Files API (file hosting only)
+- No semantic retrieval whatsoever
+- Just uploads files, then brute-forces ALL into Gemini context
+- Works with <20 docs by accident (fits in token limit)
+- Breaks at 36+ docs (exceeds token limit)
+
+**The waste**:
+- Named it "File Search" but only used Files API
+- Assumed semantic retrieval existed (it didn't)
+- Built metadata system, citations, everything on broken foundation
+- Never tested with >20 documents until tonight
+
+**What we need to do**:
+- Implement **actual** File Search Corpus API (not Files API)
+- Migrate 36 existing files to corpus
+- Change query to use corpus grounding
+- **Verify Corpus supports images** (critical - we have multimodal RAG)
+
+**Time lost**: ~2 hours tonight debugging + documentation
+**Time needed**: 3-5 hours to fix properly (if Corpus supports images)
+
+**Lesson**: "File Search" ≠ Files API. Read the fucking docs carefully.
+
+---
+
+**Last Updated**: 2025-11-13, 11:50 PM
 **Next Review**: Session 12 start (Tomorrow morning)
+**Status**: Clarified root cause - we never built File Search, only Files API

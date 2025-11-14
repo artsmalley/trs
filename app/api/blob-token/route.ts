@@ -25,6 +25,7 @@ export async function POST(request: Request): Promise<NextResponse> {
             'image/webp',
           ],
           maximumSizeInBytes: 100 * 1024 * 1024, // 100MB max
+          addRandomSuffix: true, // Prevent filename collisions
         };
       },
       onUploadCompleted: async ({ blob, tokenPayload }) => {

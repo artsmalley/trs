@@ -1,117 +1,45 @@
 # Next Steps
 
-## Current Status (Session 12 - Morning)
+## Current Status (Session 13 - Afternoon)
 
-**Latest**: Session 12 - Fixed critical RAG architecture, migrated to File Search Store
+**Latest**: Session 13 - Citations tested ✅, Japanese upload fixed ✅, Edit Metadata working ✅
 
 ### What's Working ✅
 - ✅ Research Agent - 228 curated terms, targeted search (J-STAGE, Patents, Scholar)
-- ✅ Upload Agent Core - Client-side Blob upload (up to 100MB), smart queue, File Search Store integration
-  - Client-side Blob upload (bypasses 4.5MB limit)
+- ✅ Upload Agent - **ALL FEATURES WORKING!**
+  - Client-side Blob upload (up to 100MB, bypasses 4.5MB limit)
   - Smart queue with size-based concurrency (未然防止)
   - Bulk upload warnings (3+ large files or >100MB)
   - Pending review persistence (survives navigation/refresh)
   - Files upload to File Search Store (permanent + semantic RAG)
+  - Japanese filename support ✅ (Session 13)
+  - Manual metadata editing ✅ (Session 13)
+  - 50MB warning notice displayed ✅ (Session 13)
   - Timeout: 120s
 - ✅ Browse/Query Agent - Browse with filters + semantic RAG queries (scales to 100+ docs)
-- ✅ Query Corpus - **FIXED!** Semantic retrieval with File Search Store, no token errors
+- ✅ Query Corpus - Semantic retrieval with File Search Store, citations tested ✅
 - ✅ Download functionality for all file types
 - ✅ Delete flow from Browse tab (Blob + File Search Store + Redis)
 
 ### Known Issues ⚠️
-- 🐛 **Edit Metadata "Save" button not working** - Can't persist manual metadata edits during review
 - 🐛 **Reject button not working** - Can't delete failed uploads from review queue
+  - Workaround: Approve → Delete from Browse tab
+  - Priority: MEDIUM (annoying but workaround exists)
 - ⚠️ **~50MB Gemini limit** - Metadata extraction fails for files >50MB (known Google API limitation)
   - **IMPORTANT**: Files still upload and index successfully! Only metadata display is affected.
-  - Workaround: Compress PDFs in Adobe Acrobat or manually enter metadata (once Save button fixed)
+  - **Workaround**: Use Edit Metadata button to enter manually ✅ (Session 13 - WORKING!)
+  - **Warning displayed**: Upload page shows 50MB notice ✅
+  - Alternative: Compress PDFs in Adobe Acrobat
 
 ### Corpus Status
-- **30 documents** in File Search Store (semantic RAG working)
-- **6 documents pending** re-upload (Japanese filenames failed migration)
+- **37 documents** in File Search Store (semantic RAG working, citations tested ✅)
 - **Goal:** 100 documents
 
 ---
 
-## Immediate Priorities - Session 13 (Next)
+## Immediate Priorities - Session 14 (Next)
 
-### 🧪 PRIORITY #1: Test Citations (~5 minutes)
-
-**Verify citations fixed after Vercel deployment**
-
-**Test in browser console:**
-```javascript
-fetch('/api/summary', {
-  method: 'POST',
-  headers: {'Content-Type': 'application/json'},
-  body: JSON.stringify({
-    query: 'What are the key principles of the Toyota Production System?'
-  })
-})
-.then(res => res.json())
-.then(result => {
-  console.log('Response length:', result.answer?.length);
-  console.log('Citations:', result.citations?.length);
-  result.citations?.forEach((c, i) => {
-    console.log(`${i+1}. ${c.title}`);
-  });
-});
-```
-
-**Expected result:**
-- ✅ No token errors
-- ✅ 3-5 citations returned
-- ✅ Citations show document titles and page numbers
-- ✅ Format: `[CitationKey, p.1, 2] Document Title`
-
-**If citations work:** ✅ Architectural fix 100% complete!
-
-**If citations still empty:** Debug grounding metadata parsing logic
-
----
-
-### 📄 PRIORITY #2: Re-Upload 6 Failed Documents (~15 minutes)
-
-**Files that failed migration** (Japanese characters in filenames):
-1. トヨタ生産方式と改善
-2. QCサークル活動報告
-3. 生産技術革新事例
-4. カイゼン実践ガイド
-5. トヨタ生産システム概要
-6. 製造工程改善手法
-
-**Action:**
-- [ ] Upload via Upload tab (new system handles Japanese filenames correctly)
-- [ ] Review auto-extracted metadata
-- [ ] Approve files
-- [ ] Verify appear in Browse tab
-- [ ] Test query includes these documents
-
-**Expected result:** 36 total documents in File Search Store
-
----
-
-### 🐛 PRIORITY #3: Fix Edit Metadata Save Button (~30 minutes)
-
-**Why critical:** Blocks manual metadata entry for 50MB+ files
-
-**Current issue:**
-- "Save Changes" button in Edit Metadata dialog doesn't persist changes
-- Button not wired up to API endpoint
-
-**Implementation steps:**
-- [ ] Wire up Save button to `/api/corpus/update` endpoint
-- [ ] Send updated metadata in request body
-- [ ] Update Redis with new metadata
-- [ ] Close dialog and refresh Review Dashboard
-- [ ] Test: Edit metadata → Save → Verify changes persist
-
-**Files to modify:**
-- `components/agents/UploadAgent.tsx` - Wire up Save button
-- Possibly create `/api/corpus/update` endpoint if doesn't exist
-
----
-
-### 📊 PRIORITY #4: Continue Corpus Upload (~30 minutes)
+### 📊 PRIORITY #1: Continue Corpus Upload
 
 **Goal:** Upload remaining Toyota research PDFs to reach 100 documents
 
@@ -289,6 +217,16 @@ fetch('/api/summary', {
 
 ---
 
+## Completed (Session 13) ✅
+
+- ✅ **Citations tested and working** - 2 citations with page numbers, Japanese docs handled correctly
+- ✅ **Japanese filename upload fixed** - ASCII-safe temp filenames, preserves Unicode in displayName
+- ✅ **6 Japanese documents re-uploaded** - All migration failures resolved
+- ✅ **Edit Metadata Save button fixed** - Created `/api/corpus/update` endpoint, full state management
+- ✅ **50MB warning added** - Clear notice on Upload page with workaround instructions
+- ✅ **Manual metadata workflow complete** - 5 editable fields (Title, Authors, Year, Track, Summary)
+- ✅ **Corpus expanded to 37 documents** - All searchable, citations working
+
 ## Completed (Session 12) ✅
 
 - ✅ **Fixed RAG architecture** - Migrated to File Search Store with semantic retrieval
@@ -305,16 +243,14 @@ fetch('/api/summary', {
 
 **None!** 🎉
 
-Ready to proceed with:
-1. Test citations (should work now)
-2. Re-upload 6 failed documents
-3. Fix Edit Metadata Save button
-4. Continue uploading to 100 documents
-5. Build Brainstorm/Analyze agents
+All HIGH priority bugs resolved. Ready to proceed with:
+1. Continue corpus upload to 100 documents
+2. Build Brainstorm/Analyze agents
+3. Optional: Fix Reject button (MEDIUM priority, workaround exists)
 
 ---
 
 **Status**: 4/6 agents complete (Research, Upload, Browse, Query Corpus) ✅ | 2 remaining (Brainstorm, Analyze)
 
-**Last Updated**: 2025-11-14 (Session 12 - Morning)
-**Next Session**: Session 13 - Test citations → Re-upload 6 docs → Continue corpus upload → Design Brainstorm/Analyze
+**Last Updated**: 2025-11-14 (Session 13 - Afternoon)
+**Next Session**: Session 14 - Continue corpus upload OR design Brainstorm/Analyze agents

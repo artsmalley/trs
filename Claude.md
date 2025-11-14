@@ -9,18 +9,19 @@ npm run dev
 
 ## Current Status
 
-**Phase**: 2 - Agent Implementation (Core RAG Fixed! ✅)
+**Phase**: 2 - Agent Implementation (All Core Features Working! ✅)
 **Deployed**: https://trs-mocha.vercel.app ✅
-**Working**: Research ✅ | Upload ⚠️ | Browse ✅ | Query Corpus ✅ | PDF-only RAG ✅
-**Next**: Test citations → Re-upload 6 failed docs → Continue to 100 docs → Build Brainstorm/Analyze
+**Working**: Research ✅ | Upload ✅ | Browse ✅ | Query Corpus ✅ | PDF-only RAG ✅
+**Next**: Continue to 100 docs → Build Brainstorm/Analyze agents
 **Complete**: 4/6 agents (Research, Upload, Browse/Query)
-**Corpus**: 30 documents in File Search Store, semantic RAG working
-**File Upload**: Up to 100MB client-side, smart queue ✅
+**Corpus**: 37 documents in File Search Store, semantic RAG working, citations tested ✅
+**File Upload**: Up to 100MB client-side, smart queue, manual metadata editing ✅
 **Known Limitations**:
 - ~50MB Gemini metadata extraction limit (Google API limitation)
-- Files >50MB upload successfully but need manual metadata entry
-- Edit Metadata Save button not working (bug - HIGH priority)
-- Reject button not working (bug - MEDIUM priority)
+- Files >50MB upload successfully and are fully searchable ✅
+- Manual metadata entry via Edit Metadata button ✅
+- 50MB warning notice displayed on Upload page ✅
+- Reject button not working (bug - MEDIUM priority, workaround exists)
 
 ## Environment Setup
 
@@ -199,13 +200,7 @@ Download → Redis (get blobUrl) → Fetch from Blob → Browser
 
 ### 🐛 Upload Agent Bugs
 
-**1. Edit Metadata "Save" Button Not Working**
-- Issue: Save button in Edit Metadata dialog doesn't persist changes
-- Impact: Can't edit AI-extracted metadata during review
-- Workaround: Approve files → Edit in Browse tab (not yet implemented)
-- Priority: HIGH - Needed for manual metadata entry on failed extractions
-
-**2. Reject Button Not Working**
+**1. Reject Button Not Working**
 - Issue: Reject button fails to delete files from review queue
 - Error: Calls wrong endpoint or cache issue
 - Impact: Can't delete failed uploads during review
@@ -214,7 +209,7 @@ Download → Redis (get blobUrl) → Fetch from Blob → Browser
 
 ### ⚠️ Known Limitations
 
-**3. ~50MB Gemini Metadata Extraction Limit**
+**2. ~50MB Gemini Metadata Extraction Limit**
 - Issue: Gemini API has undocumented ~50-52MB limit for PDF processing
 - Source: Known Google API limitation (contradicts 2GB documented limit)
 - Impact: Files >50MB upload successfully but metadata extraction fails
@@ -224,8 +219,9 @@ Download → Redis (get blobUrl) → Fetch from Blob → Browser
   - ❌ Metadata extraction fails
   - ⚠️ Shows "Metadata extraction failed. Please review manually."
 - **IMPORTANT**: Files are still fully queryable in RAG - only metadata display is affected
-- Workaround: Manually enter metadata using Edit Metadata dialog (once Save button is fixed)
-- Solutions to explore:
+- **Workaround**: Manually enter metadata using Edit Metadata button ✅ (Session 13 - FIXED!)
+- **Warning displayed**: Upload page shows 50MB notice with workaround instructions ✅
+- Alternative solutions:
   - Compress PDFs in Adobe Acrobat (can reduce 50-80% for scanned docs)
   - Skip metadata extraction for 50MB+ files, mark for manual review
   - Add bulk metadata editor in Browse tab

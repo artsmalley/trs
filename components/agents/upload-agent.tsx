@@ -254,6 +254,9 @@ export function UploadAgent() {
   };
 
   const handleApprove = async (fileId: string, localId: string) => {
+    // Optimistically remove file from UI immediately
+    setFiles((prev) => prev.filter((f) => f.id !== localId));
+
     try {
       const response = await fetch("/api/approve", {
         method: "POST",
@@ -268,16 +271,15 @@ export function UploadAgent() {
 
       const data = await response.json();
 
-      if (data.success) {
-        // Remove approved file from array (it's now in Browse tab)
-        setFiles((prev) => prev.filter((f) => f.id !== localId));
-      } else {
+      if (!data.success) {
         console.error("Approval failed:", data.error);
-        alert(`Failed to approve: ${data.error}`);
+        alert(`Failed to approve: ${data.error}\n\nThe file has been removed from the review queue. Please check the Browse tab to verify.`);
+      } else {
+        console.log(`✅ Document approved: ${fileId}`);
       }
     } catch (error) {
       console.error("Error approving document:", error);
-      alert("Failed to approve document. Please try again.");
+      alert("Failed to approve document. The file has been removed from the review queue. Please check the Browse tab to verify.");
     }
   };
 

@@ -214,7 +214,7 @@ When citing information:
         return {
           documentId: doc.fileId,
           title: `[${citationKey}${pageInfo}] ${doc.title}`,
-          excerpt: doc.summary.substring(0, 150) + "...",
+          excerpt: doc.summary ? doc.summary.substring(0, 150) + "..." : "No summary available",
           pageNumber: pageNumbers[0], // Use first page number
         };
       })

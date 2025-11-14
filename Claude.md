@@ -127,9 +127,11 @@ Claude's training data is dated. When encountering errors, Claude may incorrectl
 ## Documentation
 
 - `TRS_Concept.md` - Original specification
-- `Next_steps.md` - Current work queue
+- `Next_steps.md` - Current work queue and priorities
 - `research_terms.md` - Master list of Japanese/English search terms for Research Agent
-- `docs/progress/` - Session logs by date
+- `docs/progress/` - Session logs by date (completed work)
+- `docs/implementation/` - **Implementation guides for complex features** (step-by-step plans)
+  - `client-side-blob-upload.md` - Fix large file upload (HTTP 413)
 - `README.md` - Full project documentation
 
 ## Common Commands

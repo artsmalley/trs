@@ -19,11 +19,42 @@ Research, Upload (with images), Browse/Query, and Images agents are complete and
 
 ## Immediate Priorities - Phase 2
 
-### 🔨 NEXT: Session 10 - Architecture Decision + Brainstorm Agent
-- [ ] Decide image strategy: Keep hybrid or PDF-only for documents?
-- [ ] Begin Brainstorm Agent implementation (~2-3 hours)
+### 🚨 CRITICAL: Fix Large File Upload (HTTP 413 Error)
+
+**Status:** Planning Complete - Ready for Implementation
+**Issue:** Files > 4.5MB rejected by Vercel serverless function limit
+**Impact:** 20% of important research documents cannot be uploaded
+
+**Solution:** Client-side Blob upload → Server processes from Blob URL
+
+**Implementation Plan:** 📋 See `docs/implementation/client-side-blob-upload.md`
+
+**Phases:**
+- [ ] **Phase 1:** Core upload flow (2-3 hours) - Documents working
+- [ ] **Phase 2:** Image support + error handling (2 hours)
+- [ ] **Phase 3:** Large file support + progress tracking (2 hours)
+- [ ] **Phase 4:** Polish + edge cases (1-2 hours)
+
+**Total Effort:** 7-9 hours across 4 sessions
+**Pro Account:** ✅ Available ($20/mo, 100GB storage, 1M ops/month)
+
+**Current Workaround:** Compress PDFs manually before upload
+
+---
+
+### 🔨 NEXT: Session 10 - Large File Upload Fix OR Brainstorm Agent
+**Two paths:**
+- **Path A:** Fix upload issue first (guaranteed solution, blocks 20% of files)
+- **Path B:** Continue with Brainstorm Agent (defer upload fix, workaround available)
+
+**Recommendation:** Fix upload first - unblocks critical functionality
+
+---
+
+### 🔮 FUTURE: Brainstorm Agent (~2-3 hours)
 - [ ] Corpus-aware article outlining and ideation
 - [ ] Coverage assessment per section
+- [ ] Interactive refinement via chat
 
 ### ✅ COMPLETED: Session 9 (2025-11-13) - MAJOR DISCOVERY
 - ✅ Fixed image/document type filter (auto-detection from filename)

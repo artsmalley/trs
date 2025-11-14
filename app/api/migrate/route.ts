@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { listAllDocuments, storeDocumentMetadata } from "@/lib/kv";
-import { importFileToStore } from "@/lib/file-search-store";
+import { uploadToStore } from "@/lib/file-search-store";
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -70,39 +70,33 @@ export async function POST(req: NextRequest) {
         if (fileId.startsWith('fileSearchStores/')) {
           console.log(`        ⚠️  Already migrated - skipping`);
           skippedCount++;
+          succeeded.push(doc.title);
           continue;
         }
 
-        // Prepare custom metadata
-        const customMetadata = [];
-        if (doc.authors && doc.authors.length > 0) {
-          customMetadata.push({
-            key: 'authors',
-            stringValue: doc.authors.join(', '),
-          });
-        }
-        if (doc.year && typeof doc.year === 'string') {
-          const yearNum = parseInt(doc.year, 10);
-          if (!isNaN(yearNum)) {
-            customMetadata.push({
-              key: 'year',
-              numericValue: yearNum,
-            });
-          }
-        }
-        if (doc.track) {
-          customMetadata.push({
-            key: 'track',
-            stringValue: doc.track,
-          });
+        // Check if blobUrl exists
+        if (!doc.blobUrl) {
+          throw new Error('Missing blobUrl - cannot fetch file');
         }
 
-        // Import to File Search Store
-        console.log(`        → Importing to File Search Store...`);
-        const storeDoc = await importFileToStore(
-          fileId,
-          doc.title,
-          customMetadata
+        // Fetch file from Blob storage
+        console.log(`        → Fetching file from Blob storage...`);
+        const blobResponse = await fetch(doc.blobUrl);
+        if (!blobResponse.ok) {
+          throw new Error(`Failed to fetch from Blob: ${blobResponse.statusText}`);
+        }
+
+        const arrayBuffer = await blobResponse.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        console.log(`        ✓ Fetched ${buffer.length} bytes`);
+
+        // Upload to File Search Store
+        console.log(`        → Uploading to File Search Store...`);
+        const storeDoc = await uploadToStore(
+          buffer,
+          doc.fileName,
+          doc.mimeType || 'application/pdf',
+          doc.title
         );
 
         // Update Redis metadata

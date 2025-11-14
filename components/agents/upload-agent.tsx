@@ -44,6 +44,12 @@ export function UploadAgent() {
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [warningMessage, setWarningMessage] = useState("");
   const processingRef = useRef(false);
+  const filesRef = useRef<UploadedFile[]>([]); // Track current files state for processQueue
+
+  // Sync filesRef with files state (so processQueue can access current state)
+  useEffect(() => {
+    filesRef.current = files;
+  }, [files]);
 
   // Load pending files from Redis on mount (Option 1: Persistence)
   useEffect(() => {
@@ -90,7 +96,8 @@ export function UploadAgent() {
     processingRef.current = true;
 
     while (true) {
-      const currentFiles = files;
+      // Use filesRef to get current state (not stale closure!)
+      const currentFiles = filesRef.current;
       const processing = currentFiles.filter(f => f.status === 'processing');
       const queued = currentFiles.filter(f => f.status === 'queued');
 
@@ -117,7 +124,7 @@ export function UploadAgent() {
     }
 
     processingRef.current = false;
-  }, [files]);
+  }, []); // No dependencies - uses refs instead
 
   // Process individual file
   const processFile = async (file: File, fileId: string) => {

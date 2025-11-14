@@ -847,7 +847,7 @@ export function BrowseQueryAgent() {
                         disabled={loading}
                       />
                       <Button onClick={handleSend} disabled={loading || !input.trim()}>
-                        Send
+                        Search
                       </Button>
                     </div>
                   </CardContent>

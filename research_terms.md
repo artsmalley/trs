@@ -6,12 +6,31 @@ Comprehensive list of Japanese and English terms for searching academic papers, 
 
 ## Table of Contents
 
-1. [Track 1: Product Development (PD)](#track-1-product-development-pd)
-2. [Track 2: Production Engineering (PE)](#track-2-production-engineering-pe)
-3. [Track 3: Manufacturing/Operations (TPS)](#track-3-manufacturingoperations-tps)
-4. [Cross-Cutting Terms](#cross-cutting-terms)
-5. [Critical Mistranslations to Avoid](#critical-mistranslations-to-avoid)
-6. [Supplier Names](#supplier-names)
+### Track 1: Product Development (PD)
+1. [Design & Development Process](#11-design--development-process)
+2. [CAD/PLM Systems & Data Management](#12-cadplm-systems--data-management)
+3. [Simulation & Virtual Validation](#13-simulation--virtual-validation)
+4. [Prototyping & Testing](#14-prototyping--testing)
+
+### Track 2: Production Engineering (PE)
+1. [Production Preparation & Planning](#21-production-preparation--planning)
+2. [Process Design & Equipment Planning](#22-process-design--equipment-planning)
+3. [Tooling Engineering](#23-tooling-engineering)
+4. [Manufacturing Processes & Precision](#24-manufacturing-processes--precision)
+5. [Supplier Collaboration & Co-Development](#25-supplier-collaboration--co-development)
+
+### Track 3: Manufacturing/Operations (TPS)
+1. [TPS Core System](#31-tps-core-system)
+2. [Kaizen & Continuous Improvement](#32-kaizen--continuous-improvement)
+3. [Quality Control & Assurance](#33-quality-control--assurance)
+4. [Daily Operations & Setup Reduction](#34-daily-operations--setup-reduction)
+5. [Automation & Measurement Systems](#35-automation--measurement-systems)
+6. [3 Pillar Activity System](#36-3-pillar-activity-system)
+
+### Additional Sections
+- [Cross-Cutting Terms](#cross-cutting-terms)
+- [Critical Mistranslations to Avoid](#critical-mistranslations-to-avoid)
+- [Supplier Names](#supplier-names)
 
 ---
 
@@ -19,7 +38,7 @@ Comprehensive list of Japanese and English terms for searching academic papers, 
 
 **Focus**: Design, engineering tools (CAD/CAE), simulation, prototyping, validation
 
-### General PD Terms
+### 1.1 Design & Development Process
 
 | Japanese | English | Notes |
 |----------|---------|-------|
@@ -32,8 +51,12 @@ Comprehensive list of Japanese and English terms for searching academic papers, 
 | 試作 | Prototype, Prototyping | |
 | 試験 | Testing, Test | |
 | 妥当性確認 | Validation | |
+| 同時並行開発 | Simultaneous Engineering, Concurrent Engineering | PD and PE working in parallel |
+| 並行設計 | Concurrent Design | |
+| 協調開発 | Collaborative Development | |
+| DFM | Design-for-Manufacturing | |
 
-### CAD/PLM Systems
+### 1.2 CAD/PLM Systems & Data Management
 
 | Japanese | English | Notes |
 |----------|---------|-------|
@@ -45,7 +68,7 @@ Comprehensive list of Japanese and English terms for searching academic papers, 
 | 製品データ管理 | Product Data Management (PDM) | |
 | 設計データ管理 | Design Data Management | |
 
-### Simulation & Analysis
+### 1.3 Simulation & Virtual Validation
 
 | Japanese | English | Notes |
 |----------|---------|-------|
@@ -57,25 +80,20 @@ Comprehensive list of Japanese and English terms for searching academic papers, 
 | 流体解析 | Computational Fluid Dynamics (CFD) | |
 | 熱解析 | Thermal Analysis | |
 | 構造解析 | Structural Analysis | |
-
-### Digital Twins & Virtual Validation
-
-| Japanese | English | Notes |
-|----------|---------|-------|
 | デジタルツイン | Digital Twin | |
 | 仮想検証 | Virtual Validation | |
 | バーチャル試作 | Virtual Prototyping | |
 
-### Simultaneous Engineering
+### 1.4 Prototyping & Testing
 
 | Japanese | English | Notes |
 |----------|---------|-------|
-| 同時並行開発 | Simultaneous Engineering, Concurrent Engineering | PD and PE working in parallel |
-| 並行設計 | Concurrent Design | |
-| 協調開発 | Collaborative Development | |
-| DFM | Design-for-Manufacturing | |
+| 試作 | Prototype, Prototyping | Physical prototypes |
+| 試験 | Testing, Test | |
+| 妥当性確認 | Validation | |
+| 設計検証 | Design Verification | |
 
-### J-STAGE Search Keywords (Track 1)
+### J-STAGE Search Keywords (Track 1: PD)
 
 **English:**
 - CAD
@@ -100,7 +118,7 @@ Comprehensive list of Japanese and English terms for searching academic papers, 
 
 **Focus**: Equipment planning, process design, tooling, production preparation, standards
 
-### Core PE Terms (CRITICAL)
+### 2.1 Production Preparation & Planning
 
 | Japanese | English | Notes |
 |----------|---------|-------|
@@ -109,28 +127,6 @@ Comprehensive list of Japanese and English terms for searching academic papers, 
 | 量産準備 | Mass Production Preparation | Final phase |
 | 立ち上げ | Launch, Production Launch | Start of mass production |
 | 24ヶ月工程 | 24-Month Process | Production preparation timeline |
-
-### Process Design
-
-| Japanese | English | Notes |
-|----------|---------|-------|
-| 工程設計 | Process Design, Process Planning | Core PE activity |
-| 工程フロー | Process Flow | |
-| 作業順序 | Operation Sequence | |
-
-### Equipment Planning
-
-| Japanese | English | Notes |
-|----------|---------|-------|
-| 設備計画 | Equipment Planning | PE selects all production equipment |
-| 工作機械 | Machine Tool | Lathes, mills, grinders, machining centers |
-| 設備仕様 | Equipment Specification | |
-| 生産能力 | Production Capacity | |
-
-### Standards & Drawings (CRITICAL)
-
-| Japanese | English | Notes |
-|----------|---------|-------|
 | 標準化 | Standardization | |
 | トヨタ生産標準 | Toyota Manufacturing Standard (TMS) | Part of standards hierarchy |
 | TMR | Toyota Manufacturing Rules | |
@@ -143,26 +139,95 @@ Comprehensive list of Japanese and English terms for searching academic papers, 
 | 品質標準 | Quality Standard | |
 | 製品図面 | Product Drawing | Final part specifications |
 
-### Tooling Engineering
+### 2.2 Process Design & Equipment Planning
 
 | Japanese | English | Notes |
 |----------|---------|-------|
+| 工程設計 | Process Design, Process Planning | Core PE activity |
+| 工程フロー | Process Flow | |
+| 作業順序 | Operation Sequence | |
+| 設備計画 | Equipment Planning | PE selects all production equipment |
+| 工作機械 | Machine Tool | Lathes, mills, grinders, machining centers |
+| 設備仕様 | Equipment Specification | |
+| 生産能力 | Production Capacity | |
+
+### 2.3 Tooling Engineering
+
+**Overview**: Comprehensive tooling domain including cutting tools, machining fundamentals, jigs/fixtures, and tool management
+
+#### Cutting & Machining Fundamentals
+
+| Japanese | English | Notes |
+|----------|---------|-------|
+| 機械加工 | Machining | General machining operations |
+| 切削加工 | Cutting, Metal Cutting | |
+
+#### Tool Design & Materials
+
+| Japanese | English | Notes |
+|----------|---------|-------|
+| 工具 | Tool, Tooling | Cutting tools (context-dependent) |
+| 工具技術 | Tooling Technology, Tooling Engineering | |
+| 切削工具 | Cutting Tools | |
+| 工具設計 | Tool Design | |
+| 工具材料 | Tool Materials | |
+| 工具材 | Tool Material | |
+
+#### Cutting Theory & Phenomena
+
+| Japanese | English | Notes |
+|----------|---------|-------|
+| 切削理論 | Cutting Theory | |
+| 切削現象 | Cutting Phenomena | |
+| 切削機構 | Mechanisms of Cutting | |
+| 切りくず生成 | Chip Formation | |
+| 切りくず処理 | Chip Control, Chip Disposal | |
+
+#### Tool Performance & Evaluation
+
+| Japanese | English | Notes |
+|----------|---------|-------|
+| 切削条件 | Cutting Conditions | |
+| 切削速度 | Cutting Speed | |
+| 工具摩耗 | Tool Wear | |
+| 工具寿命 | Tool Life | |
+| 被削性 | Machinability | |
+| 被削材 | Work Material, Workpiece Material | |
+| 難削材 | Difficult-to-Cut Materials | |
+| 表面粗さ | Surface Roughness | |
+| 仕上げ面粗さ | Surface Finish Roughness | |
+| 加工精度 | Machining Accuracy | |
+| 寸法精度 | Dimensional Accuracy | |
+
+#### Jigs, Fixtures & Workholding
+
+| Japanese | English | Notes |
+|----------|---------|-------|
+| ツーリングエンジニアリング | Tooling Engineering | Comprehensive tooling discipline |
 | 治具 | Jig, Fixture | **NOT** "tool" - positioning/holding devices |
 | 治具設計 | Jig Design, Fixture Design | |
+| 取付具 | Workholding Fixtures | |
+| 刃具 | Cutting Tool | Factory/shop floor terminology |
 | 位置決め | Positioning, Location | |
 | 検査治具 | Inspection Fixture, Gauge | |
 | ポカヨケ | Poka-Yoke, Error-Proofing | PE/Ops |
 | 固定具 | Fixture, Clamp | |
 | クランプ | Clamp | |
 
-### Machining & Manufacturing Processes
+#### Tool Management
+
+| Japanese | English | Notes |
+|----------|---------|-------|
+| 工具管理 | Tool Management | |
+| 刃先管理 | Cutting Edge Management | |
+
+### 2.4 Manufacturing Processes & Precision
 
 | Japanese | English | Notes |
 |----------|---------|-------|
 | 加工技術 | Machining Technology | |
 | 加工物理 | Process Physics | |
 | 加工方法 | Processing Method | |
-| 機械加工 | Machining | PE/Ops |
 | 研削 | Grinding | |
 | 研削盤 | Grinding Machine, Grinder | |
 | 砥石 | Grinding Wheel | |
@@ -175,31 +240,18 @@ Comprehensive list of Japanese and English terms for searching academic papers, 
 | 塑性加工 | Plastic Working, Forming | |
 | 熱影響 | Thermal Effect | |
 | 材料流動 | Material Flow | |
-
-### Machine Tools & Equipment
-
-| Japanese | English | Notes |
-|----------|---------|-------|
-| 工作機械 | Machine Tool | |
 | 旋盤 | Lathe | |
 | フライス盤 | Milling Machine | |
-| 研削盤 | Grinding Machine | |
 | ボール盤 | Drilling Machine | |
 | マシニングセンタ | Machining Center | |
-| 工具 | Cutting Tool | |
 | 刃物 | Cutting Tool, Blade | |
-
-### Process Capability & Precision
-
-| Japanese | English | Notes |
-|----------|---------|-------|
 | 工程能力 | Process Capability | Cp/Cpk analysis |
 | Cp/Cpk | Process Capability Indices | |
 | 精度管理 | Precision Management | |
 | 機械精度 | Machine Accuracy, Machine Precision | |
 | 静的精度 | Static Accuracy | |
 
-### Supplier Collaboration
+### 2.5 Supplier Collaboration & Co-Development
 
 | Japanese | English | Notes |
 |----------|---------|-------|
@@ -207,7 +259,7 @@ Comprehensive list of Japanese and English terms for searching academic papers, 
 | 設備メーカー | Equipment Manufacturer | JTEKT, Aisin, etc. |
 | 共同開発 | Joint Development, Co-Development | Toyota + supplier equipment |
 
-### J-STAGE Search Keywords (Track 2)
+### J-STAGE Search Keywords (Track 2: PE)
 
 **English:**
 - Machine tool
@@ -216,6 +268,8 @@ Comprehensive list of Japanese and English terms for searching academic papers, 
 - Toyota AND production
 - Jig
 - Fixture
+- Tooling engineering
+- Cutting tool
 
 **Japanese:**
 - 生産技術
@@ -225,10 +279,13 @@ Comprehensive list of Japanese and English terms for searching academic papers, 
 - 工作機械
 - 研削
 - 精密加工
+- 工具技術
+- 切削工具
+- ツーリングエンジニアリング
 - Toyota AND 生産
 - 24ヶ月工程
 
-### Patent Search Keywords (Track 2)
+### Patent Search Keywords (Track 2: PE)
 
 **Japanese:**
 - 生産方法 (Production method)
@@ -243,6 +300,8 @@ Comprehensive list of Japanese and English terms for searching academic papers, 
 - 砥石 (Grinding wheel)
 - 研磨 (Polishing)
 - グラインダ (Grinder)
+- 工具 (Tool)
+- 切削工具 (Cutting tool)
 
 **IPC Classifications:**
 - B21: Mechanical metal-working (forming, pressing, stamping)
@@ -256,7 +315,7 @@ Comprehensive list of Japanese and English terms for searching academic papers, 
 
 **Focus**: Daily management, TPS, kaizen, line operations, quality systems
 
-### TPS Core Principles
+### 3.1 TPS Core System
 
 | Japanese | English | Notes |
 |----------|---------|-------|
@@ -266,34 +325,17 @@ Comprehensive list of Japanese and English terms for searching academic papers, 
 | 自働化 | Jidoka (Automation with Human Touch) | Note: 自働化 not 自動化 |
 | かんばん | Kanban | |
 
-### Kaizen & Continuous Improvement
+### 3.2 Kaizen & Continuous Improvement
 
 | Japanese | English | Notes |
 |----------|---------|-------|
 | カイゼン | Kaizen (Continuous Improvement) | |
 | 工程改善 | Process Improvement | |
-| 技術改善 | Technical Improvement, Engineering Kaizen | Engineering-level improvements |
 | 設備改善 | Equipment Improvement | |
+| 方法分析 | Methods Analysis | Work method study and analysis |
+| 作業改善 | Work Improvement | |
 
-### Daily Management & Operations
-
-| Japanese | English | Notes |
-|----------|---------|-------|
-| 生産管理 | Production Management | |
-| 日常管理 | Daily Management | |
-| 製造 | Manufacturing, Production Operations | |
-
-### Setup Reduction (SMED)
-
-| Japanese | English | Notes |
-|----------|---------|-------|
-| 段取り替え | Setup Change, Changeover | |
-| SMED | Single-Minute Exchange of Die | |
-| 段取り時間短縮 | Setup Time Reduction | |
-| 外段取り | External Setup | |
-| 内段取り | Internal Setup | |
-
-### Quality Control & Assurance
+### 3.3 Quality Control & Assurance
 
 | Japanese | English | Notes |
 |----------|---------|-------|
@@ -304,19 +346,20 @@ Comprehensive list of Japanese and English terms for searching academic papers, 
 | 工程内検査 | In-Process Inspection | |
 | 不良予防 | Defect Prevention | |
 
-### Precision Measurement (Technical TPS)
+### 3.4 Daily Operations & Setup Reduction
 
 | Japanese | English | Notes |
 |----------|---------|-------|
-| 精密測定 | Precision Measurement | Track 3 focus |
-| 測定 | Measurement | |
-| 測定技術 | Measurement Technology | |
-| 計測 | Measurement, Instrumentation | |
-| 検査 | Inspection | |
-| 精度 | Accuracy, Precision | |
-| 三次元測定 | Three-Dimensional Measurement, CMM | |
+| 生産管理 | Production Management | |
+| 日常管理 | Daily Management | |
+| 製造 | Manufacturing, Production Operations | |
+| 段取り替え | Setup Change, Changeover | |
+| SMED | Single-Minute Exchange of Die | |
+| 段取り時間短縮 | Setup Time Reduction | |
+| 外段取り | External Setup | |
+| 内段取り | Internal Setup | |
 
-### Automation & Control Systems
+### 3.5 Automation & Measurement Systems
 
 | Japanese | English | Notes |
 |----------|---------|-------|
@@ -328,8 +371,28 @@ Comprehensive list of Japanese and English terms for searching academic papers, 
 | センサ | Sensor | |
 | センサー | Sensor | |
 | 生産管理システム | Manufacturing Execution System (MES) | |
+| 精密測定 | Precision Measurement | Track 3 focus |
+| 測定 | Measurement | |
+| 測定技術 | Measurement Technology | |
+| 計測 | Measurement, Instrumentation | |
+| 検査 | Inspection | |
+| 精度 | Accuracy, Precision | |
+| 三次元測定 | Three-Dimensional Measurement, CMM | |
 
-### J-STAGE Search Keywords (Track 3)
+### 3.6 3 Pillar Activity System
+
+**Background**: Global standardized shop floor management framework introduced around 2007, originating from the Kamigo engine plant. Designed to restore the original spirit of kaizen through full employee participation. Systematizes previously implicit workplace management skills and knowledge.
+
+| Japanese | English | Notes |
+|----------|---------|-------|
+| 3本柱活動 | 3 Pillar Activity | Framework name |
+| 標準作業の徹底と改訂 | Thoroughness and Revision of Standardized Work | Pillar 1 |
+| 自主保全 | Autonomous Maintenance | Pillar 2 |
+| 加工点マネジメント | Cutting Point Management | Pillar 3 |
+
+**Reference**: Aoki2025 (cite: 3)
+
+### J-STAGE Search Keywords (Track 3: TPS)
 
 **English:**
 - Quality control
@@ -337,6 +400,8 @@ Comprehensive list of Japanese and English terms for searching academic papers, 
 - Toyota AND quality
 - Automation
 - Precision measurement
+- Kaizen
+- 3 pillar activity
 
 **Japanese:**
 - 精密測定
@@ -345,8 +410,13 @@ Comprehensive list of Japanese and English terms for searching academic papers, 
 - 機械加工
 - Toyota AND TPS
 - Toyota AND 品質
+- カイゼン
+- 3本柱活動
+- 標準作業
+- 自主保全
+- 加工点マネジメント
 
-### Patent Search Keywords (Track 3)
+### Patent Search Keywords (Track 3: TPS)
 
 **Japanese:**
 - 測定 (Measurement)
@@ -402,6 +472,10 @@ Comprehensive list of Japanese and English terms for searching academic papers, 
 - **INCORRECT**: "tool"
 - **CORRECT**: "jig, fixture"
 - **Note**: Positioning and holding devices, NOT cutting tools
+
+### 工具 (Kougu)
+- **CONTEXT-DEPENDENT**: Can mean "tool" (cutting tool) OR general tooling
+- **Note**: In tooling engineering context = cutting tools; in general context = tools/tooling
 
 ### 自働化 vs 自動化
 - **自働化 (Jidouka)**: Jidoka - Automation with human touch (TPS principle)
@@ -470,19 +544,27 @@ Comprehensive list of Japanese and English terms for searching academic papers, 
 - Use Japanese keywords for best results (J-STAGE indexes Japanese content)
 - Combine track-specific terms with "Toyota" to narrow results
 - Search by journal code for targeted results (JSPE, JSAE, etc.)
+- Use subcategory terms for more focused searches
 
 ### For Patent Searches (J-PlatPat)
 - Use applicant names in Japanese (株式会社ジェイテクト, etc.)
 - Combine with IPC classifications for precision
-- Focus on B21, B23, B24 for Track 2 (PE) patents
+- Focus on B21, B23, B24, B25 for Track 2 (PE) patents
+- Use tooling-specific terms for cutting tool patents
 
 ### For General Research
 - Track 2 (PE) terms are most critical - highest knowledge gap
+- Tooling Engineering subcategory significantly expanded
 - Watch for mistranslations (生産技術 ≠ "manufacturing technology")
 - Supplier names are key for finding technical papers
+- 3 Pillar Activity is a newer framework (2007+) - use for modern TPS research
 
 ---
 
-**Last Updated**: November 12, 2025
-**Status**: Master reference for research agent queries and manual searches
-**Next**: Use these terms to populate article writing prompts and expand research coverage
+**Last Updated**: November 14, 2025
+**Status**: Master reference with hierarchical subcategory structure
+**Major Updates**:
+- Reorganized into subcategories (4 PD, 5 PE, 6 TPS)
+- Expanded Tooling Engineering under PE (6 sub-areas)
+- Added 3 Pillar Activity System under TPS
+- Replaced Engineering Kaizen with Methods Analysis

@@ -1,205 +1,87 @@
 # Next Steps
 
-## ✅ COMPLETED: 4/6 Agents Functional
+## ✅ COMPLETED: Upload Agent Production-Ready!
 
-Research, Upload (with images), Browse/Query, and Images agents are complete and deployed!
+Research, Upload, Browse/Query, and Images agents are complete, tested, and deployed!
 
-**Latest**: Session 9 - MAJOR DISCOVERY: File Search supports images (undocumented)! Implemented hybrid approach for multimodal RAG
+**Latest**: Session 10 - Upload Agent is PRODUCTION-READY! Client-side Blob upload (up to 100MB), smart queue, tested with 50MB files.
 
 ### What's Working
 - ✅ Research Agent - 228 curated terms, targeted search (J-STAGE, Patents, Scholar)
-- ✅ Upload Agent - Hybrid approach: docs+images to File Search + Vision analysis
+- ✅ Upload Agent - **PRODUCTION-READY!** Client-side Blob upload, smart queue, up to 100MB per file
+  - Client-side Blob upload (bypasses 4.5MB limit)
+  - Smart queue with size-based concurrency (未然防止)
+  - Bulk upload warnings (3+ large files or >100MB)
+  - Pending review persistence (survives navigation/refresh)
+  - Badge counter on Upload tab
+  - Processing Queue UX (shows only active files)
+  - Tested with 50MB files successfully
 - ✅ Browse/Query Agent - Browse with filters + RAG queries citing BOTH documents AND images
 - ✅ Images Agent - Full multimodal RAG (File Search grounding + Vision metadata)
 - ✅ Download functionality for all file types
 - ✅ Delete flow (Blob + File Search + Redis)
 - ✅ Image thumbnails and previews
-- ✅ Image type filter working (auto-detection for backward compatibility)
 - ✅ Vision Analysis (OCR, objects, concepts) - Gemini 2.5 Flash
 
 ## Immediate Priorities - Phase 2
 
-### 🚨 CRITICAL: Fix Large File Upload (HTTP 413 Error)
+### 📊 TONIGHT: Upload Real Corpus
 
-**Status:** Planning Complete - Ready for Implementation
-**Issue:** Files > 4.5MB rejected by Vercel serverless function limit
-**Impact:** 20% of important research documents cannot be uploaded
+**User Task:**
+- Upload research PDFs (Toyota production, manufacturing, quality)
+- Build real corpus for testing
+- Validate upload system with production data
 
-**Solution:** Client-side Blob upload → Server processes from Blob URL
-
-**Implementation Plan:** 📋 See `docs/implementation/client-side-blob-upload.md`
-
-**Phases:**
-- [ ] **Phase 1:** Core upload flow (2-3 hours) - Documents working
-- [ ] **Phase 2:** Image support + error handling (2 hours)
-- [ ] **Phase 3:** Large file support + progress tracking (2 hours)
-- [ ] **Phase 4:** Polish + edge cases (1-2 hours)
-
-**Total Effort:** 7-9 hours across 4 sessions
-**Pro Account:** ✅ Available ($20/mo, 100GB storage, 1M ops/month)
-
-**Current Workaround:** Compress PDFs manually before upload
+**Expected:**
+- Mix of small (2-5MB) and large (10-50MB) files
+- Smart queue will manage concurrency
+- Files will persist in Redis for approval tomorrow
 
 ---
 
-### 🔨 NEXT: Session 10 - Large File Upload Fix OR Brainstorm Agent
-**Two paths:**
-- **Path A:** Fix upload issue first (guaranteed solution, blocks 20% of files)
-- **Path B:** Continue with Brainstorm Agent (defer upload fix, workaround available)
+### 🧪 TOMORROW: Test & Design Workflow (Session 11)
 
-**Recommendation:** Fix upload first - unblocks critical functionality
+**Morning - Test with Real Corpus:**
+1. **Approve uploaded files** - Review AI-extracted metadata
+2. **Test Browse tab** - Verify all files appear, sorting works
+3. **Test Query Corpus** - Run real research questions:
+   - "What are Toyota's 3 pillars of production?"
+   - "Summarize QC circle activities"
+   - "Find examples of kaizen implementation"
+4. **Evaluate RAG quality** - Are citations accurate? Responses helpful?
 
----
+**Afternoon - Design Brainstorm/Analyze Workflow:**
 
-### 🔮 FUTURE: Brainstorm Agent (~2-3 hours)
-- [ ] Corpus-aware article outlining and ideation
-- [ ] Coverage assessment per section
-- [ ] Interactive refinement via chat
+**Key Questions to Answer:**
+1. **How will you use Brainstorm Agent?**
+   - Start with topic → Generate outline?
+   - Review corpus first → Then brainstorm?
+   - Iterative: Brainstorm → Query → Refine?
 
-### ✅ COMPLETED: Session 9 (2025-11-13) - MAJOR DISCOVERY
-- ✅ Fixed image/document type filter (auto-detection from filename)
-- ✅ Fixed Vision analysis model (gemini-2.5-flash)
-- ✅ **DISCOVERED: File Search supports images (undocumented Google API feature!)**
-- ✅ Tested File Search with images - full RAG queries with citations work
-- ✅ Implemented hybrid approach - images go to File Search + Vision API
-- ✅ Validated Vision analysis quality (excellent Japanese OCR)
-- ✅ Compared PDF vs images for multi-page documents (PDF superior)
+2. **How will you use Analyze Agent?**
+   - Write draft first → Then analyze?
+   - Write section by section → Analyze each?
+   - Continuous feedback loop?
 
-**Major Achievement**: Proven that Google File Search API accepts image MIME types and enables multimodal RAG queries. Gemini grounds on visual content from images, not just OCR text. This opens new architectural possibilities.
+3. **Integration with Editor:**
+   - Export from TRS → Edit in Claude.ai?
+   - Copy/paste workflow?
+   - What format? (Markdown, plain text?)
 
-### ✅ COMPLETED: Session 2 (2025-11-12)
-- ✅ Documentation standardization to "File Search" terminology
-- ✅ RAG strategy documentation added
-- ✅ Research terms integration (research_terms.md)
-- ✅ Environment setup (.env.local with API key)
-- ✅ Build error fixes (Tailwind v4→v3, TypeScript, imports)
-- ✅ UI enhancement (professional blue theme, gradient header)
-
-### ✅ COMPLETED: Session 3 - Research Agent V1 (2025-11-12)
-- ✅ Cascading dropdown UI (categories → terms)
-- ✅ 228 curated Japanese/English terms from research_terms.md
-- ✅ Multi-select term picker with search
-- ✅ Google Custom Search API integration
-- ✅ Web search results display (5 per page)
-- ✅ Load More pagination
-- ✅ Targeted search buttons (J-STAGE, Patents, Scholar, Google JP)
-- ✅ Dual search modes (guided + free-form)
-- ✅ Blue theme styling throughout
-
-**Outcome**: Research Agent V1 FUNCTIONING - Successfully found 4 high-quality Japanese articles that regular Google search missed. Bypasses SEO/ad corruption.
-
-### ✅ COMPLETED: Session 3 - Upload Agent Implementation (2025-11-12)
-- ✅ Set up `.env.local` with Google AI API key
-- ✅ Install PDF/DOCX text extraction libraries (pdf-parse, mammoth)
-- ✅ Implement `/api/upload` backend:
-  - ✅ Text extraction from PDF/DOCX/TXT
-  - ✅ Gemini metadata extraction (real API call)
-  - ✅ Upload to File Search (Google Gemini File API)
-  - ⏳ Store metadata in Vercel KV (next step)
-- ✅ Created text extraction utility (`lib/text-extraction.ts`)
-- ✅ Created AI metadata extraction (`lib/metadata-extraction.ts`)
-- ✅ Created File Search integration (`lib/file-search.ts`)
-- ✅ Updated API route with full pipeline
-
-**Outcome**: Upload pipeline functional - extracts text, generates metadata, uploads to File Search. Documents stored in Google's cloud, ready for RAG queries.
-
-### ✅ COMPLETED: Session 4 - Vercel Deployment & Upload Agent Fix (2025-11-12)
-
-**Vercel Deployment:**
-- ✅ Connected GitHub repo to Vercel
-- ✅ Deployed to https://trs-mocha.vercel.app
-- ✅ Created Vercel Redis database (30MB free tier)
-- ✅ Configured environment variables (KV_REDIS_URL, API keys)
-- ✅ Switched from @vercel/kv to ioredis (direct Redis connection)
-
-**Upload Agent Fix:**
-- ✅ Diagnosed pdf-parse DOMMatrix error in serverless
-- ✅ Removed text extraction - Gemini reads PDFs directly
-- ✅ Updated metadata extraction to use Gemini file reading API
-- ✅ Simplified flow: Upload → Gemini reads → Metadata → Redis
-- ✅ Tested in production - Upload working perfectly!
-
-**Outcome**: Upload Agent V1 FULLY FUNCTIONAL in production. Documents upload successfully, Gemini extracts accurate metadata, stored in Redis, displayed in Review Dashboard.
-
-### ✅ COMPLETED: Session 5 - Approve Button & Summary Agent V1 (2025-11-12)
-
-**Approve Button Workflow:**
-- ✅ Wired up approve button in Upload Agent
-- ✅ Created handleApprove() function with API call
-- ✅ Files automatically removed from review dashboard after approval
-- ✅ Status updates: pending_review → approved in Redis
-- ✅ Tested end-to-end workflow successfully
-
-**Summary Agent V1:**
-- ✅ Implemented RAG queries using approved documents from Redis
-- ✅ Metadata-based grounding (title, summary, keywords, track, year)
-- ✅ Conversation history support (multi-turn dialogues)
-- ✅ Citation extraction with `[1]`, `[2]` format
-- ✅ Document sidebar showing referenced files
-- ✅ Citation cards with excerpts and titles
-- ✅ Handles empty corpus gracefully
-- ✅ Tested with Toyota production engineering document
-
-**Corpus Management:**
-- ✅ Implemented /api/corpus/list with filtering (status, track, year)
-- ✅ Real-time document listing from Redis
-
-**Outcome**: Summary Agent V1 WORKING. Full RAG workflow functional: Upload → Review → Approve → Query with AI-powered answers and citations.
-
-### ✅ COMPLETED: Session 7 - RAG Citation System + Browse UX (2025-11-13)
-
-**RAG Quality Improvements:**
-- ✅ Fixed file grounding (reads full document content, not just metadata)
-- ✅ Added page-specific citations with direct quotes
-- ✅ AI-powered family name extraction (handles Japanese/Western names)
-- ✅ Title-based citation keys for documents without authors
-- ✅ Format: `[Takami2014, p.11]` - production-ready academic citations
-
-**Browse Documents UX:**
-- ✅ Sorting dropdown (7 options: title, date, year, author)
-- ✅ Infinite scroll (20 documents per batch)
-- ✅ Document detail modal (full metadata, all keywords)
-- ✅ Download API route (documents file storage limitation)
-
-**Outcome**: RAG system now provides verifiable, academic-quality citations. Browse scales to 100+ documents with professional UX.
-
-### ✅ COMPLETED: Session 8 - Unified Blob Storage (2025-11-13)
-
-**Unified Storage Architecture:**
-- ✅ Vercel Blob storage for ALL files (documents + images)
-- ✅ Smart routing: Documents → File Search (RAG), Images → Vision API (analysis)
-- ✅ Download functionality for all file types
-- ✅ Image upload with Vision analysis (OCR, objects, concepts)
-- ✅ Image thumbnails and type filter in Browse tab
-- ✅ Multi-layer deletion (Blob + File Search + Redis)
-- ✅ Backward compatibility (mimeType fallback)
-- ✅ Clear-all utility endpoint for testing
-
-**New Libraries:**
-- `lib/blob-storage.ts` - Upload/delete/filename generation
-- `lib/vision-analysis.ts` - Gemini Vision integration
-
-**Known Issue:**
-- ⚠️ Image type filter shows 0 results (metadata migration issue - needs re-upload in Session 9)
-
-**Outcome**: Images Agent COMPLETE (integrated into Upload). 4/6 agents functional. Unified storage enables downloads and searchable image content.
+**Outcome:**
+- Clear workflow documented
+- Prioritize Brainstorm OR Analyze (which first?)
+- Specific requirements for each agent
 
 ---
 
-**Status**: 4/6 agents complete (Research, Upload w/ Images, Browse/Query, Images) ✅ | 2 remaining (Brainstorm, Analyze) | 1 eliminated (Editor) ❌
+## 🔮 FUTURE: Remaining Agents (~4-6 hours total)
 
----
+### Priority 1: Brainstorm Agent (~2-3 hours)
 
-### ✅ COMPLETED: Priority 0 - Unified Blob Storage
+**Purpose:** Corpus-aware article outlining and ideation
 
-See Session 8 above for full details. Images Agent integrated into Upload agent.
-
----
-
-**Remaining Priority Agents** (2/6 remaining):
-
-### Priority 1: Brainstorm Agent (~2-3 hours) - NEXT
-- [ ] Implement `/api/brainstorm` for article structure generation
+**Key Features:**
 - [ ] Accept topic + optional outline hints
 - [ ] Query corpus for coverage assessment
 - [ ] Generate hierarchical outline (levels 1-3)
@@ -207,69 +89,155 @@ See Session 8 above for full details. Images Agent integrated into Upload agent.
 - [ ] Support interactive refinement via chat
 - [ ] Allow section drilling and expansion
 - [ ] Export to Markdown
-- [ ] Test with various article topics
 
-**Outcome**: Corpus-aware ideation and outlining assistant
+**API Route:**
+- [ ] Implement `/api/brainstorm` for outline generation
+
+**UI:**
+- [ ] Topic input field
+- [ ] Optional outline hints textarea
+- [ ] Interactive outline display with coverage indicators
+- [ ] Chat interface for refinement
+- [ ] Export button
+
+**Testing:**
+- [ ] Test with various article topics
+- [ ] Verify corpus coverage assessment
+- [ ] Validate export format
+
+**Estimated Time:** 2-3 hours
+
+---
 
 ### Priority 2: Analyze Agent (~2 hours)
-- [ ] Implement `/api/analyze` for draft review
+
+**Purpose:** Draft article reviewer that finds corpus support
+
+**Key Features:**
 - [ ] Accept draft text for analysis
 - [ ] Find corpus support for claims
 - [ ] Suggest where to add citations
 - [ ] Identify unsupported assertions
 - [ ] Calculate relevance scores
 - [ ] Return citations with context and excerpts
-- [ ] Wire up UI controls
+
+**API Route:**
+- [ ] Implement `/api/analyze` for draft review
+
+**UI:**
+- [ ] Draft text input (textarea or file upload)
+- [ ] Analysis results display
+- [ ] Suggested citations list
+- [ ] Unsupported claims highlight
+- [ ] Insert citation buttons
+
+**Testing:**
 - [ ] Test with draft research text
+- [ ] Verify citation suggestions are relevant
+- [ ] Test with various claim types
 
-**Outcome**: Draft article reviewer that finds corpus support
-
-### ❌ ELIMINATED: Editor Agent
-**Reason**: Use external tools (Claude.ai, Gemini, ChatGPT) for final text polish. No need to rebuild text editing capabilities.
-
-## Phase 2 Goals (After Scaffold)
-
-### Summary Agent Implementation
-- [ ] Implement RAG query with File Search grounding
-- [ ] Citation extraction and formatting
-- [ ] Conversation history management
-- [ ] Document filtering (by track, year, language)
-- [ ] Export conversation functionality
-
-### Upload Agent Real Implementation
-- [ ] PDF/DOCX text extraction library integration
-- [ ] Gemini prompt for metadata extraction (Japanese + English)
-- [ ] File Search upload integration
-- [ ] Vercel KV metadata storage
-- [ ] Review dashboard approval workflow
-
-## Infrastructure Tasks
-
-- [ ] Set up Vercel KV database
-- [ ] Configure environment variables for production
-- [ ] Test Gemini API key and rate limits
-- [ ] Decide on error handling strategy
-- [ ] Add loading states throughout UI
-
-## Open Questions
-
-1. Should we build all UI shells first or go deep on one agent?
-2. When to set up Vercel KV (now or later)?
-3. Which agent to implement first after scaffold?
-4. How to handle long-running document processing (>10min)?
-
-## Dependencies Needed
-
-- Google AI API key (get from https://makersuite.google.com/app/apikey)
-- Vercel KV database (create in Vercel dashboard when ready)
-- Test documents (PDF/DOCX) for upload testing
-- Japanese + English Toyota docs for RAG testing
-
-## Current Blockers
-
-None - ready to proceed in any direction
+**Estimated Time:** 2 hours
 
 ---
 
-**Last Updated**: 2025-11-13
-**Session**: 9 - File Search image support discovered, hybrid multimodal RAG implemented (4/6 agents functional)
+### ❌ ELIMINATED: Editor Agent
+
+**Reason:** Use external tools (Claude.ai, Gemini, ChatGPT) for final text polish. No need to rebuild text editing capabilities.
+
+**Workflow:**
+- Brainstorm → Generate outline in TRS
+- Analyze → Find corpus support in TRS
+- **Editor → Copy to Claude.ai/Gemini for final polish**
+
+---
+
+## Infrastructure Tasks
+
+### Completed:
+- ✅ Vercel KV database (Redis) - 30MB free tier
+- ✅ Vercel Blob storage - Pro plan ($20/mo, 100GB)
+- ✅ Vercel Pro plan - 60s function timeout
+- ✅ Environment variables configured
+- ✅ Gemini API tested and working
+- ✅ Error handling throughout
+- ✅ Loading states in UI
+
+### Optional Future:
+- [ ] Rate limiting (not critical for single user)
+- [ ] Usage analytics (track API costs)
+- [ ] Backup/export corpus (Redis → JSON)
+
+---
+
+## Open Questions (To Answer Tomorrow)
+
+1. **Brainstorm first or Analyze first?**
+   - Which agent provides more immediate value?
+   - Which aligns better with your workflow?
+
+2. **Iterative vs Linear workflow?**
+   - Brainstorm → Draft → Analyze → Edit?
+   - Or: Draft → Analyze → Brainstorm → Refine?
+
+3. **How to handle long documents?**
+   - Process sections individually?
+   - Full document analysis?
+   - Character/token limits?
+
+4. **Export formats?**
+   - Markdown with citations?
+   - Plain text?
+   - Copy to clipboard?
+
+5. **Conversation persistence?**
+   - Should Brainstorm/Analyze save chat history?
+   - Or session-only like current approach?
+
+---
+
+## Dependencies Needed
+
+### All Set! ✅
+- Google AI API key - ✅ Working
+- Vercel KV database - ✅ Created
+- Vercel Blob storage - ✅ Pro plan active
+- Vercel Pro plan - ✅ 60s timeout configured
+- Test documents - ✅ Uploading tonight
+
+---
+
+## Current Blockers
+
+**None!** 🎉
+
+Ready to proceed with:
+1. Upload corpus tonight
+2. Test & design workflow tomorrow
+3. Implement Brainstorm/Analyze agents
+
+---
+
+## Phase 3 Goals (After Agent Implementation)
+
+### Polish & Production Readiness:
+- [ ] Comprehensive testing with full corpus
+- [ ] Performance optimization (if needed)
+- [ ] Error recovery testing
+- [ ] Documentation for end users
+- [ ] Video walkthrough of workflow
+
+### Stretch Goals:
+- [ ] Corpus statistics dashboard
+- [ ] Search within corpus (full-text)
+- [ ] Bulk metadata editing
+- [ ] Export corpus to JSON/CSV
+- [ ] API rate limit monitoring
+
+---
+
+**Status**: 4/6 agents complete (Research, Upload, Browse/Query, Images) ✅ | 2 remaining (Brainstorm, Analyze) | 1 eliminated (Editor) ❌
+
+---
+
+**Last Updated**: 2025-11-13 (Session 10 - Evening)
+**Next Session**: Session 11 - Test with real corpus + Design Brainstorm/Analyze workflow

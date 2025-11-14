@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
+import { upload } from "@vercel/blob/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,19 +40,51 @@ export function UploadAgent() {
 
       // Update to processing
       setFiles((prev) =>
-        prev.map((f) => (f.id === fileId ? { ...f, status: "processing", progress: 30 } : f))
+        prev.map((f) => (f.id === fileId ? { ...f, status: "processing", progress: 10 } : f))
       );
 
       try {
-        const formData = new FormData();
-        formData.append("file", file);
+        // PHASE 1: Upload to Blob storage (client-side, direct)
+        console.log(`📤 Uploading to Blob: ${file.name}`);
 
-        const response = await fetch("/api/upload", {
-          method: "POST",
-          body: formData,
+        const blob = await upload(file.name, file, {
+          access: 'public',
+          handleUploadUrl: '/api/blob-token',
+          multipart: file.size > 5 * 1024 * 1024, // Use multipart for files > 5MB
+          onUploadProgress: ({ percentage }) => {
+            // Upload phase is 10-50% of total progress
+            const uploadPhase = 10 + (percentage / 100) * 40;
+            setFiles((prev) =>
+              prev.map((f) => (f.id === fileId ? { ...f, progress: uploadPhase } : f))
+            );
+          },
         });
 
+        console.log(`✅ Blob uploaded: ${blob.url}`);
+
+        // PHASE 2: Process with AI on server (50-100% progress)
+        setFiles((prev) =>
+          prev.map((f) => (f.id === fileId ? { ...f, progress: 50 } : f))
+        );
+
+        const response = await fetch("/api/process-blob", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            blobUrl: blob.url,
+            fileName: file.name,
+            mimeType: file.type,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Processing failed");
+        }
+
         const data = await response.json();
+
+        console.log(`✅ Processing complete: ${file.name}`);
 
         // Update to complete with fileId for approval
         setFiles((prev) =>
@@ -68,6 +101,7 @@ export function UploadAgent() {
           )
         );
       } catch (error) {
+        console.error(`❌ Upload failed for ${file.name}:`, error);
         setFiles((prev) =>
           prev.map((f) => (f.id === fileId ? { ...f, status: "error", progress: 0 } : f))
         );

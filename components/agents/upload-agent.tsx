@@ -290,6 +290,37 @@ export function UploadAgent() {
     }
   };
 
+  const handleReject = async (fileId: string, localId: string, fileName: string) => {
+    if (!confirm(`Delete "${fileName}"?\n\nThis will permanently remove the file from Blob storage, File Search, and Redis.`)) {
+      return;
+    }
+
+    // Optimistically remove file from UI immediately
+    setFiles((prev) => prev.filter((f) => f.id !== localId));
+
+    try {
+      const response = await fetch("/api/delete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ fileId }),
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        console.error("Delete failed:", data.error);
+        alert(`Failed to delete: ${data.error}`);
+      } else {
+        console.log(`🗑️ File deleted: ${fileId}`);
+      }
+    } catch (error) {
+      console.error("Error deleting file:", error);
+      alert("Failed to delete file. Please try again.");
+    }
+  };
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
@@ -551,6 +582,14 @@ export function UploadAgent() {
                               <Button>Save Changes</Button>
                             </DialogContent>
                           </Dialog>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => file.fileId && handleReject(file.fileId, file.id, file.name)}
+                            disabled={!file.fileId}
+                          >
+                            Reject
+                          </Button>
                           <Button
                             size="sm"
                             onClick={() => file.fileId && handleApprove(file.fileId, file.id)}

@@ -385,18 +385,18 @@ export function UploadAgent() {
       )}
 
       {/* Processing Queue */}
-      {files.length > 0 && (
+      {files.filter(f => f.status !== 'complete' && f.status !== 'approved').length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Upload Queue</CardTitle>
             <CardDescription>
-              {completedCount > 0 && `${completedCount} file(s) ready for review`}
+              Active uploads and processing
             </CardDescription>
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-[200px]">
               <div className="space-y-3">
-                {files.map((file) => (
+                {files.filter(f => f.status !== 'complete' && f.status !== 'approved').map((file) => (
                   <div key={file.id} className="space-y-2 p-3 border rounded-lg">
                     <div className="flex items-center justify-between">
                       <div className="flex-1 min-w-0">

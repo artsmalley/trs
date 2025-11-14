@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai"; // New SDK for File Search Store
+import { GoogleGenerativeAI } from "@google/generative-ai"; // Legacy SDK for Files API (images)
 import { listAllDocuments } from "@/lib/kv";
+import { getStoreName } from "@/lib/file-search-store";
 
 // POST /api/summary - Query corpus with RAG
 export async function POST(req: NextRequest) {
@@ -31,11 +33,14 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Build context from approved documents
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
-    });
+    // Separate documents (in File Search Store) from images (in Files API)
+    const documents = approvedDocs.filter((doc) => doc.fileType === "document");
+    const images = approvedDocs.filter((doc) => doc.fileType === "image");
+
+    console.log(`Query corpus: ${documents.length} documents (File Search Store), ${images.length} images (Files API)`);
+
+    // Initialize new SDK for File Search Store
+    const ai = new GoogleGenAI({ apiKey });
 
     // Helper function to generate citation key from title
     const generateTitleCitationKey = (title: string): string => {
@@ -77,9 +82,10 @@ export async function POST(req: NextRequest) {
     // Construct system instruction
     const systemInstruction = `You are a research assistant specializing in Toyota production engineering and manufacturing.
 
-You have access to the following approved documents in the corpus:
+You have access to a corpus with the following approved content:
 
-${approvedDocs
+DOCUMENTS (${documents.length} files - searchable via File Search):
+${documents
   .map(
     (doc, idx) =>
       `Document: "${doc.title}"
@@ -93,7 +99,19 @@ ${doc.keywords && doc.keywords.length > 0 ? `Keywords: ${doc.keywords.join(", ")
   )
   .join("\n\n")}
 
-IMPORTANT: Read the full content of the uploaded documents to answer questions. Do not rely only on the summaries above.
+${images.length > 0 ? `
+IMAGES (${images.length} files):
+${images
+  .map(
+    (img, idx) =>
+      `Image: "${img.title}"
+${img.summary ? `Description: ${img.summary}` : ""}
+---`
+  )
+  .join("\n\n")}
+` : ''}
+
+IMPORTANT: The File Search tool will automatically retrieve relevant sections from documents based on your query.
 
 When citing information:
 - Use the Citation Key format: [CitationKey, p.#] (e.g., [${docCitationKeys[0] || 'Tanaka2024'}, p.5])
@@ -101,10 +119,29 @@ When citing information:
 - Be specific about which section or heading the information comes from
 - The citation key corresponds to the document listed above`;
 
-    // Build conversation history with file references
-    const contents = [];
+    // Get File Search Store name for semantic retrieval
+    const storeName = await getStoreName();
 
-    // Add conversation history if present
+    // Build query with File Search tool (for documents) and optional image fileData
+    const queryParts: any[] = [{ text: query }];
+
+    // Add images as direct fileData (Files API - temporary 48-hour solution)
+    // TODO: Find permanent solution for image storage (Files API expires after 48 hours)
+    if (images.length > 0) {
+      console.log(`Including ${images.length} images as direct fileData (Files API)`);
+      images.forEach((img) => {
+        queryParts.push({
+          fileData: {
+            mimeType: img.mimeType,
+            fileUri: img.fileUri,
+          },
+        });
+      });
+    }
+
+    // Build conversation history
+    const contents: any[] = [];
+
     if (history && history.length > 0) {
       for (const msg of history) {
         contents.push({
@@ -114,49 +151,36 @@ When citing information:
       }
     }
 
-    // Helper function to detect MIME type from filename
-    const getMimeType = (doc: any): string => {
-      if (doc.mimeType) return doc.mimeType;
-      // Fallback for old documents without mimeType
-      const ext = doc.fileName.toLowerCase().split('.').pop();
-      const mimeTypes: Record<string, string> = {
-        'pdf': 'application/pdf',
-        'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'doc': 'application/msword',
-        'txt': 'text/plain',
-      };
-      return mimeTypes[ext || 'pdf'] || 'application/pdf';
-    };
-
-    // Add current query with file URIs for grounding
-    const currentMessage: any = {
+    // Add current query
+    contents.push({
       role: "user",
-      parts: [
-        { text: query },
-        // Add all approved document files for Gemini to read
-        ...approvedDocs.map((doc) => ({
-          fileData: {
-            mimeType: getMimeType(doc),
-            fileUri: doc.fileUri,
-          },
-        })),
-      ],
-    };
-
-    contents.push(currentMessage);
-
-    // Generate response with file grounding
-    const result = await model.generateContent({
-      contents,
-      systemInstruction: systemInstruction,
+      parts: queryParts,
     });
 
-    const response = result.response;
-    const responseText = response.text();
+    // Generate response with File Search tool (semantic retrieval)
+    console.log(`Querying File Search Store: ${storeName}`);
+    const result = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents,
+      config: {
+        systemInstruction,
+        tools: [
+          {
+            fileSearch: {
+              fileSearchStoreNames: [storeName],
+              // Optional: can add metadata filters here
+            },
+          },
+        ],
+      },
+    });
+
+    // Get response text (new SDK structure)
+    const responseText = result.text || "";
 
     // Log grounding metadata if available (for debugging)
-    if (response.candidates?.[0]?.groundingMetadata) {
-      console.log('Grounding metadata:', JSON.stringify(response.candidates[0].groundingMetadata, null, 2));
+    if (result.candidates?.[0]?.groundingMetadata) {
+      console.log('Grounding metadata:', JSON.stringify(result.candidates[0].groundingMetadata, null, 2));
     }
 
     // Extract document references from response

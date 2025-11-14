@@ -9,11 +9,16 @@ npm run dev
 
 ## Current Status
 
-**Phase**: 2 - Agent Implementation (IN PROGRESS)
+**Phase**: 2 - Agent Implementation (CRITICAL ISSUE DISCOVERED)
 **Deployed**: https://trs-mocha.vercel.app ✅
-**Working**: Research ✅ | Upload (hybrid RAG) ✅ | Browse/Query (multimodal) ✅ | Images ✅
-**Next**: Architecture decision (PDF vs images) → Then Brainstorm + Analyze
-**Complete**: 4/6 agents (Research, Upload, Browse/Query, Images)
+**Working**: Research ✅ | Upload (mostly working) ⚠️ | Browse ✅ | Images ✅
+**BROKEN**: Query Corpus ❌ - Token limit exceeded with 36+ documents (see Critical Issues)
+**Next**: Fix RAG architecture → Fix upload bugs → Continue corpus upload
+**Complete**: 3.5/6 agents (Research, Upload, Browse, Images; Query broken)
+**File Upload**: Up to 100MB client-side, smart queue ✅
+**Known Limitations**:
+- ~50MB Gemini metadata extraction limit (Google API limitation)
+- Files >50MB upload successfully but need manual metadata entry
 **Major Discovery**: File Search supports images (undocumented Google API feature!) - Multimodal RAG enabled!
 
 ## Environment Setup
@@ -102,14 +107,123 @@ Claude's training data is dated. When encountering errors, Claude may incorrectl
 ## 6 Active Agents (1 Eliminated)
 
 1. **Research** ✅ COMPLETE - 228 curated terms, Google Custom Search, targeted search (J-STAGE, Patents, Scholar)
-2. **Upload** ✅ COMPLETE - Hybrid approach: docs+images to File Search + Vision analysis, review dashboard, approve workflow
-3. **Browse/Query** ✅ COMPLETE - Browse (sorting, infinite scroll, image thumbnails, type filter) + Query Corpus (multimodal RAG with citations from documents AND images)
-4. **Images** ✅ COMPLETE - Hybrid integration: File Search grounding + Vision API metadata (OCR, objects, concepts)
-5. **Brainstorm** 🔨 TODO - Corpus-aware ideation and outlining assistant (renamed from Outline)
-6. **Analyze** 🔨 TODO - Draft article reviewer that finds corpus support
-7. **Editor** ❌ ELIMINATED - Use external tools (Claude.ai, Gemini, ChatGPT) for final polish
+2. **Upload** ⚠️ MOSTLY WORKING - Client-side Blob upload, smart queue, supports up to 100MB, ~50MB Gemini limit for metadata extraction (see Known Issues)
+3. **Browse** ✅ COMPLETE - Sorting, infinite scroll, image thumbnails, type filter, file details modal
+4. **Query Corpus** ❌ BROKEN - Token limit exceeded with 36+ documents (see Critical Issues)
+5. **Images** ✅ COMPLETE - Hybrid integration: File Search grounding + Vision API metadata (OCR, objects, concepts)
+6. **Brainstorm** 🔨 TODO - Corpus-aware ideation and outlining assistant (renamed from Outline)
+7. **Analyze** 🔨 TODO - Draft article reviewer that finds corpus support
+8. **Editor** ❌ ELIMINATED - Use external tools (Claude.ai, Gemini, ChatGPT) for final polish
 
-**Next Session**: Architecture decision (keep hybrid images or PDF-only?) + Begin Brainstorm Agent implementation
+**Next Session**: **PRIORITY #1**: Fix RAG architecture (token limit) → Fix upload bugs → Continue corpus upload
+
+## Upload Agent Architecture (Session 10 - Production-Ready!)
+
+**Client-Side Blob Upload** - Bypasses 4.5MB serverless function limit:
+- Browser uploads directly to Vercel Blob (up to 100MB)
+- Server processes from Blob URL (no body size limit!)
+- Two-phase progress: Upload (10-50%) → Processing (50-100%)
+- Multipart upload for files >5MB
+
+**Smart Queue System** (未然防止 - mizen boushi):
+- Size-based concurrency: Small files (<10MB): 5 concurrent, Medium (10-30MB): 3 concurrent, Large (>30MB): 2 concurrent
+- Bulk upload warning: 3+ large files or >100MB total triggers confirmation dialog
+- Queue status card: Shows "Processing: 2" and "Queued: 5" with dynamic limits
+- Prevents browser crashes and API rate limits
+
+**Pending Review Persistence**:
+- Files survive navigation, page refreshes, browser sessions
+- Badge counter on Upload tab shows pending count (refreshes every 10s)
+- Load pending files from Redis on mount
+
+**UX Polish**:
+- Processing Queue shows only active files (queued/processing)
+- Completed files move to Review Dashboard
+- File sizes displayed (e.g., "45.2MB")
+- Blue pulsing dot for active uploads
+- Memory optimization (clears raw files after upload)
+
+**Tested & Validated**:
+- ✅ Files up to 100MB upload to Blob successfully
+- ✅ Bulk uploads (10+ files) queue properly
+- ✅ Vercel Pro timeout (120s) handles processing
+- ✅ No HTTP 413 errors, no crashes, smooth UX
+
+## 🚨 CRITICAL ISSUES (Session 11 - End)
+
+### ❌ Query Corpus Broken - Token Limit Exceeded
+
+**Discovered**: End of Session 11 (2025-11-13, 11 PM)
+
+**Error**:
+```
+[400 Bad Request] The input token count exceeds the maximum number of tokens allowed 1,048,576.
+```
+
+**Problem**:
+- Current architecture sends **ALL documents** to Gemini on every query
+- With 36 documents (mix of 5-50MB PDFs) = 1M+ tokens = CRASH
+- Query Corpus completely broken with current corpus size
+- **Blocks the core RAG functionality of the entire system**
+
+**Root Cause**:
+- No semantic retrieval implemented
+- Code dumps entire corpus into Gemini's context window:
+  ```typescript
+  // BROKEN: Sends ALL 36 files!
+  ...approvedDocs.map((doc) => ({
+    fileData: { fileUri: doc.fileUri }
+  }))
+  ```
+
+**Impact**:
+- ❌ Cannot query corpus with 36+ documents
+- ❌ Completely blocks 100-document goal stated from day 1
+- ❌ RAG system non-functional at production scale
+
+**Solutions Under Investigation** (Session 12):
+1. Google File Search Corpus API (proper semantic retrieval)
+2. Manual embeddings + vector similarity filtering
+3. Temporary limit to top 10 relevant docs (quick hack)
+
+**See**: `docs/issues/query-corpus-token-limit.md` for detailed analysis
+
+---
+
+## Known Issues (Session 11)
+
+### 🐛 Upload Agent Bugs
+
+**1. Edit Metadata "Save" Button Not Working**
+- Issue: Save button in Edit Metadata dialog doesn't persist changes
+- Impact: Can't edit AI-extracted metadata during review
+- Workaround: Approve files → Edit in Browse tab (not yet implemented)
+- Priority: HIGH - Needed for manual metadata entry on failed extractions
+
+**2. Reject Button Not Working**
+- Issue: Reject button fails to delete files from review queue
+- Error: Calls wrong endpoint or cache issue
+- Impact: Can't delete failed uploads during review
+- Workaround: Approve → Delete from Browse tab
+- Priority: MEDIUM - Annoying but workaround exists
+
+### ⚠️ Known Limitations
+
+**3. ~50MB Gemini Metadata Extraction Limit**
+- Issue: Gemini API has undocumented ~50-52MB limit for PDF processing
+- Source: Known Google API limitation (contradicts 2GB documented limit)
+- Impact: Files >50MB upload successfully but metadata extraction fails
+- Behavior:
+  - ✅ File uploads to Blob
+  - ✅ File uploads to File Search (fully indexed and queryable!)
+  - ❌ Metadata extraction fails
+  - ⚠️ Shows "Metadata extraction failed. Please review manually."
+- **IMPORTANT**: Files are still fully queryable in RAG - only metadata display is affected
+- Workaround: Manually enter metadata using Edit Metadata dialog (once Save button is fixed)
+- Solutions to explore:
+  - Compress PDFs in Adobe Acrobat (can reduce 50-80% for scanned docs)
+  - Skip metadata extraction for 50MB+ files, mark for manual review
+  - Add bulk metadata editor in Browse tab
 
 ## Key Design Decisions
 
@@ -121,6 +235,7 @@ Claude's training data is dated. When encountering errors, Claude may incorrectl
   - Google File Search: Multimodal RAG for documents AND images (undocumented feature!)
   - Gemini Vision API: Content analysis metadata (OCR, objects, concepts)
   - Redis: Stores both fileUri (File Search) and visionAnalysis (Vision API)
+- **Client-side Blob upload** (Session 10): Bypasses 4.5MB limit, supports up to 100MB
 - **Unified upload**: One page accepts any file type, smart routing handles the rest
 - Session-based conversations (no persistence initially)
 

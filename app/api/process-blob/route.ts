@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractMetadataFromFile } from "@/lib/metadata-extraction";
-import { uploadToFileSearch } from "@/lib/file-search";
+import { uploadToFileSearch } from "@/lib/file-search"; // Files API for images (48-hour expiry)
+import { uploadToStore } from "@/lib/file-search-store"; // File Search Store for documents (permanent + semantic RAG)
 import { storeDocumentMetadata } from "@/lib/kv";
 import {
   analyzeImageWithVision,
@@ -80,12 +81,12 @@ export async function POST(req: NextRequest) {
     let documentMetadata: DocumentMetadata;
 
     if (isDocument) {
-      // === DOCUMENT FLOW ===
-      console.log(`📄 Document detected - routing to File Search + metadata extraction`);
+      // === DOCUMENT FLOW (File Search Store) ===
+      console.log(`📄 Document detected - routing to File Search Store (semantic RAG) + metadata extraction`);
 
-      // Upload to File Search for RAG
-      console.log(`  → Uploading to File Search...`);
-      const uploadedFile = await uploadToFileSearch(
+      // Upload to File Search Store for permanent semantic RAG
+      console.log(`  → Uploading to File Search Store (persistent, semantic retrieval)...`);
+      const storeDocument = await uploadToStore(
         buffer,
         fileName,
         mimeType,
@@ -93,17 +94,22 @@ export async function POST(req: NextRequest) {
       );
 
       // Extract metadata using Gemini
+      // Note: We need to create a temporary Files API upload for metadata extraction
+      // because Gemini needs a fileUri to read the file content
+      console.log(`  → Uploading to Files API (temporary, for metadata extraction)...`);
+      const tempFile = await uploadToFileSearch(buffer, fileName, mimeType, fileName);
+
       console.log(`  → Extracting metadata with Gemini...`);
       const metadata = await extractMetadataFromFile(
-        uploadedFile.uri,
+        tempFile.uri,
         mimeType,
         fileName
       );
 
       // Build document metadata
       documentMetadata = {
-        fileId: uploadedFile.name,
-        fileUri: uploadedFile.uri,
+        fileId: storeDocument.name, // File Search Store document ID
+        fileUri: storeDocument.name, // Store document name (used for queries)
         fileName: fileName,
         mimeType: mimeType,
         blobUrl: blobUrl,
@@ -123,11 +129,13 @@ export async function POST(req: NextRequest) {
         approvedAt: null,
       };
     } else if (isImage) {
-      // === HYBRID IMAGE FLOW ===
-      console.log(`🖼️ Image detected - routing to File Search + Vision API (hybrid approach)`);
+      // === IMAGE FLOW (Files API - 48-hour expiry) ===
+      // Note: File Search Store doesn't support images, so we use Files API
+      // Files expire after 48 hours, but images work with RAG queries during that time
+      console.log(`🖼️ Image detected - routing to Files API (48-hour expiry) + Vision API`);
 
-      // STEP 1: Upload to File Search for RAG queries
-      console.log(`  → Uploading to File Search for RAG...`);
+      // STEP 1: Upload to Files API for RAG queries (will expire after 48 hours)
+      console.log(`  → Uploading to Files API (temporary, 48-hour expiry)...`);
       const uploadedFile = await uploadToFileSearch(
         buffer,
         fileName,

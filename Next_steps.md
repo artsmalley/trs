@@ -1,25 +1,34 @@
 # Next Steps
 
-## Current Status (Session 13 - Afternoon)
+## Current Status (Session 14 - Complete)
 
-**Latest**: Session 13 - Citations tested ✅, Japanese upload fixed ✅, Edit Metadata working ✅
+**Latest**: Session 14 - Query Corpus customization ✅, Research Agent 2-level nav ✅, Research terms reorganized ✅
 
 ### What's Working ✅
-- ✅ Research Agent - 228 curated terms, targeted search (J-STAGE, Patents, Scholar)
-- ✅ Upload Agent - **ALL FEATURES WORKING!**
+- ✅ **Research Agent** - 228 curated terms, 2-level navigation (Track → Subcategory → Terms), hierarchical organization
+- ✅ **Upload Agent** - ALL FEATURES WORKING!
   - Client-side Blob upload (up to 100MB, bypasses 4.5MB limit)
   - Smart queue with size-based concurrency (未然防止)
   - Bulk upload warnings (3+ large files or >100MB)
   - Pending review persistence (survives navigation/refresh)
   - Files upload to File Search Store (permanent + semantic RAG)
-  - Japanese filename support ✅ (Session 13)
-  - Manual metadata editing ✅ (Session 13)
-  - 50MB warning notice displayed ✅ (Session 13)
+  - Japanese filename support ✅
+  - Manual metadata editing ✅
+  - 50MB warning notice displayed ✅
   - Timeout: 120s
-- ✅ Browse/Query Agent - Browse with filters + semantic RAG queries (scales to 100+ docs)
-- ✅ Query Corpus - Semantic retrieval with File Search Store, citations tested ✅
+- ✅ **Browse/Query Agent** - Browse with filters + semantic RAG queries (scales to 100+ docs)
+- ✅ **Query Corpus** - Customizable controls (Mode, Length, Custom Instructions) ✅
+  - 6 modes: Standard, Find Examples, Find People, Compare, Timeline, Technical
+  - 3 lengths: Brief, Medium, Detailed
+  - Custom instructions for specific context
+  - "Search" button (replaced "Send")
 - ✅ Download functionality for all file types
 - ✅ Delete flow from Browse tab (Blob + File Search Store + Redis)
+
+### Research Terms Organization ✅
+- **Track 1: PD** - 4 subcategories (Design & Development, CAD/PLM, Simulation, Prototyping)
+- **Track 2: PE** - 5 subcategories (Production Prep, Process Design, **Tooling Engineering (6 sub-areas)**, Manufacturing Processes, Supplier Collaboration)
+- **Track 3: TPS** - 6 subcategories (TPS Core, Kaizen & Methods Analysis, Quality Control, Daily Ops, Automation, **3 Pillar Activity System**)
 
 ### Known Issues ⚠️
 - 🐛 **Reject button not working** - Can't delete failed uploads from review queue
@@ -27,7 +36,7 @@
   - Priority: MEDIUM (annoying but workaround exists)
 - ⚠️ **~50MB Gemini limit** - Metadata extraction fails for files >50MB (known Google API limitation)
   - **IMPORTANT**: Files still upload and index successfully! Only metadata display is affected.
-  - **Workaround**: Use Edit Metadata button to enter manually ✅ (Session 13 - WORKING!)
+  - **Workaround**: Use Edit Metadata button to enter manually ✅
   - **Warning displayed**: Upload page shows 50MB notice ✅
   - Alternative: Compress PDFs in Adobe Acrobat
 
@@ -37,7 +46,7 @@
 
 ---
 
-## Immediate Priorities - Session 14 (Next)
+## Immediate Priorities - Session 15 (Next)
 
 ### 📊 PRIORITY #1: Continue Corpus Upload
 
@@ -52,17 +61,24 @@
 2. **Upload compressed files**
    - Upload 10-20 PDFs per batch
    - Review and approve files with successful metadata extraction
-   - For failed extractions: Use Edit Metadata (once Save button fixed)
+   - For failed extractions: Use Edit Metadata button
 
-3. **Test RAG queries** with growing corpus
+3. **Test customizable Query Corpus**
+   - Try different Mode options (Find Examples, Find People, etc.)
+   - Test Length controls (Brief vs Detailed)
+   - Use Custom Instructions for targeted queries
    - Verify citations remain accurate
-   - Test response quality with more documents
-   - Monitor semantic retrieval performance
+
+4. **Test 2-level Research Agent navigation**
+   - Navigate Track → Subcategory → Terms
+   - Test Tooling Engineering subcategory
+   - Explore 3 Pillar Activity System terms
 
 **Expected result:**
 - 50+ documents uploaded
-- RAG queries working smoothly
+- RAG queries working smoothly with customization
 - Citation quality validated
+- Navigation improvements validated
 
 ---
 
@@ -91,7 +107,7 @@
 **Outcome:**
 - Clear user story for prioritized agent
 - Specific requirements and mockup
-- Ready to implement in Session 14
+- Ready to implement in Session 15 or 16
 
 ---
 
@@ -181,6 +197,7 @@
 - ✅ Gemini API tested and working
 - ✅ Error handling throughout
 - ✅ Loading states in UI
+- ✅ UI component library complete (shadcn/ui)
 
 ### Optional Future:
 - [ ] Rate limiting (not critical for single user)
@@ -217,6 +234,17 @@
 
 ---
 
+## Completed (Session 14) ✅
+
+- ✅ **Query Corpus customization** - Mode (6 options), Length (3 options), Custom Instructions
+- ✅ **Research Agent 2-level navigation** - Track → Subcategory → Terms (hierarchical)
+- ✅ **Research terms reorganized** - 4 PD, 5 PE, 6 TPS subcategories
+- ✅ **Tooling Engineering expanded** - 6 sub-areas under PE (cutting tools, jigs, tool management)
+- ✅ **3 Pillar Activity System added** - Modern TPS framework (2007 Kamigo)
+- ✅ **Methods Analysis** - Replaced Engineering Kaizen in TPS
+- ✅ **UI improvements** - "Send" → "Search" button, collapsible Custom Instructions
+- ✅ **Technical fixes** - React Select empty string error resolved
+
 ## Completed (Session 13) ✅
 
 - ✅ **Citations tested and working** - 2 citations with page numbers, Japanese docs handled correctly
@@ -245,12 +273,14 @@
 
 All HIGH priority bugs resolved. Ready to proceed with:
 1. Continue corpus upload to 100 documents
-2. Build Brainstorm/Analyze agents
-3. Optional: Fix Reject button (MEDIUM priority, workaround exists)
+2. Test new Query Corpus customization features
+3. Test Research Agent 2-level navigation
+4. Build Brainstorm/Analyze agents
+5. Optional: Fix Reject button (MEDIUM priority, workaround exists)
 
 ---
 
 **Status**: 4/6 agents complete (Research, Upload, Browse, Query Corpus) ✅ | 2 remaining (Brainstorm, Analyze)
 
-**Last Updated**: 2025-11-14 (Session 13 - Afternoon)
-**Next Session**: Session 14 - Continue corpus upload OR design Brainstorm/Analyze agents
+**Last Updated**: 2025-11-14 (Session 14 - Complete)
+**Next Session**: Session 15 - Continue corpus upload + test new features OR design Brainstorm/Analyze agents

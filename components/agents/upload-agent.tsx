@@ -299,7 +299,7 @@ export function UploadAgent() {
     setFiles((prev) => prev.filter((f) => f.id !== localId));
 
     try {
-      const response = await fetch("/api/delete", {
+      const response = await fetch("/api/corpus/delete", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -307,13 +307,12 @@ export function UploadAgent() {
         body: JSON.stringify({ fileId }),
       });
 
-      const data = await response.json();
-
-      if (!data.success) {
-        console.error("Delete failed:", data.error);
-        alert(`Failed to delete: ${data.error}`);
-      } else {
+      if (response.ok) {
         console.log(`🗑️ File deleted: ${fileId}`);
+      } else {
+        const data = await response.json();
+        console.error("Delete failed:", data.error);
+        alert(`Failed to delete: ${data.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error("Error deleting file:", error);

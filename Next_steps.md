@@ -1,77 +1,124 @@
 # Next Steps
 
-## ✅ COMPLETED: Upload Agent Production-Ready!
+## Current Status (Session 11 - Evening)
 
-Research, Upload, Browse/Query, and Images agents are complete, tested, and deployed!
+**Latest**: Session 11 - Debugging upload bugs, discovered Gemini 50MB limit, tested with real corpus files
 
-**Latest**: Session 10 - Upload Agent is PRODUCTION-READY! Client-side Blob upload (up to 100MB), smart queue, tested with 50MB files.
-
-### What's Working
+### What's Working ✅
 - ✅ Research Agent - 228 curated terms, targeted search (J-STAGE, Patents, Scholar)
-- ✅ Upload Agent - **PRODUCTION-READY!** Client-side Blob upload, smart queue, up to 100MB per file
+- ✅ Upload Agent Core - Client-side Blob upload (up to 100MB), smart queue, file indexing
   - Client-side Blob upload (bypasses 4.5MB limit)
   - Smart queue with size-based concurrency (未然防止)
   - Bulk upload warnings (3+ large files or >100MB)
   - Pending review persistence (survives navigation/refresh)
-  - Badge counter on Upload tab
-  - Processing Queue UX (shows only active files)
-  - Tested with 50MB files successfully
+  - Files upload to File Search successfully (fully indexed and queryable!)
+  - Timeout increased to 120s
 - ✅ Browse/Query Agent - Browse with filters + RAG queries citing BOTH documents AND images
 - ✅ Images Agent - Full multimodal RAG (File Search grounding + Vision metadata)
 - ✅ Download functionality for all file types
-- ✅ Delete flow (Blob + File Search + Redis)
+- ✅ Delete flow from Browse tab (Blob + File Search + Redis)
 - ✅ Image thumbnails and previews
 - ✅ Vision Analysis (OCR, objects, concepts) - Gemini 2.5 Flash
 
-## Immediate Priorities - Phase 2
+### Known Issues ⚠️
+- 🐛 **Edit Metadata "Save" button not working** - Can't persist manual metadata edits during review
+- 🐛 **Reject button not working** - Can't delete failed uploads from review queue (cache issue?)
+- ⚠️ **~50MB Gemini limit** - Metadata extraction fails for files >50MB (known Google API limitation)
+  - **IMPORTANT**: Files still upload and index successfully! Only metadata display is affected.
+  - Workaround: Compress PDFs in Adobe Acrobat or manually enter metadata (once Save button fixed)
 
-### 📊 TONIGHT: Upload Real Corpus
+## Immediate Priorities - Session 12 (Tomorrow Morning)
 
-**User Task:**
-- Upload research PDFs (Toyota production, manufacturing, quality)
-- Build real corpus for testing
-- Validate upload system with production data
+### 🐛 CRITICAL: Fix Upload Agent Bugs (~1 hour)
 
-**Expected:**
-- Mix of small (2-5MB) and large (10-50MB) files
-- Smart queue will manage concurrency
-- Files will persist in Redis for approval tomorrow
+**Bug 1: Wire Up Edit Metadata Save Button** (Priority: HIGH)
+- [ ] Connect "Save Changes" button to API endpoint
+- [ ] Update metadata in Redis
+- [ ] Refresh Review Dashboard after save
+- [ ] Test: Edit metadata → Save → Verify changes persist
+- **Why critical**: Blocks manual metadata entry for 50MB+ files
+
+**Bug 2: Fix Reject Button** (Priority: MEDIUM)
+- [ ] Verify deployment is complete (check Vercel dashboard)
+- [ ] Hard refresh browser to clear JavaScript cache
+- [ ] Test delete functionality in incognito mode
+- [ ] Debug: Check Network tab for actual endpoint being called
+- [ ] If still broken: Investigate why `/api/corpus/delete` isn't working
+- **Workaround exists**: Approve → Delete from Browse tab
 
 ---
 
-### 🧪 TOMORROW: Test & Design Workflow (Session 11)
+### 📊 Continue Corpus Upload (~30 minutes)
 
-**Morning - Test with Real Corpus:**
-1. **Approve uploaded files** - Review AI-extracted metadata
-2. **Test Browse tab** - Verify all files appear, sorting works
-3. **Test Query Corpus** - Run real research questions:
-   - "What are Toyota's 3 pillars of production?"
-   - "Summarize QC circle activities"
-   - "Find examples of kaizen implementation"
-4. **Evaluate RAG quality** - Are citations accurate? Responses helpful?
+**User Tasks:**
+1. **Compress large PDFs** (>50MB files)
+   - Use Adobe Acrobat: File → Save As → Optimized PDF
+   - Target: Reduce to <50MB for auto-metadata extraction
+   - Expected: 50-80% size reduction on scanned documents
 
-**Afternoon - Design Brainstorm/Analyze Workflow:**
+2. **Upload compressed files**
+   - Re-upload TTR Vol64, Vol66, etc. (compressed versions)
+   - Upload remaining Toyota research PDFs
+   - Review and approve files with successful metadata extraction
 
-**Key Questions to Answer:**
-1. **How will you use Brainstorm Agent?**
-   - Start with topic → Generate outline?
-   - Review corpus first → Then brainstorm?
-   - Iterative: Brainstorm → Query → Refine?
+3. **Manual metadata for password-protected files**
+   - Use Edit Metadata for files that can't be extracted
+   - Copy-paste prepared metadata (like TTR Vol64 example)
+   - Save and approve (once Save button fixed)
 
-2. **How will you use Analyze Agent?**
-   - Write draft first → Then analyze?
-   - Write section by section → Analyze each?
-   - Continuous feedback loop?
+**Expected Result:**
+- 10-20 files uploaded successfully
+- Mix of auto-extracted and manual metadata
+- Ready for RAG testing
 
-3. **Integration with Editor:**
-   - Export from TRS → Edit in Claude.ai?
-   - Copy/paste workflow?
-   - What format? (Markdown, plain text?)
+---
+
+### 🧪 Test RAG Queries with Real Corpus (~30 minutes)
+
+**Go to Browse/Query tab → "Query Corpus" section**
+
+**Test Questions:**
+1. "What are Toyota's 3 pillars of production?"
+2. "Summarize QC circle activities mentioned in the documents"
+3. "Find examples of kaizen implementation"
+4. "Explain TNGA powertrain development approach"
+5. "What production engineering techniques are discussed?"
+
+**Evaluate:**
+- ✅ Are citations accurate? (correct page numbers, file names)
+- ✅ Are responses grounded in uploaded documents?
+- ✅ Does it cite multiple sources when relevant?
+- ✅ Are Japanese terms handled correctly?
+- ✅ Image references working? (if any images uploaded)
+
+**Document findings** - What works well? What needs improvement?
+
+---
+
+### 🎯 Design Brainstorm/Analyze Workflow (~1 hour)
+
+**Based on real corpus testing, answer:**
+
+1. **Brainstorm Agent Workflow**
+   - How will you start? (Topic first, or corpus review first?)
+   - What outline depth do you need? (2 levels? 3 levels?)
+   - Iterative refinement needed? (Chat back-and-forth?)
+   - Coverage assessment useful? (Show which sections have strong corpus support?)
+
+2. **Analyze Agent Workflow**
+   - When will you use it? (Draft complete? Section by section?)
+   - What feedback do you want? (Missing citations? Unsupported claims?)
+   - Integration with Brainstorm? (Outline → Draft → Analyze loop?)
+
+3. **Priority Decision**
+   - Which agent is more urgent for your workflow?
+   - **Brainstorm** = Helps structure research before writing
+   - **Analyze** = Helps improve existing drafts with citations
 
 **Outcome:**
-- Clear workflow documented
-- Prioritize Brainstorm OR Analyze (which first?)
-- Specific requirements for each agent
+- Clear user story for prioritized agent
+- Specific requirements and mockup
+- Ready to implement in Session 13
 
 ---
 

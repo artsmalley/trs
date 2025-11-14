@@ -57,7 +57,7 @@ export function UploadAgent() {
             id: doc.fileId,
             name: doc.fileName,
             size: 0,
-            status: 'complete' as const,
+            status: 'complete' as const, // Always "complete" for pending_review files
             progress: 100,
             metadata: doc,
             fileId: doc.fileId,
@@ -269,10 +269,8 @@ export function UploadAgent() {
       const data = await response.json();
 
       if (data.success) {
-        // Update file status to approved
-        setFiles((prev) =>
-          prev.map((f) => (f.id === localId ? { ...f, status: "approved" as const } : f))
-        );
+        // Remove approved file from array (it's now in Browse tab)
+        setFiles((prev) => prev.filter((f) => f.id !== localId));
       } else {
         console.error("Approval failed:", data.error);
         alert(`Failed to approve: ${data.error}`);

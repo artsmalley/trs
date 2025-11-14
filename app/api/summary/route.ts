@@ -84,11 +84,11 @@ ${approvedDocs
     (doc, idx) =>
       `Document: "${doc.title}"
 Citation Key: [${docCitationKeys[idx]}]
-Authors: ${doc.authors.length > 0 ? doc.authors.join(", ") : "Unknown"}
-Track: ${doc.track}
+Authors: ${doc.authors && doc.authors.length > 0 ? doc.authors.join(", ") : "Unknown"}
+Track: ${doc.track || "Unknown"}
 Year: ${doc.year || "Unknown"}
 ${doc.summary ? `Summary: ${doc.summary}` : ""}
-${doc.keywords.length > 0 ? `Keywords: ${doc.keywords.join(", ")}` : ""}
+${doc.keywords && doc.keywords.length > 0 ? `Keywords: ${doc.keywords.join(", ")}` : ""}
 ---`
   )
   .join("\n\n")}

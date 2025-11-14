@@ -29,7 +29,45 @@
 
 ## Immediate Priorities - Session 12 (Tomorrow Morning)
 
-### 🐛 CRITICAL: Fix Upload Agent Bugs (~1 hour)
+### 🚨 CRITICAL PRIORITY #1: Fix RAG Architecture - Token Limit (~2-3 hours)
+
+**BLOCKING ISSUE**: Query Corpus broken with 36+ documents
+
+**Problem:**
+```
+Error: [400 Bad Request] The input token count exceeds the maximum number of tokens allowed 1,048,576.
+```
+
+**Root Cause:**
+- Current code sends **ALL documents** to Gemini on every query
+- 36 large PDFs = 1M+ tokens = exceeds Gemini limit
+- No semantic retrieval - just dumps entire corpus into context
+- **Blocks core RAG functionality and 100-document goal**
+
+**Investigation Required:**
+1. **Research Google File Search Corpus API**
+   - Does it handle semantic retrieval automatically?
+   - How to create/manage corpus?
+   - Migration path for existing 36 files?
+
+2. **Alternative: Manual Semantic Filtering**
+   - Generate embeddings for each document
+   - Vector similarity search for top 5-10 relevant docs
+   - Only send relevant subset to Gemini
+
+3. **Quick Hack: Limit to N Documents**
+   - Temporary workaround: Cap at 10 most recent docs
+   - Not ideal but unblocks testing
+
+**Decision Needed:**
+- Which approach to implement? (Research first)
+- Time estimate for proper fix vs temporary workaround
+
+**See**: `docs/issues/query-corpus-token-limit.md` for detailed analysis
+
+---
+
+### 🐛 PRIORITY #2: Fix Upload Agent Bugs (~1 hour)
 
 **Bug 1: Wire Up Edit Metadata Save Button** (Priority: HIGH)
 - [ ] Connect "Save Changes" button to API endpoint

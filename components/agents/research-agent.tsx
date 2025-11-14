@@ -41,7 +41,7 @@ interface WebSearchResult {
 
 export function ResearchAgent() {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string>("");
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>("all");
   const [selectedTerms, setSelectedTerms] = useState<ResearchTerm[]>([]);
   const [termPickerOpen, setTermPickerOpen] = useState(false);
   const [freeFormTopic, setFreeFormTopic] = useState("");
@@ -57,7 +57,7 @@ export function ResearchAgent() {
 
   // Get available subcategories and terms based on selections
   const availableSubcategories = selectedCategory ? getSubcategoriesForTrack(selectedCategory) : [];
-  const availableTerms = selectedCategory && selectedSubcategory
+  const availableTerms = selectedCategory && selectedSubcategory && selectedSubcategory !== "all"
     ? getTermsForSubcategory(selectedCategory, selectedSubcategory)
     : selectedCategory
       ? getTermsForCategory(selectedCategory)
@@ -65,7 +65,7 @@ export function ResearchAgent() {
 
   const handleCategoryChange = (categoryId: string) => {
     setSelectedCategory(categoryId);
-    setSelectedSubcategory(""); // Clear subcategory when track changes
+    setSelectedSubcategory("all"); // Reset to all subcategories when track changes
     setSelectedTerms([]); // Clear selected terms when category changes
   };
 
@@ -238,10 +238,10 @@ export function ResearchAgent() {
                 </label>
                 <Select value={selectedSubcategory} onValueChange={handleSubcategoryChange}>
                   <SelectTrigger className="w-full border-blue-200 focus:ring-blue-500">
-                    <SelectValue placeholder="Choose a subcategory or leave blank for all" />
+                    <SelectValue placeholder="Choose a subcategory or select all" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Subcategories</SelectItem>
+                    <SelectItem value="all">All Subcategories</SelectItem>
                     {availableSubcategories.map((subcategory) => (
                       <SelectItem key={subcategory.id} value={subcategory.id}>
                         {subcategory.name}
@@ -281,7 +281,7 @@ export function ResearchAgent() {
                         <CommandEmpty>No terms found.</CommandEmpty>
                         <ScrollArea className="h-[300px]">
                           {RESEARCH_CATEGORIES.find((c) => c.id === selectedCategory)?.subcategories
-                            .filter((subcategory) => !selectedSubcategory || subcategory.id === selectedSubcategory)
+                            .filter((subcategory) => selectedSubcategory === "all" || subcategory.id === selectedSubcategory)
                             .map((subcategory) => (
                               <CommandGroup key={subcategory.id} heading={subcategory.name}>
                                 {subcategory.terms.map((term) => (

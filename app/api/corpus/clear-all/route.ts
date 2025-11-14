@@ -6,6 +6,22 @@ import { GoogleAIFileManager } from "@google/generative-ai/server";
 // DELETE /api/corpus/clear-all - Delete ALL files (use with caution!)
 export async function DELETE(req: NextRequest) {
   try {
+    // SECURITY: Require confirmation token to prevent accidental mass deletion
+    const { confirmationToken } = await req.json().catch(() => ({}));
+
+    const expectedToken = process.env.CLEAR_ALL_TOKEN || "DELETE_ALL_DOCUMENTS";
+
+    if (confirmationToken !== expectedToken) {
+      return NextResponse.json(
+        {
+          error: "Confirmation token required",
+          hint: "Send { confirmationToken: '<token>' } in request body",
+          note: "Set CLEAR_ALL_TOKEN in .env.local or use default: DELETE_ALL_DOCUMENTS",
+        },
+        { status: 403 }
+      );
+    }
+
     const apiKey = process.env.GOOGLE_AI_API_KEY;
     if (!apiKey) {
       throw new Error("GOOGLE_AI_API_KEY is not set");

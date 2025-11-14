@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { performGoogleSearch } from "@/lib/google-search";
+import { checkRateLimit, getClientIdentifier, rateLimitPresets } from "@/lib/rate-limit";
+import { sanitizeQuery } from "@/lib/sanitize";
 
 /**
  * POST /api/search
@@ -7,6 +9,14 @@ import { performGoogleSearch } from "@/lib/google-search";
  */
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting - Tier 2: Quota-limited endpoint (100 free searches/day)
+    const identifier = getClientIdentifier(request);
+    const rateLimitCheck = await checkRateLimit(identifier, rateLimitPresets.search);
+
+    if (!rateLimitCheck.allowed) {
+      return rateLimitCheck.response!;
+    }
+
     const { query, startIndex = 1 } = await request.json();
 
     if (!query || typeof query !== "string") {
@@ -16,8 +26,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Perform search
-    const results = await performGoogleSearch(query, startIndex);
+    // Sanitize and validate query
+    const queryValidation = sanitizeQuery(query);
+    if (!queryValidation.isValid) {
+      return NextResponse.json(
+        { error: queryValidation.error, warnings: queryValidation.warnings },
+        { status: 400 }
+      );
+    }
+
+    // Perform search with sanitized query
+    const results = await performGoogleSearch(queryValidation.sanitized!, startIndex);
 
     return NextResponse.json({
       success: true,

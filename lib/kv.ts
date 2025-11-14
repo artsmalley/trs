@@ -8,6 +8,9 @@ const redis = new Redis(process.env.KV_REDIS_URL!, {
   lazyConnect: true,
 });
 
+// Export Redis client for rate limiting
+export const kv = redis;
+
 // Store document metadata
 export async function storeDocumentMetadata(
   fileId: string,

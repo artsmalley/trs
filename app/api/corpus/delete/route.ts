@@ -2,10 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { deleteDocumentMetadata, getDocumentMetadata } from "@/lib/kv";
 import { deleteFromBlob } from "@/lib/blob-storage";
 import { GoogleAIFileManager } from "@google/generative-ai/server";
+import { checkRateLimit, getClientIdentifier, rateLimitPresets } from "@/lib/rate-limit";
 
 // POST /api/corpus/delete - Delete a file from Blob, File Search, and Redis
 export async function POST(req: NextRequest) {
   try {
+    // Rate limiting - Tier 3: Mutation endpoint
+    const identifier = getClientIdentifier(req);
+    const rateLimitCheck = await checkRateLimit(identifier, rateLimitPresets.mutation);
+
+    if (!rateLimitCheck.allowed) {
+      return rateLimitCheck.response!;
+    }
+
     const { fileId } = await req.json();
 
     if (!fileId) {

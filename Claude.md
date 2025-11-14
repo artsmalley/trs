@@ -13,9 +13,10 @@ npm run dev
 **Deployed**: https://trs-mocha.vercel.app ✅
 **Working**: Research ✅ | Upload ✅ | Browse ✅ | Query Corpus ✅ | PDF-only RAG ✅
 **Next**: Continue to 100 docs → Build Brainstorm/Analyze agents
-**Complete**: 4/6 agents (Research, Upload, Browse/Query)
+**Complete**: 4/6 agents (Research with 2-level nav, Upload, Browse/Query with customizable controls)
 **Corpus**: 37 documents in File Search Store, semantic RAG working, citations tested ✅
 **File Upload**: Up to 100MB client-side, smart queue, manual metadata editing ✅
+**Research Terms**: Hierarchical structure (4 PD, 5 PE, 6 TPS subcategories) ✅
 **Known Limitations**:
 - ~50MB Gemini metadata extraction limit (Google API limitation)
 - Files >50MB upload successfully and are fully searchable ✅
@@ -36,6 +37,42 @@ Required keys:
 - `KV_REDIS_URL` - Auto-created when connecting Vercel Redis database
 - `BLOB_READ_WRITE_TOKEN` - Auto-created when connecting Vercel Blob storage
 
+Optional security settings (see `.env.example`):
+- `CLEAR_ALL_TOKEN` - Token for /api/corpus/clear-all (default: DELETE_ALL_DOCUMENTS)
+- `ENABLE_MIGRATION` - Enable /api/migrate endpoint (default: false)
+- `ALLOWED_ORIGIN` - CORS domain whitelist (default: http://localhost:3000)
+
+## Security (Session 15 - Production-Ready!)
+
+**Rate Limiting**: ✅ Active (custom implementation using ioredis)
+- `/api/summary`: 10/hour, 2/min burst
+- `/api/search`: 20/hour, 3/min burst
+- `/api/process-blob`: 15/hour, 3/min burst
+- Returns HTTP 429 with retry-after when exceeded
+
+**Input Validation**: ✅ Active
+- Prompt injection detection (15+ patterns blocked)
+- Length limits: 1000 chars (query), 500 chars (custom instructions), 50 messages (history)
+- SSRF protection (blob URL domain validation)
+- Path traversal protection (filename sanitization)
+
+**Protected Endpoints**: ✅
+- `/api/corpus/clear-all` - Requires confirmation token
+- `/api/migrate` - Requires ENABLE_MIGRATION=true flag
+
+**Security Headers**: ✅ Active (in `next.config.ts`)
+- X-Frame-Options, X-Content-Type-Options, HSTS, CSP, Permissions-Policy
+- CORS configured (whitelist via ALLOWED_ORIGIN)
+
+**Testing**:
+```bash
+# Clear rate limits before testing
+node test/clear-rate-limits.js
+
+# Run security test suite
+bash test/security-test.sh
+```
+
 ## Project Structure
 
 ```
@@ -43,7 +80,10 @@ app/
   api/              ← API routes for all agents + utilities
     process-blob/   ← Upload processing (Blob → File Search Store + metadata)
     summary/        ← Query Corpus with semantic RAG (File Search tool)
-    migrate/        ← One-time migration endpoint (Files API → File Search Store)
+    migrate/        ← One-time migration endpoint (protected with env flag)
+    corpus/
+      clear-all/    ← Delete all documents (protected with token)
+      delete/       ← Delete single document (rate limited)
   page.tsx          ← Main UI with 6 tabs (Research, Upload, Browse, Brainstorm, Analyze)
 components/
   agents/           ← 4 agents complete (Research, Upload, Browse/Query)
@@ -52,8 +92,13 @@ lib/
   file-search-store.ts ← File Search Store (semantic RAG) - PRIMARY STORAGE
   file-search.ts    ← Files API (deprecated, only for temp metadata extraction)
   blob-storage.ts   ← Vercel Blob (permanent file storage for downloads)
-  kv.ts             ← Vercel KV (Redis) for metadata + status tracking
+  kv.ts             ← Vercel KV (Redis) for metadata + status tracking + rate limiting
+  rate-limit.ts     ← Custom rate limiter (sliding window, ioredis)
+  sanitize.ts       ← Input validation & prompt injection protection
   types.ts          ← TypeScript definitions
+test/
+  security-test.sh  ← Security test suite (rate limiting + injection tests)
+  clear-rate-limits.js ← Utility to reset rate limits
 ```
 
 ## Tech Stack
@@ -193,6 +238,52 @@ Download → Redis (get blobUrl) → Fetch from Blob → Browser
 - Scales to 100+ documents (tested to 1000+)
 
 **See**: `docs/progress/2025-11-14-Session12.md` for detailed implementation
+
+---
+
+## ✅ Session 14 - Query Customization & Research Organization
+
+### Query Corpus Customization (Session 14)
+**Added 3-dimensional control over RAG responses:**
+
+1. **Mode** - What to focus on:
+   - Standard, Find Examples, Find People, Compare Approaches, Timeline/History, Technical Deep-Dive
+
+2. **Length** - How much detail:
+   - Brief (2-3 sentences), Medium (2-3 paragraphs), Detailed (4-6 paragraphs)
+
+3. **Custom Instructions** - User-specific context (collapsible textarea)
+
+**Example:** Mode: "Find Examples" + Length: "Detailed" + Custom: "Focus on 1990s Japanese implementations"
+
+**UI Change:** "Send" button → "Search" button
+
+### Research Agent 2-Level Navigation (Session 14)
+**Hierarchical dropdown navigation:**
+- **Step 1:** Select Track (PD, PE, TPS, Cross-Cutting)
+- **Step 2:** Select Subcategory (dynamically updates, optional "All")
+- **Step 3:** Select Terms (filtered by subcategory)
+
+**Example:** Track: "PE" → Subcategory: "Tooling Engineering" → Terms: 6 sub-areas
+
+### Research Terms Reorganization (Session 14)
+**Hierarchical structure with logical subcategories:**
+
+- **Track 1: PD** (4 subcategories)
+  - Design & Development Process, CAD/PLM Systems, Simulation & Virtual Validation, Prototyping & Testing
+
+- **Track 2: PE** (5 subcategories)
+  - Production Preparation, Process Design, **Tooling Engineering (6 sub-areas)**, Manufacturing Processes, Supplier Collaboration
+
+- **Track 3: TPS** (6 subcategories)
+  - TPS Core, Kaizen & Methods Analysis, Quality Control, Daily Ops & SMED, Automation & Measurement, **3 Pillar Activity System (new)**
+
+**Key Additions:**
+- Tooling Engineering expanded under PE (cutting tools, jigs, tool management)
+- 3 Pillar Activity System (3本柱活動) from 2007 Kamigo plant framework
+- Replaced Engineering Kaizen with Methods Analysis
+
+**See**: `docs/progress/2025-11-14-Session14.md` for detailed implementation
 
 ---
 

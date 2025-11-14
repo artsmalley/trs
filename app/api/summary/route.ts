@@ -3,10 +3,20 @@ import { GoogleGenAI } from "@google/genai"; // New SDK for File Search Store
 import { GoogleGenerativeAI } from "@google/generative-ai"; // Legacy SDK for Files API (images)
 import { listAllDocuments } from "@/lib/kv";
 import { getStoreName } from "@/lib/file-search-store";
+import { checkRateLimit, getClientIdentifier, rateLimitPresets } from "@/lib/rate-limit";
+import { sanitizeQuery, sanitizeCustomInstructions, validateHistory } from "@/lib/sanitize";
 
 // POST /api/summary - Query corpus with RAG
 export async function POST(req: NextRequest) {
   try {
+    // Rate limiting - Tier 1: Expensive AI endpoint
+    const identifier = getClientIdentifier(req);
+    const rateLimitCheck = await checkRateLimit(identifier, rateLimitPresets.summary);
+
+    if (!rateLimitCheck.allowed) {
+      return rateLimitCheck.response!;
+    }
+
     const { query, history, mode = 'standard', length = 'medium', customInstructions = '' } = await req.json();
 
     if (!query) {
@@ -15,6 +25,36 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Sanitize and validate inputs
+    const queryValidation = sanitizeQuery(query);
+    if (!queryValidation.isValid) {
+      return NextResponse.json(
+        { error: queryValidation.error, warnings: queryValidation.warnings },
+        { status: 400 }
+      );
+    }
+
+    const customInstructionsValidation = sanitizeCustomInstructions(customInstructions);
+    if (!customInstructionsValidation.isValid) {
+      return NextResponse.json(
+        { error: customInstructionsValidation.error, warnings: customInstructionsValidation.warnings },
+        { status: 400 }
+      );
+    }
+
+    const historyValidation = validateHistory(history);
+    if (!historyValidation.isValid) {
+      return NextResponse.json(
+        { error: historyValidation.error },
+        { status: 400 }
+      );
+    }
+
+    // Use sanitized values
+    const sanitizedQuery = queryValidation.sanitized!;
+    const sanitizedCustomInstructions = customInstructionsValidation.sanitized || '';
+    const sanitizedHistory = historyValidation.sanitized || [];
 
     const apiKey = process.env.GOOGLE_AI_API_KEY;
     if (!apiKey) {
@@ -105,7 +145,7 @@ export async function POST(req: NextRequest) {
 
 ${modeInstruction ? modeInstruction + '\n' : ''}
 ${lengthInstruction}
-${customInstructions ? '\n' + customInstructions : ''}
+${sanitizedCustomInstructions ? '\n' + sanitizedCustomInstructions : ''}
 
 You have access to a corpus with the following approved content:
 
@@ -148,7 +188,7 @@ When citing information:
     const storeName = await getStoreName();
 
     // Build query with File Search tool (for documents) and optional image fileData
-    const queryParts: any[] = [{ text: query }];
+    const queryParts: any[] = [{ text: sanitizedQuery }];
 
     // Add images as direct fileData (Files API - temporary 48-hour solution)
     // TODO: Find permanent solution for image storage (Files API expires after 48 hours)
@@ -167,10 +207,10 @@ When citing information:
     // Build conversation history
     const contents: any[] = [];
 
-    if (history && history.length > 0) {
-      for (const msg of history) {
+    if (sanitizedHistory && sanitizedHistory.length > 0) {
+      for (const msg of sanitizedHistory) {
         contents.push({
-          role: msg.role === "assistant" ? "model" : "user",
+          role: msg.role === "model" ? "model" : "user",
           parts: [{ text: msg.content }],
         });
       }

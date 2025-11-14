@@ -15,6 +15,21 @@ export const maxDuration = 300; // 5 minutes (migration takes time)
 
 export async function POST(req: NextRequest) {
   try {
+    // SECURITY: Only allow migration if explicitly enabled
+    // Set ENABLE_MIGRATION=true in .env.local to run this endpoint
+    const migrationEnabled = process.env.ENABLE_MIGRATION === 'true';
+
+    if (!migrationEnabled) {
+      return NextResponse.json(
+        {
+          error: "Migration endpoint is disabled",
+          hint: "Set ENABLE_MIGRATION=true in .env.local to enable",
+          note: "This endpoint should only be run once. Disable after migration is complete.",
+        },
+        { status: 403 }
+      );
+    }
+
     console.log('='.repeat(70));
     console.log('MIGRATION: Files API → File Search Store');
     console.log('='.repeat(70));

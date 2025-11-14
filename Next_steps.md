@@ -1,10 +1,18 @@
 # Next Steps
 
-## Current Status (Session 14 - Complete)
+## Current Status (Session 15 - Complete)
 
-**Latest**: Session 14 - Query Corpus customization ✅, Research Agent 2-level nav ✅, Research terms reorganized ✅
+**Latest**: Session 15 - Security hardening complete ✅ (Rate limiting, prompt injection protection, dangerous endpoints secured, security headers added)
 
 ### What's Working ✅
+- ✅ **Security (Session 15)** - Production-ready protection ✅
+  - Rate limiting: 10-20 req/hour per IP (custom sliding window)
+  - Prompt injection protection (15+ patterns blocked)
+  - Input validation (length limits, SSRF protection, path traversal prevention)
+  - Dangerous endpoints protected (clear-all requires token, migrate requires env flag)
+  - Security headers (CSP, HSTS, X-Frame-Options, etc.)
+  - CORS configured (domain whitelisting)
+  - Test suite created (`test/security-test.sh`)
 - ✅ **Research Agent** - 228 curated terms, 2-level navigation (Track → Subcategory → Terms), hierarchical organization
 - ✅ **Upload Agent** - ALL FEATURES WORKING!
   - Client-side Blob upload (up to 100MB, bypasses 4.5MB limit)
@@ -46,9 +54,41 @@
 
 ---
 
-## Immediate Priorities - Session 15 (Next)
+## Immediate Priorities - Session 16 (Next)
 
-### 📊 PRIORITY #1: Continue Corpus Upload
+### 🚀 PRIORITY #1: Deploy & Test with Friends
+
+**Goal:** Deploy security updates to production and enable friend testing
+
+**Tasks:**
+1. **Update Vercel environment variables** (in Vercel dashboard)
+   - Set `ALLOWED_ORIGIN=https://trs-mocha.vercel.app`
+   - Optional: Set custom `CLEAR_ALL_TOKEN` (or use default)
+   - Ensure `ENABLE_MIGRATION=false` (already migrated)
+
+2. **Deploy to Vercel**
+   - Commit all changes
+   - Push to GitHub
+   - Verify deployment includes security headers
+
+3. **Test production security**
+   - Verify rate limiting works
+   - Test prompt injection protection
+   - Confirm protected endpoints require tokens
+
+4. **Share with friends for testing**
+   - Provide URL: https://trs-mocha.vercel.app
+   - Monitor for any issues or abuse
+   - Rate limiting will protect against excessive usage
+
+**Expected result:**
+- Production deployment with security active
+- Friends can test without breaking anything
+- Rate limits prevent API abuse
+
+---
+
+### 📊 PRIORITY #2: Continue Corpus Upload
 
 **Goal:** Upload remaining Toyota research PDFs to reach 100 documents
 
@@ -198,13 +238,21 @@
 - ✅ Error handling throughout
 - ✅ Loading states in UI
 - ✅ UI component library complete (shadcn/ui)
+- ✅ **Security implementation complete (Session 15)**
+  - ✅ Rate limiting (custom sliding window with ioredis)
+  - ✅ Prompt injection protection
+  - ✅ Input validation (length limits, SSRF, path traversal)
+  - ✅ Protected endpoints (clear-all, migrate)
+  - ✅ Security headers (CSP, HSTS, etc.)
+  - ✅ CORS configuration
+  - ✅ Security test suite
 
 ### Optional Future:
-- [ ] Rate limiting (not critical for single user)
 - [ ] Usage analytics (track API costs)
 - [ ] Backup/export corpus (Redis → JSON)
 - [ ] Add debug/inspection tools for File Search Store
 - [ ] Consider manual RAG migration if more control needed (Pinecone/Supabase)
+- [ ] Audit logging for security events
 
 ---
 
@@ -233,6 +281,29 @@
    - Or session-only like current approach?
 
 ---
+
+## Completed (Session 15) ✅
+
+- ✅ **Security hardening complete** - Production-ready protection implemented
+- ✅ **Rate limiting** - Custom sliding window implementation using ioredis
+  - 10/hour (2/min burst) for expensive AI queries
+  - 20/hour (3/min burst) for web searches
+  - 15/hour (3/min burst) for uploads/mutations
+  - HTTP 429 responses with retry-after information
+- ✅ **Prompt injection protection** - 15+ patterns detected and blocked
+  - Input sanitization with max length limits (500-1000 chars)
+  - Custom instructions validation with safe prefix
+  - History array size limits (50 messages max)
+- ✅ **Dangerous endpoint protection**
+  - `/api/corpus/clear-all` requires confirmation token
+  - `/api/migrate` requires ENABLE_MIGRATION=true flag
+- ✅ **Security headers added** - CSP, HSTS, X-Frame-Options, Permissions-Policy, Referrer-Policy
+- ✅ **CORS configured** - Domain whitelisting via ALLOWED_ORIGIN
+- ✅ **SSRF protection** - Blob URL domain validation
+- ✅ **Path traversal protection** - Filename sanitization
+- ✅ **Security test suite created** - `test/security-test.sh` with 18+ tests
+- ✅ **Test utilities** - `test/clear-rate-limits.js` for test isolation
+- ✅ **Documentation updated** - CLAUDE.md, .env.example, session log
 
 ## Completed (Session 14) ✅
 
@@ -280,7 +351,7 @@ All HIGH priority bugs resolved. Ready to proceed with:
 
 ---
 
-**Status**: 4/6 agents complete (Research, Upload, Browse, Query Corpus) ✅ | 2 remaining (Brainstorm, Analyze)
+**Status**: 4/6 agents complete (Research, Upload, Browse, Query Corpus) ✅ | Security hardened ✅ | 2 remaining (Brainstorm, Analyze)
 
-**Last Updated**: 2025-11-14 (Session 14 - Complete)
-**Next Session**: Session 15 - Continue corpus upload + test new features OR design Brainstorm/Analyze agents
+**Last Updated**: 2025-11-14 (Session 15 - Security Complete)
+**Next Session**: Session 16 - Deploy to production + enable friend testing OR continue corpus upload + build Brainstorm/Analyze agents

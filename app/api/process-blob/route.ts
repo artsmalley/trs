@@ -9,6 +9,8 @@ import {
 } from "@/lib/vision-analysis";
 import { DocumentMetadata } from "@/lib/types";
 import { del as deleteBlob } from "@vercel/blob";
+import { checkRateLimit, getClientIdentifier, rateLimitPresets } from "@/lib/rate-limit";
+import { validateBlobUrl, sanitizeFilename } from "@/lib/sanitize";
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -18,6 +20,14 @@ export async function POST(req: NextRequest) {
   let blobUrl: string | null = null;
 
   try {
+    // Rate limiting - Tier 3: Resource-intensive endpoint
+    const identifier = getClientIdentifier(req);
+    const rateLimitCheck = await checkRateLimit(identifier, rateLimitPresets.upload);
+
+    if (!rateLimitCheck.allowed) {
+      return rateLimitCheck.response!;
+    }
+
     const { blobUrl: url, fileName, mimeType } = await req.json();
     blobUrl = url;
 
@@ -28,7 +38,27 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(`📥 Processing Blob: ${fileName} from ${blobUrl}`);
+    // Validate blob URL to prevent SSRF attacks
+    const blobUrlValidation = validateBlobUrl(blobUrl);
+    if (!blobUrlValidation.isValid) {
+      return NextResponse.json(
+        { error: blobUrlValidation.error },
+        { status: 400 }
+      );
+    }
+
+    // Sanitize filename to prevent path traversal
+    const filenameValidation = sanitizeFilename(fileName);
+    if (!filenameValidation.isValid) {
+      return NextResponse.json(
+        { error: filenameValidation.error },
+        { status: 400 }
+      );
+    }
+
+    const sanitizedFileName = filenameValidation.sanitized!;
+
+    console.log(`📥 Processing Blob: ${sanitizedFileName} from ${blobUrl}`);
 
     // Supported file types
     const documentTypes = [
@@ -63,7 +93,7 @@ export async function POST(req: NextRequest) {
     const isImage = imageTypes.includes(mimeType);
     const fileType = isDocument ? "document" : "image";
 
-    console.log(`📁 Processing ${fileType}: ${fileName} (${mimeType})`);
+    console.log(`📁 Processing ${fileType}: ${sanitizedFileName} (${mimeType})`);
 
     // STEP 1: Fetch file from Blob URL
     console.log(`  → Fetching file from Blob storage...`);
@@ -88,29 +118,29 @@ export async function POST(req: NextRequest) {
       console.log(`  → Uploading to File Search Store (persistent, semantic retrieval)...`);
       const storeDocument = await uploadToStore(
         buffer,
-        fileName,
+        sanitizedFileName,
         mimeType,
-        fileName
+        sanitizedFileName
       );
 
       // Extract metadata using Gemini
       // Note: We need to create a temporary Files API upload for metadata extraction
       // because Gemini needs a fileUri to read the file content
       console.log(`  → Uploading to Files API (temporary, for metadata extraction)...`);
-      const tempFile = await uploadToFileSearch(buffer, fileName, mimeType, fileName);
+      const tempFile = await uploadToFileSearch(buffer, sanitizedFileName, mimeType, sanitizedFileName);
 
       console.log(`  → Extracting metadata with Gemini...`);
       const metadata = await extractMetadataFromFile(
         tempFile.uri,
         mimeType,
-        fileName
+        sanitizedFileName
       );
 
       // Build document metadata
       documentMetadata = {
         fileId: storeDocument.name, // File Search Store document ID
         fileUri: storeDocument.name, // Store document name (used for queries)
-        fileName: fileName,
+        fileName: sanitizedFileName,
         mimeType: mimeType,
         blobUrl: blobUrl,
         fileType: "document",
@@ -138,9 +168,9 @@ export async function POST(req: NextRequest) {
       console.log(`  → Uploading to Files API (temporary, 48-hour expiry)...`);
       const uploadedFile = await uploadToFileSearch(
         buffer,
-        fileName,
+        sanitizedFileName,
         mimeType,
-        fileName
+        sanitizedFileName
       );
 
       // STEP 2: Analyze image with Gemini Vision for metadata
@@ -148,18 +178,18 @@ export async function POST(req: NextRequest) {
       const visionAnalysis = await analyzeImageWithVision(
         buffer,
         mimeType,
-        fileName
+        sanitizedFileName
       );
 
       // STEP 3: Extract metadata from vision analysis
       console.log(`  → Extracting searchable metadata from Vision analysis...`);
-      const metadata = extractMetadataFromVision(visionAnalysis, fileName);
+      const metadata = extractMetadataFromVision(visionAnalysis, sanitizedFileName);
 
       // Build hybrid image metadata (File Search fileId + Vision analysis)
       documentMetadata = {
         fileId: uploadedFile.name, // Use File Search ID (starts with "files/")
         fileUri: uploadedFile.uri, // File Search URI for RAG
-        fileName: fileName,
+        fileName: sanitizedFileName,
         mimeType: mimeType,
         blobUrl: blobUrl,
         fileType: "image",
@@ -186,7 +216,7 @@ export async function POST(req: NextRequest) {
     console.log(`💾 Storing metadata in Redis...`);
     await storeDocumentMetadata(documentMetadata.fileId, documentMetadata);
 
-    console.log(`✅ ${fileType} processed successfully: ${fileName}`);
+    console.log(`✅ ${fileType} processed successfully: ${sanitizedFileName}`);
 
     // STEP 4: Return metadata for human review
     return NextResponse.json({

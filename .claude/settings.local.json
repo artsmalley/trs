@@ -2,7 +2,17 @@
   "permissions": {
     "allow": [
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git push)",
+      "Bash(npx shadcn@latest add collapsible)",
+      "Bash(npm install:*)",
+      "Bash(chmod:*)",
+      "Bash(curl:*)",
+      "Bash(/dev/null)",
+      "Bash(bash test/security-test.sh:*)",
+      "Bash(redis-cli:*)",
+      "Bash(xargs:*)",
+      "Bash(node test/clear-rate-limits.js:*)"
     ],
     "deny": [],
     "ask": []

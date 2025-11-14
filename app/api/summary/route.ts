@@ -179,70 +179,76 @@ When citing information:
     const responseText = result.text || "";
 
     // Log grounding metadata if available (for debugging)
-    if (result.candidates?.[0]?.groundingMetadata) {
-      console.log('Grounding metadata:', JSON.stringify(result.candidates[0].groundingMetadata, null, 2));
+    const groundingMetadata = result.candidates?.[0]?.groundingMetadata;
+    if (groundingMetadata) {
+      console.log('Grounding metadata:', JSON.stringify(groundingMetadata, null, 2));
     }
 
-    // Extract document references from response
-    // Matches patterns like: [Tanaka2024, p.5], [PE2024, p.11], [Doc1], etc.
-    const citationMatches = responseText.match(/\[[\w]+(?:\d{4})?(?:,\s*p\.?\d+)?\]/g) || [];
+    // Extract citations from File Search Store grounding metadata
+    const citations: any[] = [];
+    const referencedDocIds: string[] = [];
 
-    // Build a map of citation keys to document indices
-    const citationKeyMap = new Map<string, number>();
-    docCitationKeys.forEach((key, idx) => {
-      citationKeyMap.set(key.toLowerCase(), idx);
-    });
+    if (groundingMetadata?.groundingChunks) {
+      // Track unique documents by title
+      const docMap = new Map<string, { doc: any; pages: Set<number>; citationKey: string }>();
 
-    // Extract referenced document IDs and page numbers
-    const referencedDocs = new Map<string, Set<number>>();
-    citationMatches.forEach((match) => {
-      // Parse citation format: [CitationKey, p.5] or [CitationKey]
-      const parts = match.match(/\[([\w\d]+)(?:,\s*p\.?(\d+))?\]/);
-      if (!parts) return;
+      groundingMetadata.groundingChunks.forEach((chunk: any) => {
+        const chunkTitle = chunk.retrievedContext?.title;
+        if (!chunkTitle) return;
 
-      const citationKey = parts[1].toLowerCase();
-      const pageNum = parts[2] ? parseInt(parts[2]) : undefined;
+        // Extract page numbers from chunk text (look for "--- PAGE X ---" markers)
+        const chunkText = chunk.retrievedContext?.text || '';
+        const pageMatches = chunkText.match(/---\s*PAGE\s+(\d+)\s*---/g) || [];
+        const pages = pageMatches.map((m: string) => {
+          const match = m.match(/PAGE\s+(\d+)/);
+          return match ? parseInt(match[1]) : null;
+        }).filter((p: number | null) => p !== null);
 
-      // Find document by citation key
-      const docIdx = citationKeyMap.get(citationKey);
-      if (docIdx !== undefined) {
-        const doc = approvedDocs[docIdx];
-        if (doc) {
-          if (!referencedDocs.has(doc.fileId)) {
-            referencedDocs.set(doc.fileId, new Set());
-          }
-          if (pageNum !== undefined) {
-            referencedDocs.get(doc.fileId)!.add(pageNum);
-          }
+        // Try to match chunk title to original document
+        // Chunk titles are like "upload-1763123009682-TPS_history_timeline.pdf"
+        // Extract the actual filename part
+        const filenamePart = chunkTitle.replace(/^upload-\d+-/, '');
+
+        // Find matching document by filename
+        const matchedDoc = approvedDocs.find(doc => {
+          return doc.fileName === filenamePart ||
+                 chunkTitle.includes(doc.fileName) ||
+                 doc.fileName.includes(filenamePart);
+        });
+
+        if (matchedDoc && !docMap.has(matchedDoc.fileId)) {
+          const docIdx = approvedDocs.indexOf(matchedDoc);
+          const citationKey = docCitationKeys[docIdx] || 'Doc' + (docIdx + 1);
+
+          docMap.set(matchedDoc.fileId, {
+            doc: matchedDoc,
+            pages: new Set(pages as number[]),
+            citationKey
+          });
+        } else if (matchedDoc) {
+          // Add pages to existing document
+          const existing = docMap.get(matchedDoc.fileId)!;
+          pages.forEach((p: number) => existing.pages.add(p));
         }
-      }
-    });
+      });
 
-    const referencedDocIds = Array.from(referencedDocs.keys());
+      // Build citations from matched documents
+      docMap.forEach(({ doc, pages, citationKey }) => {
+        referencedDocIds.push(doc.fileId);
 
-    // Build citations from referenced documents with page numbers
-    const citations = Array.from(referencedDocs.entries())
-      .slice(0, 5) // Limit to 5 documents
-      .map(([fileId, pages]) => {
-        const docIdx = approvedDocs.findIndex(d => d.fileId === fileId);
-        const doc = approvedDocs[docIdx];
-        if (!doc) return null;
-
-        const citationKey = docCitationKeys[docIdx];
         const pageNumbers = Array.from(pages).sort((a, b) => a - b);
         const pageInfo = pageNumbers.length > 0
           ? `, p.${pageNumbers.join(', ')}`
           : '';
 
-        // Format: [AuthorYear] Title (or [Track/Doc1] Title)
-        return {
+        citations.push({
           documentId: doc.fileId,
           title: `[${citationKey}${pageInfo}] ${doc.title}`,
           excerpt: doc.summary ? doc.summary.substring(0, 150) + "..." : "No summary available",
-          pageNumber: pageNumbers[0], // Use first page number
-        };
-      })
-      .filter((c) => c !== null);
+          pageNumber: pageNumbers[0] || undefined,
+        });
+      });
+    }
 
     return NextResponse.json({
       answer: responseText,

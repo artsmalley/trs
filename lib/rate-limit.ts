@@ -199,6 +199,17 @@ export function formatRetryAfter(resetTimestamp: number): string {
 }
 
 /**
+ * Check if IP is whitelisted (bypasses all rate limits)
+ */
+function isWhitelisted(identifier: string): boolean {
+  const whitelistedIps = process.env.WHITELISTED_IPS;
+  if (!whitelistedIps) return false;
+
+  const whitelist = whitelistedIps.split(',').map(ip => ip.trim());
+  return whitelist.includes(identifier);
+}
+
+/**
  * Check rate limit with both hourly and burst limits
  * Returns { allowed: boolean, response?: Response }
  */
@@ -206,6 +217,15 @@ export async function checkRateLimit(
   identifier: string,
   preset: typeof rateLimitPresets.summary
 ): Promise<{ allowed: boolean; response?: Response; remaining?: number }> {
+  // Bypass rate limiting for whitelisted IPs
+  if (isWhitelisted(identifier)) {
+    console.log(`⚪ Rate limit bypassed for whitelisted IP: ${identifier}`);
+    return {
+      allowed: true,
+      remaining: 999, // Unlimited for whitelisted IPs
+    };
+  }
+
   // Check hourly limit first
   const hourlyResult = await checkLimit(
     identifier,

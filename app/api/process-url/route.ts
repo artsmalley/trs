@@ -8,6 +8,7 @@ import { storeDocumentMetadata, listAllDocuments } from "@/lib/kv";
 import { DocumentMetadata } from "@/lib/types";
 import { checkRateLimit, getClientIdentifier, rateLimitPresets } from "@/lib/rate-limit";
 import { sanitizeFilename } from "@/lib/sanitize";
+import chromium from "@sparticuz/chromium";
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -101,6 +102,18 @@ export async function POST(req: NextRequest) {
 
     // STEP 3: Convert markdown to PDF
     console.log(`  → Converting markdown to PDF...`);
+
+    // Use serverless Chrome for Vercel deployment
+    const isProduction = process.env.VERCEL === '1';
+    const launchOptions = isProduction ? {
+      executablePath: await chromium.executablePath(),
+      args: chromium.args,
+      headless: true,
+    } : {
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    };
+
     const pdf = await mdToPdf(
       { content },
       {
@@ -138,10 +151,7 @@ export async function POST(req: NextRequest) {
             overflow-x: auto;
           }
         `,
-        launch_options: {
-          headless: true,
-          args: ['--no-sandbox', '--disable-setuid-sandbox']
-        }
+        launch_options: launchOptions
       }
     );
 

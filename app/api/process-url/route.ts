@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { mdToPdf } from "md-to-pdf";
 import { put } from "@vercel/blob";
 import { uploadToStore } from "@/lib/file-search-store";
 import { uploadToFileSearch } from "@/lib/file-search";
@@ -8,7 +7,6 @@ import { storeDocumentMetadata, listAllDocuments } from "@/lib/kv";
 import { DocumentMetadata } from "@/lib/types";
 import { checkRateLimit, getClientIdentifier, rateLimitPresets } from "@/lib/rate-limit";
 import { sanitizeFilename } from "@/lib/sanitize";
-import chromium from "@sparticuz/chromium";
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -100,78 +98,32 @@ export async function POST(req: NextRequest) {
 
     console.log(`  ✓ Extracted content: "${title}" (${content.length} chars)`);
 
-    // STEP 3: Convert markdown to PDF
-    console.log(`  → Converting markdown to PDF...`);
+    // STEP 3: Create text file from markdown content
+    console.log(`  → Creating text file from markdown...`);
 
-    // Use serverless Chrome for Vercel deployment
-    const isProduction = process.env.VERCEL === '1';
-    const launchOptions = isProduction ? {
-      executablePath: await chromium.executablePath(),
-      args: chromium.args,
-      headless: true,
-    } : {
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    };
+    // Add metadata header to the content
+    const textContent = `# ${title}
+${description ? `\n${description}\n` : ''}
+---
+Source: ${canonicalUrl || url}
+Extracted: ${new Date().toISOString()}
+---
 
-    const pdf = await mdToPdf(
-      { content },
-      {
-        pdf_options: {
-          format: 'A4',
-          margin: {
-            top: '20mm',
-            right: '20mm',
-            bottom: '20mm',
-            left: '20mm'
-          },
-          printBackground: true,
-        },
-        css: `
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            font-size: 11pt;
-            line-height: 1.6;
-            color: #333;
-          }
-          h1 { font-size: 20pt; margin-top: 12pt; margin-bottom: 8pt; }
-          h2 { font-size: 16pt; margin-top: 10pt; margin-bottom: 6pt; }
-          h3 { font-size: 14pt; margin-top: 8pt; margin-bottom: 4pt; }
-          p { margin-bottom: 8pt; }
-          code {
-            background: #f5f5f5;
-            padding: 2px 4px;
-            border-radius: 3px;
-            font-family: 'Courier New', monospace;
-          }
-          pre {
-            background: #f5f5f5;
-            padding: 10px;
-            border-radius: 5px;
-            overflow-x: auto;
-          }
-        `,
-        launch_options: launchOptions
-      }
-    );
+${content}`;
 
-    if (!pdf || !pdf.content) {
-      throw new Error('Failed to generate PDF from markdown');
-    }
+    const textBuffer = Buffer.from(textContent, 'utf-8');
+    console.log(`  ✓ Created text file (${textBuffer.length} bytes)`);
 
-    const pdfBuffer = pdf.content;
-    console.log(`  ✓ Generated PDF (${pdfBuffer.length} bytes)`);
-
-    // STEP 4: Upload PDF to Vercel Blob
-    console.log(`  → Uploading PDF to Blob storage...`);
+    // STEP 4: Upload text file to Vercel Blob
+    console.log(`  → Uploading text file to Blob storage...`);
     const sanitizedFilenameResult = sanitizeFilename(
-      `${title || 'web-page'}_${Date.now()}.pdf`
+      `${title || 'web-page'}_${Date.now()}.txt`
     );
-    const fileName = sanitizedFilenameResult.sanitized || `web-page_${Date.now()}.pdf`;
+    const fileName = sanitizedFilenameResult.sanitized || `web-page_${Date.now()}.txt`;
 
-    const blob = await put(fileName, pdfBuffer, {
+    const blob = await put(fileName, textBuffer, {
       access: 'public',
-      contentType: 'application/pdf',
+      contentType: 'text/plain; charset=utf-8',
     });
 
     blobUrl = blob.url;
@@ -180,18 +132,18 @@ export async function POST(req: NextRequest) {
     // STEP 5: Upload to File Search Store for semantic RAG
     console.log(`  → Uploading to File Search Store...`);
     const storeDocument = await uploadToStore(
-      pdfBuffer,
+      textBuffer,
       fileName,
-      'application/pdf',
+      'text/plain',
       fileName
     );
 
     // STEP 6: Upload to Files API for metadata extraction
     console.log(`  → Uploading to Files API for metadata extraction...`);
     const tempFile = await uploadToFileSearch(
-      pdfBuffer,
+      textBuffer,
       fileName,
-      'application/pdf',
+      'text/plain',
       fileName
     );
 
@@ -199,7 +151,7 @@ export async function POST(req: NextRequest) {
     console.log(`  → Extracting metadata with Gemini...`);
     const metadata = await extractMetadataFromFile(
       tempFile.uri,
-      'application/pdf',
+      'text/plain',
       fileName
     );
 
@@ -208,7 +160,7 @@ export async function POST(req: NextRequest) {
       fileId: storeDocument.name, // File Search Store document ID
       fileUri: storeDocument.name,
       fileName: fileName,
-      mimeType: 'application/pdf',
+      mimeType: 'text/plain',
       blobUrl: blobUrl,
       fileType: 'document',
       title: metadata.title || title || 'Web Page',
@@ -219,7 +171,7 @@ export async function POST(req: NextRequest) {
       language: metadata.language || 'Mixed',
       keywords: metadata.keywords || [],
       summary: metadata.summary || description || 'Web page content',
-      documentType: 'Web Page',
+      documentType: 'Web Page (Text)',
       confidence: metadata.confidence || 'medium',
       source: canonicalUrl || url, // Store original URL
       status: 'pending_review',
@@ -243,7 +195,7 @@ export async function POST(req: NextRequest) {
       status: 'pending_review',
       extractedMetadata: documentMetadata,
       needsReview: true,
-      message: 'Web page processed and converted to PDF. Please review before approving.',
+      message: 'Web page processed and saved as text. Please review before approving.',
     });
 
   } catch (error) {

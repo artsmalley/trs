@@ -18,7 +18,8 @@
       "Bash(npm run dev:*)",
       "WebSearch",
       "WebFetch(domain:jina.ai)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(npm uninstall:*)"
     ],
     "deny": [],
     "ask": []

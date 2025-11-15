@@ -16,7 +16,7 @@ npm run dev
 **Complete**: 4/6 agents (Research with searchable browser, Upload with URL ingestion, Browse/Query with customizable controls)
 **Corpus**: 37 documents in File Search Store, semantic RAG working, citations tested ✅
 **File Upload**: Up to 100MB client-side, smart queue, manual metadata editing ✅
-**URL Ingestion**: Jina.ai Reader + md-to-pdf conversion, duplicate detection ✅ (Session 16)
+**URL Ingestion**: Jina.ai Reader → direct text storage, duplicate detection ✅ (Session 17 - simplified)
 **Research Terms**: All 228 terms, searchable interface, bilingual toggle ✅ (Session 16)
 **Known Limitations**:
 - ~50MB Gemini metadata extraction limit (Google API limitation)
@@ -40,6 +40,7 @@ Required keys:
 
 Optional features (see `.env.example`):
 - `JINA_API_KEY` - Jina.ai Reader API key for URL ingestion (free: 20 req/min, with key: 500 req/min)
+- `WHITELISTED_IPS` - Bypass rate limiting (comma-separated IPs, for solo dev only)
 
 Optional security settings (see `.env.example`):
 - `CLEAR_ALL_TOKEN` - Token for /api/corpus/clear-all (default: DELETE_ALL_DOCUMENTS)
@@ -52,7 +53,9 @@ Optional security settings (see `.env.example`):
 - `/api/summary`: 10/hour, 2/min burst
 - `/api/search`: 20/hour, 3/min burst
 - `/api/process-blob`: 15/hour, 3/min burst
+- `/api/process-url`: 15/hour, 3/min burst
 - Returns HTTP 429 with retry-after when exceeded
+- **IP Whitelist**: Optional bypass for solo dev (WHITELISTED_IPS env var)
 
 **Input Validation**: ✅ Active
 - Prompt injection detection (15+ patterns blocked)
@@ -120,8 +123,7 @@ test/
 - Google Custom Search API for web search
 - react-dropzone for file uploads
 - `@google/genai` SDK v1.29.0 (official SDK for File Search Store)
-- **Jina.ai Reader** - Web page content extraction for URL ingestion (Session 16)
-- **md-to-pdf** - Markdown to PDF conversion for URL ingestion (Session 16)
+- **Jina.ai Reader** - Web page content extraction for URL ingestion (Session 16, simplified Session 17)
 
 ## ⚠️ CRITICAL: Gemini Model Policy
 
@@ -150,7 +152,7 @@ Claude's training data is dated. When encountering errors, Claude may incorrectl
 **Uses Google File Search Store** - Persistent semantic RAG with automatic chunking, embeddings, and retrieval. Handles 100+ documents without token limit issues.
 
 **Three-Layer Architecture:**
-1. **Vercel Blob** - Original PDF files (permanent, for downloads)
+1. **Vercel Blob** - Original files (PDFs + text from URLs, permanent, for downloads)
 2. **File Search Store** - Chunked + embedded text (permanent, semantic search)
 3. **Redis (KV)** - Metadata + approval status + references to layers 1 & 2
 
@@ -220,12 +222,13 @@ Download → Redis (get blobUrl) → Fetch from Blob → Browser
 - ✅ Vercel Pro timeout (120s) handles processing
 - ✅ No HTTP 413 errors, no crashes, smooth UX
 
-**URL Ingestion (Session 16)**:
+**URL Ingestion (Session 16-17)**:
 - Jina.ai Reader API integration for clean content extraction
-- md-to-pdf converts markdown to PDF
+- Stores as text files (.txt) - no PDF conversion needed (Session 17 simplification)
 - Duplicate URL detection via Redis source tracking
 - Queue system with same status display
 - Same review workflow and approval process
+- Source URL displayed in Browse tab for easy duplicate checking
 - Perfect for ingesting 75+ Toyota history web pages
 
 ## ✅ Session 12 - Critical Architectural Fix
@@ -351,10 +354,10 @@ Download → Redis (get blobUrl) → Fetch from Blob → Browser
 **1. Backend API** (`app/api/process-url/route.ts`)
 - **Jina.ai Reader**: Calls `https://r.jina.ai/{url}` for clean content extraction
 - **Smart Extraction**: Removes navigation, ads, headers
-- **PDF Conversion**: Uses `md-to-pdf` with Puppeteer
-- **Blob Upload**: Stores PDF in Vercel Blob
+- **Text Storage**: Stores as `.txt` file (Session 17 - simplified from PDF conversion)
+- **Blob Upload**: Stores text file in Vercel Blob
 - **File Search Store**: Adds to semantic RAG
-- **Metadata Extraction**: Gemini extracts title, summary, keywords
+- **Metadata Extraction**: Gemini extracts title, summary, keywords, track (including History track)
 - **Duplicate Detection**: Checks Redis, returns 409 with existing document info
 - **Source Tracking**: Stores original URL in `metadata.source`
 
@@ -371,7 +374,7 @@ Download → Redis (get blobUrl) → Fetch from Blob → Browser
 - Same Pending Review dashboard integration
 
 **3. Dependencies**
-- Added `md-to-pdf` for markdown → PDF conversion
+- None required (Session 17 - removed PDF conversion dependencies)
 
 ### Workflow
 1. Paste URL in Upload tab
@@ -410,11 +413,54 @@ Errors:
 
 **Known Limitations:**
 - **Jina.ai Rate Limits**: Free tier = 20 req/min (tracked by IP). Optional `JINA_API_KEY` increases to 500 req/min.
-- **PDF Formatting**: Markdown conversion may not preserve complex layouts
+- **Text-only storage**: Web content stored as text files, not PDFs (Session 17)
 - **No Authentication**: Can't ingest pages behind login
-- **Rate Limiting**: 15/hour, 3/min burst (TRS endpoint limit, separate from Jina.ai)
+- **Rate Limiting**: 15/hour, 3/min burst (TRS endpoint limit, can bypass with IP whitelist for solo dev)
 
 **See**: `docs/progress/2025-11-14-Session16.md` for detailed implementation
+
+---
+
+## ✅ Session 17 - URL Ingestion Simplification + History Track
+
+### Architecture Simplification
+**Problem**: PDF conversion was unnecessary complexity
+- 60MB+ dependencies (@sparticuz/chromium, puppeteer-core, md-to-pdf)
+- Slower processing (Puppeteer startup overhead)
+- File Search Store accepts text/plain natively
+
+**Solution**: Store markdown as text files directly
+- Changed `app/api/process-url/route.ts` to create `.txt` files
+- Removed all PDF conversion dependencies
+- Faster, simpler, smaller deployment
+
+### History Track Addition
+**Need**: Category for Toyota historical/biographical content
+- Added "History" to ResearchTrack enum
+- Updated metadata extraction with History examples
+- Gemini now classifies founder biographies, timelines, company milestones
+
+### IP Whitelist for Solo Dev
+**Enhancement**: Bypass rate limiting during development
+- Added `WHITELISTED_IPS` env var to `lib/rate-limit.ts`
+- Current IP: `99.137.185.29`
+- Speeds up solo dev workflow
+- Production safety: Empty whitelist = full rate limiting
+
+### UI Enhancement
+**Browse tab now shows source URLs**
+- Easy duplicate checking for URL-ingested documents
+- Click to open original page
+- Shows "Source: [URL]" in file details modal
+
+### Testing Results
+- ✅ Toyota history page ingested successfully
+- ✅ Track classified as "History"
+- ✅ Excellent content quality from Jina.ai
+- ✅ Fully searchable in corpus
+- ✅ 60MB smaller deployment
+
+**See**: `docs/progress/2025-11-14-Session17.md` for detailed implementation
 
 ---
 

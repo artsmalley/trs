@@ -1,8 +1,8 @@
 # Next Steps
 
-## Current Status (Session 16 - Complete)
+## Current Status (Session 17 - Complete)
 
-**Latest**: Session 16 - Research Agent redesigned + URL ingestion added ✅ (228 terms with searchable browser, bilingual toggle, Jina.ai Reader integration)
+**Latest**: Session 17 - URL ingestion simplified (text storage), History track added, IP whitelist for solo dev ✅
 
 ### What's Working ✅
 - ✅ **Security (Session 15)** - Production-ready protection ✅
@@ -21,11 +21,12 @@
   - Real-time search across all terms
   - Tooling Engineering: 36 terms across 6 sub-areas ✅
   - 3 Pillar Activity System added ✅
-- ✅ **Upload Agent (Session 16 - URL INGESTION ADDED)** - ALL FEATURES WORKING!
+- ✅ **Upload Agent (Session 17 - URL INGESTION SIMPLIFIED)** - ALL FEATURES WORKING!
   - Client-side Blob upload (up to 100MB, bypasses 4.5MB limit)
-  - **URL Ingestion via Jina.ai Reader** ✅ NEW!
+  - **URL Ingestion via Jina.ai Reader** ✅ (text storage, no PDF conversion)
   - Duplicate URL detection via Redis source tracking ✅
   - Queue system for batch URL processing ✅
+  - Source URL display in Browse tab ✅
   - Smart queue with size-based concurrency (未然防止)
   - Bulk upload warnings (3+ large files or >100MB)
   - Pending review persistence (survives navigation/refresh)
@@ -47,6 +48,8 @@
 - **Track 1: PD** - 4 subcategories (Design & Development, CAD/PLM, Simulation, Prototyping)
 - **Track 2: PE** - 5 subcategories (Production Prep, Process Design, **Tooling Engineering (6 sub-areas)**, Manufacturing Processes, Supplier Collaboration)
 - **Track 3: TPS** - 6 subcategories (TPS Core, Kaizen & Methods Analysis, Quality Control, Daily Ops, Automation, **3 Pillar Activity System**)
+- **Track 4: Cross-Cutting** - 2 subcategories (Knowledge/Learning, Quality/Process)
+- **Track 5: History** - NEW! (Session 17) - Biographical, timeline, company milestone content
 
 ### Known Issues ⚠️
 - 🐛 **Reject button not working** - Can't delete failed uploads from review queue
@@ -64,45 +67,9 @@
 
 ---
 
-## Immediate Priorities - Session 17 (Next)
+## Immediate Priorities - Session 18 (Next)
 
-### 🚀 PRIORITY #1: Test Session 16 Features
-
-**Goal:** Verify Research Agent redesign and URL ingestion work in production
-
-**User tasks:**
-1. **Test Research Agent with bilingual search**
-   - Test language toggle (English Only | Japanese Only | Both)
-   - Verify all 228 terms are accessible
-   - Test search functionality
-   - Navigate through Tooling Engineering sub-areas (6 sub-areas, 36 terms)
-   - Explore 3 Pillar Activity System terms
-   - Generate search terms and perform web searches
-
-2. **Test URL Ingestion**
-   - Paste Toyota history page URL: `https://www.toyota.co.jp/jpn/company/history/75years/text/...`
-   - Add to queue
-   - Click "Process All"
-   - Verify PDF conversion
-   - Check metadata extraction
-   - Test duplicate detection (try adding same URL twice)
-   - Review and approve ingested page
-   - Query corpus to verify it's searchable
-
-3. **Verify deployment to Vercel**
-   - Confirm all features work in production
-   - Check for any build or runtime errors
-   - Test rate limiting is active
-
-**Expected result:**
-- Research Agent fully functional with all 228 terms
-- URL ingestion working smoothly for Toyota history pages
-- Duplicate detection prevents re-processing
-- PDFs generated from URLs are searchable in corpus
-
----
-
-### 📊 PRIORITY #2: Ingest Toyota History Pages
+### 📊 PRIORITY #1: Bulk Ingest Toyota History Pages
 
 **Goal:** Use URL ingestion to add 75+ Toyota history web pages to corpus
 
@@ -128,6 +95,11 @@
 - 50+ PDF documents uploaded
 - Corpus approaching 100+ documents
 - Rich historical context available for queries
+- Test History track classification at scale
+
+---
+
+### 🎯 PRIORITY #2: Design & Build First Agent (Brainstorm or Analyze)
 
 ---
 
@@ -291,6 +263,33 @@
 
 ---
 
+## Completed (Session 17) ✅
+
+- ✅ **URL ingestion architecture simplified** - Removed PDF conversion
+  - Changed `app/api/process-url/route.ts` to store markdown as `.txt` files
+  - Removed dependencies: @sparticuz/chromium, puppeteer-core, md-to-pdf
+  - 60MB smaller deployment
+  - Faster processing (no Puppeteer startup)
+  - File Search Store accepts text/plain natively
+- ✅ **History track added** - 5th research track for historical/biographical content
+  - Added "History" to ResearchTrack enum in `lib/types.ts`
+  - Updated `lib/metadata-extraction.ts` with History examples
+  - Gemini classifies founder biographies, timelines, company milestones
+- ✅ **IP whitelist for solo dev** - Bypass rate limiting during development
+  - Added `WHITELISTED_IPS` env var to `lib/rate-limit.ts`
+  - Current IP: 99.137.185.29
+  - Speeds up development workflow
+  - Production safety: empty whitelist = full rate limiting
+- ✅ **Source URL display** - Browse tab shows original URLs
+  - Easy duplicate checking for URL-ingested documents
+  - Click to open original page
+  - Shows "Source: [URL]" in file details modal
+- ✅ **Testing successful** - Toyota history page ingested and searchable
+  - Track classified as "History" correctly
+  - Excellent content quality from Jina.ai
+  - Fully searchable in corpus
+- ✅ **Documentation complete** - Claude.md, Next_steps.md, Session 17 progress log
+
 ## Completed (Session 16) ✅
 
 - ✅ **Research Agent completely redesigned** - Accurate data from research_terms.md
@@ -385,7 +384,7 @@ All HIGH priority bugs resolved. Ready to proceed with:
 
 ---
 
-**Status**: 4/6 agents complete (Research, Upload, Browse, Query Corpus) ✅ | Security hardened ✅ | 2 remaining (Brainstorm, Analyze)
+**Status**: 4/6 agents complete (Research, Upload, Browse, Query Corpus) ✅ | Security hardened ✅ | URL ingestion simplified ✅ | 2 remaining (Brainstorm, Analyze)
 
-**Last Updated**: 2025-11-14 (Session 16 - Research Agent Redesigned + URL Ingestion Added)
-**Next Session**: Session 17 - Test new features (Research browser, URL ingestion) → Ingest Toyota history pages → Continue corpus upload → Build Brainstorm/Analyze agents
+**Last Updated**: 2025-11-14 (Session 17 - URL Ingestion Simplified + History Track Added)
+**Next Session**: Session 18 - Bulk ingest Toyota history (75+ pages) → Continue to 100 docs → Build Brainstorm/Analyze agents

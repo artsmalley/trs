@@ -243,9 +243,9 @@ export function sanitizeTopic(input: string): ValidationResult {
  */
 export function validateHistory(
   history: unknown
-): ValidationResult & { sanitized?: Array<{ role: string; content: string }> } {
+): Omit<ValidationResult, 'sanitized'> & { sanitized?: Array<{ role: string; content: string }> } {
   if (!history) {
-    return { isValid: true, sanitized: [] };
+    return { isValid: true, sanitized: [] as Array<{ role: string; content: string }> };
   }
 
   if (!Array.isArray(history)) {

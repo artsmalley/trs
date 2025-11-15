@@ -1,8 +1,8 @@
 # Next Steps
 
-## Current Status (Session 17 - Complete)
+## Current Status (Session 18 - Partial Complete)
 
-**Latest**: Session 17 - URL ingestion simplified (text storage), History track added, IP whitelist for solo dev ✅
+**Latest**: Session 18 - Draft Agent complete ✅ | Analyze Agent built but debugging empty Gemini response ⚠️
 
 ### What's Working ✅
 - ✅ **Security (Session 15)** - Production-ready protection ✅
@@ -14,189 +14,160 @@
   - CORS configured (domain whitelisting)
   - Test suite created (`test/security-test.sh`)
 - ✅ **Research Agent (Session 16 - REDESIGNED)** - ALL FEATURES WORKING!
-  - 228 curated terms (was ~170) with accurate 4-level hierarchy
-  - Searchable browser interface (replaced 3 dropdowns)
-  - Bilingual toggle (English Only | Japanese Only | Both)
-  - Two-column layout (filters left, terms right)
-  - Real-time search across all terms
-  - Tooling Engineering: 36 terms across 6 sub-areas ✅
-  - 3 Pillar Activity System added ✅
+  - 228 curated terms with accurate 4-level hierarchy
+  - Searchable browser interface with bilingual toggle
 - ✅ **Upload Agent (Session 17 - URL INGESTION SIMPLIFIED)** - ALL FEATURES WORKING!
-  - Client-side Blob upload (up to 100MB, bypasses 4.5MB limit)
-  - **URL Ingestion via Jina.ai Reader** ✅ (text storage, no PDF conversion)
-  - Duplicate URL detection via Redis source tracking ✅
-  - Queue system for batch URL processing ✅
-  - Source URL display in Browse tab ✅
-  - Smart queue with size-based concurrency (未然防止)
-  - Bulk upload warnings (3+ large files or >100MB)
-  - Pending review persistence (survives navigation/refresh)
-  - Files upload to File Search Store (permanent + semantic RAG)
-  - Japanese filename support ✅
-  - Manual metadata editing ✅
-  - 50MB warning notice displayed ✅
-  - Timeout: 120s
-- ✅ **Browse/Query Agent** - Browse with filters + semantic RAG queries (scales to 100+ docs)
-- ✅ **Query Corpus** - Customizable controls (Mode, Length, Custom Instructions) ✅
-  - 6 modes: Standard, Find Examples, Find People, Compare, Timeline, Technical
-  - 3 lengths: Brief, Medium, Detailed
-  - Custom instructions for specific context
-  - "Search" button (replaced "Send")
-- ✅ Download functionality for all file types
-- ✅ Delete flow from Browse tab (Blob + File Search Store + Redis)
+  - Client-side Blob upload (up to 100MB)
+  - URL ingestion via Jina.ai Reader (text storage)
+  - Duplicate URL detection, queue system
+- ✅ **Browse/Query Agent** - Browse with filters + semantic RAG queries
+- ✅ **Query Corpus** - Customizable controls (Mode, Length, Custom Instructions)
+- ✅ **Draft Agent (Session 18)** - NEW! Outline → Full Article Generation ✅
+  - Two-step workflow: Generate Outline → Edit → Generate Draft
+  - 6 article types, 5 lengths, 4 tones
+  - Inline/Footnote citations (endnotes removed)
+  - Skip to Draft option
+  - Copy/download markdown
+  - Working perfectly with 123-document corpus
 
-### Research Terms Organization ✅
-- **Track 1: PD** - 4 subcategories (Design & Development, CAD/PLM, Simulation, Prototyping)
-- **Track 2: PE** - 5 subcategories (Production Prep, Process Design, **Tooling Engineering (6 sub-areas)**, Manufacturing Processes, Supplier Collaboration)
-- **Track 3: TPS** - 6 subcategories (TPS Core, Kaizen & Methods Analysis, Quality Control, Daily Ops, Automation, **3 Pillar Activity System**)
-- **Track 4: Cross-Cutting** - 2 subcategories (Knowledge/Learning, Quality/Process)
-- **Track 5: History** - NEW! (Session 17) - Biographical, timeline, company milestone content
+### In Progress ⚠️
+- ⚠️ **Analyze & Cite Agent (Session 18)** - Built but needs debugging
+  - Drag/drop + paste article input ✅
+  - 5-category analysis framework designed ✅
+  - API endpoint created ✅
+  - **Issue:** Gemini returning empty feedback (0 characters)
+  - Detailed logging added to diagnose (finishReason, safetyRatings, usageMetadata)
+  - **Next Session:** Review logs and fix empty response issue
 
 ### Known Issues ⚠️
 - 🐛 **Reject button not working** - Can't delete failed uploads from review queue
   - Workaround: Approve → Delete from Browse tab
   - Priority: MEDIUM (annoying but workaround exists)
-- ⚠️ **~50MB Gemini limit** - Metadata extraction fails for files >50MB (known Google API limitation)
-  - **IMPORTANT**: Files still upload and index successfully! Only metadata display is affected.
-  - **Workaround**: Use Edit Metadata button to enter manually ✅
-  - **Warning displayed**: Upload page shows 50MB notice ✅
-  - Alternative: Compress PDFs in Adobe Acrobat
+- ⚠️ **~50MB Gemini limit** - Metadata extraction fails for files >50MB
+  - **IMPORTANT**: Files still upload and index successfully!
+  - **Workaround**: Use Edit Metadata button ✅
+- 🐛 **Analyze Agent empty response** (NEW - Session 18)
+  - Gemini returns 0 characters of feedback
+  - May be token limit, safety filter, or tool configuration issue
+  - Priority: HIGH (blocks Analyze Agent functionality)
 
 ### Corpus Status
-- **37 documents** in File Search Store (semantic RAG working, citations tested ✅)
-- **Goal:** 100 documents
+- **123 documents** in File Search Store (up from 37 in Session 17!)
+- **Goal:** Continue to 200+ documents
 
 ---
 
-## Immediate Priorities - Session 18 (Next)
+## Immediate Priorities - Session 19 (Next)
 
-### 📊 PRIORITY #1: Bulk Ingest Toyota History Pages
+### 🔥 PRIORITY #1: Fix Analyze Agent Empty Response (URGENT)
 
-**Goal:** Use URL ingestion to add 75+ Toyota history web pages to corpus
+**Status:** API complete, debugging empty Gemini response
 
-**User tasks:**
-1. **Collect Toyota history URLs**
-   - Navigate through `https://www.toyota.co.jp/jpn/company/history/75years/`
-   - Copy URLs for all 75+ pages
+**What needs to happen:**
+1. **Review detailed Gemini logs** (finishReason, safetyRatings, usageMetadata)
+   - Check if safety filters blocking content
+   - Check if token limit exceeded
+   - Check if tool configuration issue
+2. **Identify root cause** and implement fix:
+   - If token limit: Simplify system instruction or reduce corpus context
+   - If safety filter: Adjust prompting to avoid triggers
+   - If tool issue: Debug File Search Store integration
+3. **Test with various article lengths**
+   - Short (500 words)
+   - Medium (1200 words)
+   - Long (2000+ words)
+4. **Validate feedback quality**
+   - Ensure 5 categories are addressed
+   - Check citation suggestions
+   - Verify corpus references
 
-2. **Batch process URLs**
-   - Add 5-10 URLs to queue at a time
-   - Click "Process All"
-   - Monitor for errors or duplicates
-   - Review and approve successful conversions
-
-3. **Continue regular PDF uploads**
-   - Upload 10-20 PDFs per batch
-   - Compress large PDFs (>50MB) if needed
-   - Review and approve files with successful metadata extraction
-   - For failed extractions: Use Edit Metadata button
-
-**Expected result:**
-- 75+ Toyota history pages added to corpus
-- 50+ PDF documents uploaded
-- Corpus approaching 100+ documents
-- Rich historical context available for queries
-- Test History track classification at scale
+**Expected outcome:**
+- Analyze Agent returns categorized feedback
+- User can fact-check articles against corpus
+- Citation suggestions working
+- Full workflow functional: Draft → Edit → Analyze → Revise
 
 ---
 
-### 🎯 PRIORITY #2: Design & Build First Agent (Brainstorm or Analyze)
+### 🎯 PRIORITY #2: Build Editorial Agent (Final Agent!)
+
+**Purpose:** Final polish for structure, grammar, and clarity (no external fact-checking)
+
+**Scope:**
+- **Content Review:** Argument flow, paragraph coherence, transitions
+- **Structure Review:** Intro strength, conclusion effectiveness, logical gaps
+- **Grammar/Style:** Sentence clarity, passive voice, wordiness, typos
+- **Readability:** Sentence variety, paragraph length, jargon explanation
+- **Tone Consistency:** Match target style (academic, journalistic, etc.)
+
+**What NOT to do:**
+- ❌ External fact-checking (corpus is source of truth)
+- ❌ Add new content
+- ❌ Rewrite (suggestions only)
+
+**Implementation Plan:**
+1. Create `/app/api/editorial/route.ts`
+   - Similar structure to Analyze Agent
+   - Focus on writing quality, not content validation
+   - No File Search tool needed (doesn't query corpus)
+2. Create `/components/agents/editorial-agent.tsx`
+   - Drag/drop + paste article input
+   - Categorized feedback display
+   - Copy/download suggestions
+3. Test with articles from Draft Agent
+4. Integrate into workflow
+
+**Estimated Time:** 1-2 hours (simpler than Analyze - no corpus interaction)
 
 ---
 
 ## Short-Term Goals (~2-4 hours)
 
-### 🎯 Design Brainstorm/Analyze Workflow (~1 hour)
+### 🔨 Complete 3-Agent Article Workflow
 
-**Based on real corpus testing, answer:**
+**Goal:** Draft → Analyze → Editorial all working
 
-1. **Brainstorm Agent Workflow**
-   - How will you start? (Topic first, or corpus review first?)
-   - What outline depth do you need? (2 levels? 3 levels?)
-   - Iterative refinement needed? (Chat back-and-forth?)
-   - Coverage assessment useful? (Show which sections have strong corpus support?)
+**Steps:**
+1. ✅ Draft Agent (COMPLETE)
+2. ⚠️ Analyze Agent (FIX EMPTY RESPONSE)
+3. 🔨 Editorial Agent (BUILD)
+4. 🧪 Test full workflow end-to-end
+5. 📝 Document best practices for users
 
-2. **Analyze Agent Workflow**
-   - When will you use it? (Draft complete? Section by section?)
-   - What feedback do you want? (Missing citations? Unsupported claims?)
-   - Integration with Brainstorm? (Outline → Draft → Analyze loop?)
-
-3. **Priority Decision**
-   - Which agent is more urgent for your workflow?
-   - **Brainstorm** = Helps structure research before writing
-   - **Analyze** = Helps improve existing drafts with citations
-
-**Outcome:**
-- Clear user story for prioritized agent
-- Specific requirements and mockup
-- Ready to implement in Session 15 or 16
+**Expected workflow:**
+1. User enters topic in Draft Agent → Generate outline → Edit → Generate draft
+2. User edits draft offline with personal insights
+3. User pastes edited draft into Analyze Agent → Review corpus-based feedback
+4. User revises based on feedback
+5. User pastes revised draft into Editorial Agent → Review writing quality
+6. User does final polish
+7. Article complete!
 
 ---
 
-### 🔨 Implement Prioritized Agent (~2-3 hours)
+### 📊 Continue Corpus Expansion
 
-**Option A: Brainstorm Agent**
+**Current:** 123 documents
+**Goal:** 200+ documents
 
-**Purpose:** Corpus-aware article outlining and ideation
-
-**Key Features:**
-- [ ] Accept topic + optional outline hints
-- [ ] Query corpus for coverage assessment
-- [ ] Generate hierarchical outline (levels 1-3)
-- [ ] Assess coverage per section (strong/moderate/weak/missing)
-- [ ] Support interactive refinement via chat
-- [ ] Allow section drilling and expansion
-- [ ] Export to Markdown
-
-**API Route:**
-- [ ] Implement `/api/brainstorm` for outline generation
-
-**UI:**
-- [ ] Topic input field
-- [ ] Optional outline hints textarea
-- [ ] Interactive outline display with coverage indicators
-- [ ] Chat interface for refinement
-- [ ] Export button
-
-**Estimated Time:** 2-3 hours
+**Sources:**
+- Toyota history pages (75+)
+- Additional PDFs from research
+- Technical reports
+- Internal documents
 
 ---
 
-**Option B: Analyze Agent**
+## Medium-Term Goals (~4-6 hours)
 
-**Purpose:** Draft article reviewer that finds corpus support
-
-**Key Features:**
-- [ ] Accept draft text for analysis
-- [ ] Find corpus support for claims
-- [ ] Suggest where to add citations
-- [ ] Identify unsupported assertions
-- [ ] Calculate relevance scores
-- [ ] Return citations with context and excerpts
-
-**API Route:**
-- [ ] Implement `/api/analyze` for draft review
-
-**UI:**
-- [ ] Draft text input (textarea or file upload)
-- [ ] Analysis results display
-- [ ] Suggested citations list
-- [ ] Unsupported claims highlight
-- [ ] Insert citation buttons
-
-**Estimated Time:** 2 hours
-
----
-
-## Medium-Term Goals (~2-4 hours)
-
-### Polish & Production Readiness:
-- [ ] Comprehensive testing with 100-document corpus
+### Polish & Documentation
+- [ ] Comprehensive testing with full workflow
 - [ ] Performance optimization (if needed)
 - [ ] Error recovery testing
 - [ ] Documentation for end users
 - [ ] Video walkthrough of workflow
 
-### Optional Improvements:
+### Optional Improvements
 - [ ] Fix Reject button (MEDIUM priority)
 - [ ] Corpus statistics dashboard
 - [ ] Search within corpus (full-text)
@@ -206,185 +177,98 @@
 
 ---
 
-## Infrastructure Tasks
+## Open Questions for Next Session
 
-### Completed:
-- ✅ Vercel KV database (Redis) - 30MB free tier
-- ✅ Vercel Blob storage - Pro plan ($20/mo, 100GB)
-- ✅ Vercel Pro plan - 120s function timeout
-- ✅ Environment variables configured
-- ✅ File Search Store - Created and tested
-- ✅ Migration complete (30/36 documents)
-- ✅ Gemini API tested and working
-- ✅ Error handling throughout
-- ✅ Loading states in UI
-- ✅ UI component library complete (shadcn/ui)
-- ✅ **Security implementation complete (Session 15)**
-  - ✅ Rate limiting (custom sliding window with ioredis)
-  - ✅ Prompt injection protection
-  - ✅ Input validation (length limits, SSRF, path traversal)
-  - ✅ Protected endpoints (clear-all, migrate)
-  - ✅ Security headers (CSP, HSTS, etc.)
-  - ✅ CORS configuration
-  - ✅ Security test suite
+1. **Analyze Agent Debugging:**
+   - What does Gemini finishReason show?
+   - Are safety filters blocking the response?
+   - Is the token limit being exceeded?
 
-### Optional Future:
-- [ ] Usage analytics (track API costs)
-- [ ] Backup/export corpus (Redis → JSON)
-- [ ] Add debug/inspection tools for File Search Store
-- [ ] Consider manual RAG migration if more control needed (Pinecone/Supabase)
-- [ ] Audit logging for security events
+2. **Editorial Agent Scope:**
+   - Should it check consistency with corpus? (Or leave that to Analyze?)
+   - How detailed should grammar feedback be?
+   - Include style guide recommendations?
+
+3. **Workflow Integration:**
+   - Should agents remember previous steps?
+   - Export/import between agents?
+   - Or keep session-based as is?
 
 ---
 
-## Open Questions
+## Completed (Session 18) ✅
 
-1. **Brainstorm first or Analyze first?**
-   - Which agent provides more immediate value?
-   - Which aligns better with your workflow?
-
-2. **Iterative vs Linear workflow?**
-   - Brainstorm → Draft → Analyze → Edit?
-   - Or: Draft → Analyze → Brainstorm → Refine?
-
-3. **How to handle long documents?**
-   - Process sections individually?
-   - Full document analysis?
-   - Character/token limits?
-
-4. **Export formats?**
-   - Markdown with citations?
-   - Plain text?
-   - Copy to clipboard?
-
-5. **Conversation persistence?**
-   - Should Brainstorm/Analyze save chat history?
-   - Or session-only like current approach?
+- ✅ **Draft Agent built** - Complete outline → draft workflow
+  - Created `/app/api/draft/route.ts` (250+ lines)
+  - Created `/components/agents/draft-agent.tsx` (400+ lines)
+  - Two-step workflow: Generate Outline → Edit → Generate Draft
+  - 6 article types: Research, Opinion, Technical, Historical, Case Study, Executive
+  - 5 lengths: 500/800/1200/1500/2000 words
+  - 4 tones: Academic, Journalistic, Technical, Executive
+  - Citation styles: Inline, Footnotes (endnotes removed for being too long)
+  - Advanced options: Target audience, key points
+  - "Skip to Draft" option for quick generation
+  - Progressive disclosure UI (3 steps)
+  - Copy/download markdown
+  - **Testing:** Works perfectly with 123-document corpus
+- ✅ **Analyze Agent built** - Corpus validation framework complete
+  - Created `/app/api/analyze/route.ts` (200+ lines)
+  - Updated `/components/agents/analyze-agent.tsx` (290+ lines)
+  - Drag & drop file upload (.txt, .md)
+  - Or paste article text directly
+  - 5-category analysis framework:
+    1. Fact-Checking (verify claims)
+    2. Better Examples (suggest stronger evidence)
+    3. Citation Suggestions (where needed)
+    4. Unsupported Claims (flag gaps)
+    5. Coverage Gaps (missed opportunities)
+  - **Issue:** Gemini returning empty feedback (debugging in Session 19)
+- ✅ **New sanitization function** - `sanitizeArticle()` for long-form content
+  - Added to `lib/sanitize.ts`
+  - Max length: 50,000 characters (~10,000 words)
+  - More lenient than `sanitizeCustomInstructions` (500 char limit)
+  - Still checks prompt injection but allows articles
+- ✅ **Debugging infrastructure** - Detailed logging for empty response issue
+  - Server logs feedback length
+  - Logs Gemini result object (finishReason, safetyRatings, usageMetadata)
+  - Client logs response data
+  - Empty feedback fallback UI with explanation
+- ✅ **UI updates**
+  - Renamed "Outline" tab → "Draft" tab
+  - Updated component imports
+  - Added label component (shadcn)
+  - Collapsible advanced options
+- ✅ **Citation style refinement** - Removed endnotes option
+  - Endnotes generated massive bibliographies (longer than article)
+  - Kept Inline (default) and Footnotes
+  - Improved user experience for corpus-heavy content
+- ✅ **Documentation complete** - Session 18 progress log, CLAUDE.md updated
 
 ---
 
 ## Completed (Session 17) ✅
 
-- ✅ **URL ingestion architecture simplified** - Removed PDF conversion
-  - Changed `app/api/process-url/route.ts` to store markdown as `.txt` files
-  - Removed dependencies: @sparticuz/chromium, puppeteer-core, md-to-pdf
-  - 60MB smaller deployment
-  - Faster processing (no Puppeteer startup)
-  - File Search Store accepts text/plain natively
-- ✅ **History track added** - 5th research track for historical/biographical content
-  - Added "History" to ResearchTrack enum in `lib/types.ts`
-  - Updated `lib/metadata-extraction.ts` with History examples
-  - Gemini classifies founder biographies, timelines, company milestones
-- ✅ **IP whitelist for solo dev** - Bypass rate limiting during development
-  - Added `WHITELISTED_IPS` env var to `lib/rate-limit.ts`
-  - Current IP: 99.137.185.29
-  - Speeds up development workflow
-  - Production safety: empty whitelist = full rate limiting
-- ✅ **Source URL display** - Browse tab shows original URLs
-  - Easy duplicate checking for URL-ingested documents
-  - Click to open original page
-  - Shows "Source: [URL]" in file details modal
-- ✅ **Testing successful** - Toyota history page ingested and searchable
-  - Track classified as "History" correctly
-  - Excellent content quality from Jina.ai
-  - Fully searchable in corpus
-- ✅ **Documentation complete** - Claude.md, Next_steps.md, Session 17 progress log
-
-## Completed (Session 16) ✅
-
-- ✅ **Research Agent completely redesigned** - Accurate data from research_terms.md
-  - Rebuilt `lib/research-terms-data.ts` with all 228 terms (was ~170)
-  - Created `components/ui/term-browser.tsx` - Searchable interface (420 lines)
-  - Updated `components/agents/research-agent.tsx` - Simplified logic
-  - Added bilingual search toggle (English Only | Japanese Only | Both)
-  - Two-column layout with collapsible category filters
-  - Real-time search across all terms
-  - Fixed PE Tooling Engineering: 36 terms across 6 sub-areas
-  - Added missing TPS 3 Pillar Activity System subcategory
-- ✅ **URL Ingestion system built** - Automated web page to PDF conversion
-  - Created `/app/api/process-url/route.ts` (200 lines)
-  - Jina.ai Reader integration for clean content extraction
-  - md-to-pdf conversion with Puppeteer
-  - Duplicate URL detection via Redis source tracking
-  - Added URL section to Upload Agent (purple card)
-  - Queue system with status icons (pending/processing/complete/error/duplicate)
-  - Same review workflow and approval process
-  - Perfect for ingesting 75+ Toyota history pages
-- ✅ **Fixed pre-existing TypeScript error** - `lib/sanitize.ts` validateHistory type conflict
-  - Used `Omit<ValidationResult, 'sanitized'>` to resolve type conflict
-- ✅ **Build and deployment successful** - Pushed commits `de82162` and `954f9be` to GitHub
-- ✅ **Documentation complete** - CLAUDE.md, next_steps.md, Session 16 progress log
-
-## Completed (Session 15) ✅
-
-- ✅ **Security hardening complete** - Production-ready protection implemented
-- ✅ **Rate limiting** - Custom sliding window implementation using ioredis
-  - 10/hour (2/min burst) for expensive AI queries
-  - 20/hour (3/min burst) for web searches
-  - 15/hour (3/min burst) for uploads/mutations
-  - HTTP 429 responses with retry-after information
-- ✅ **Prompt injection protection** - 15+ patterns detected and blocked
-  - Input sanitization with max length limits (500-1000 chars)
-  - Custom instructions validation with safe prefix
-  - History array size limits (50 messages max)
-- ✅ **Dangerous endpoint protection**
-  - `/api/corpus/clear-all` requires confirmation token
-  - `/api/migrate` requires ENABLE_MIGRATION=true flag
-- ✅ **Security headers added** - CSP, HSTS, X-Frame-Options, Permissions-Policy, Referrer-Policy
-- ✅ **CORS configured** - Domain whitelisting via ALLOWED_ORIGIN
-- ✅ **SSRF protection** - Blob URL domain validation
-- ✅ **Path traversal protection** - Filename sanitization
-- ✅ **Security test suite created** - `test/security-test.sh` with 18+ tests
-- ✅ **Test utilities** - `test/clear-rate-limits.js` for test isolation
-- ✅ **Documentation updated** - CLAUDE.md, .env.example, session log
-
-## Completed (Session 14) ✅
-
-- ✅ **Query Corpus customization** - Mode (6 options), Length (3 options), Custom Instructions
-- ✅ **Research Agent 2-level navigation** - Track → Subcategory → Terms (hierarchical)
-- ✅ **Research terms reorganized** - 4 PD, 5 PE, 6 TPS subcategories
-- ✅ **Tooling Engineering expanded** - 6 sub-areas under PE (cutting tools, jigs, tool management)
-- ✅ **3 Pillar Activity System added** - Modern TPS framework (2007 Kamigo)
-- ✅ **Methods Analysis** - Replaced Engineering Kaizen in TPS
-- ✅ **UI improvements** - "Send" → "Search" button, collapsible Custom Instructions
-- ✅ **Technical fixes** - React Select empty string error resolved
-
-## Completed (Session 13) ✅
-
-- ✅ **Citations tested and working** - 2 citations with page numbers, Japanese docs handled correctly
-- ✅ **Japanese filename upload fixed** - ASCII-safe temp filenames, preserves Unicode in displayName
-- ✅ **6 Japanese documents re-uploaded** - All migration failures resolved
-- ✅ **Edit Metadata Save button fixed** - Created `/api/corpus/update` endpoint, full state management
-- ✅ **50MB warning added** - Clear notice on Upload page with workaround instructions
-- ✅ **Manual metadata workflow complete** - 5 editable fields (Title, Authors, Year, Track, Summary)
-- ✅ **Corpus expanded to 37 documents** - All searchable, citations working
-
-## Completed (Session 12) ✅
-
-- ✅ **Fixed RAG architecture** - Migrated to File Search Store with semantic retrieval
-- ✅ **Token limit issue resolved** - 99.77% token reduction (1M+ → 2,500 tokens)
-- ✅ **Migration complete** - 30/36 documents in File Search Store
-- ✅ **Query Corpus working** - No token errors with 30 documents
-- ✅ **Citation extraction rewritten** - Parses grounding metadata from File Search Store
-- ✅ **Three-layer architecture** - Blob + File Search Store + Redis
-- ✅ **Scales to 100+ documents** - Tested to 1000+ documents
+- ✅ URL ingestion simplified (text storage, no PDF conversion)
+- ✅ History track added
+- ✅ IP whitelist for solo dev
+- ✅ Source URL display in Browse tab
+- ✅ Deployment size reduced by 60MB
 
 ---
 
 ## Current Blockers
 
-**None!** 🎉
+1. **Analyze Agent Empty Response** (HIGH PRIORITY)
+   - Gemini returns 0 characters
+   - Blocks full workflow testing
+   - Needs debugging with logs in Session 19
 
-All HIGH priority bugs resolved. Ready to proceed with:
-1. Continue corpus upload to 100 documents
-2. Test new Query Corpus customization features
-3. Test Research Agent 2-level navigation
-4. Build Brainstorm/Analyze agents
-5. Optional: Fix Reject button (MEDIUM priority, workaround exists)
+**Other than that:** Ready to build Editorial Agent and complete 6-agent system! 🎉
 
 ---
 
-**Status**: 4/6 agents complete (Research, Upload, Browse, Query Corpus) ✅ | Security hardened ✅ | URL ingestion simplified ✅ | 2 remaining (Brainstorm, Analyze)
+**Status**: 5/6 agents (Research, Upload, Browse/Query, Draft ✅, Analyze ⚠️) | Editorial remaining 🔨 | Security hardened ✅ | 123 documents ✅
 
-**Last Updated**: 2025-11-14 (Session 17 - URL Ingestion Simplified + History Track Added)
-**Next Session**: Session 18 - Bulk ingest Toyota history (75+ pages) → Continue to 100 docs → Build Brainstorm/Analyze agents
+**Last Updated**: 2025-11-15 (Session 18 - Draft Agent Complete, Analyze Agent Debugging)
+
+**Next Session**: Session 19 - Fix Analyze Agent empty response → Build Editorial Agent → Complete 3-agent article workflow

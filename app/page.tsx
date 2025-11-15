@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ResearchAgent } from "@/components/agents/research-agent";
 import { UploadAgent } from "@/components/agents/upload-agent";
 import { BrowseQueryAgent } from "@/components/agents/browse-query-agent";
-import { OutlineAgent } from "@/components/agents/outline-agent";
+import { DraftAgent } from "@/components/agents/draft-agent";
 import { AnalyzeAgent } from "@/components/agents/analyze-agent";
 import { EditorAgent } from "@/components/agents/editor-agent";
 
@@ -69,7 +69,7 @@ export default function Home() {
               )}
             </TabsTrigger>
             <TabsTrigger value="browse">Browse</TabsTrigger>
-            <TabsTrigger value="outline">Outline</TabsTrigger>
+            <TabsTrigger value="draft">Draft</TabsTrigger>
             <TabsTrigger value="analyze">Analyze</TabsTrigger>
             <TabsTrigger value="editor">Editor</TabsTrigger>
           </TabsList>
@@ -86,8 +86,8 @@ export default function Home() {
             <BrowseQueryAgent />
           </TabsContent>
 
-          <TabsContent value="outline" className="space-y-4">
-            <OutlineAgent />
+          <TabsContent value="draft" className="space-y-4">
+            <DraftAgent />
           </TabsContent>
 
           <TabsContent value="analyze" className="space-y-4">

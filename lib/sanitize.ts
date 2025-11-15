@@ -57,6 +57,7 @@ export const LIMITS = {
   QUERY_MAX_LENGTH: 1000,
   CUSTOM_INSTRUCTIONS_MAX_LENGTH: 500,
   TOPIC_MAX_LENGTH: 500,
+  ARTICLE_MAX_LENGTH: 50000, // For full article analysis (Analyze Agent)
   HISTORY_MAX_MESSAGES: 50,
   FILENAME_MAX_LENGTH: 255,
 };
@@ -233,6 +234,55 @@ export function sanitizeTopic(input: string): ValidationResult {
   return {
     isValid: true,
     sanitized,
+  };
+}
+
+/**
+ * Sanitize article content (Analyze Agent)
+ *
+ * More lenient than other sanitizers since we're analyzing user's own content.
+ * Still checks for malicious patterns but allows longer content.
+ */
+export function sanitizeArticle(input: string): ValidationResult {
+  if (!input || input.trim().length === 0) {
+    return {
+      isValid: false,
+      error: "Article cannot be empty",
+    };
+  }
+
+  const warnings: string[] = [];
+
+  // Check length (50,000 characters = ~10,000 words)
+  if (input.length > LIMITS.ARTICLE_MAX_LENGTH) {
+    return {
+      isValid: false,
+      error: `Article too long (max ${LIMITS.ARTICLE_MAX_LENGTH} characters, ~10,000 words)`,
+    };
+  }
+
+  // Detect obvious injection attempts (very lenient for articles)
+  const injectionDetections = detectPromptInjection(input);
+  if (injectionDetections.length > 5) {
+    // Only block if many patterns detected (articles may contain technical terms)
+    return {
+      isValid: false,
+      error: "Article contains suspicious patterns. Please review your content.",
+      warnings: injectionDetections,
+    };
+  }
+
+  // Remove suspicious characters but preserve formatting
+  const sanitized = removeSuspiciousChars(input);
+
+  if (sanitized !== input) {
+    warnings.push("Article was cleaned (removed suspicious characters)");
+  }
+
+  return {
+    isValid: true,
+    sanitized,
+    warnings: warnings.length > 0 ? warnings : undefined,
   };
 }
 

@@ -1,210 +1,306 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-
-interface Citation {
-  text: string;
-  source: string;
-  page?: number;
-  relevanceScore: number;
-  context: string;
-}
+import { Label } from "@/components/ui/label";
+import { Loader2, Upload, FileText, Copy, Download } from "lucide-react";
+import { useDropzone } from "react-dropzone";
 
 export function AnalyzeAgent() {
-  const [claim, setClaim] = useState("");
-  const [citations, setCitations] = useState<Citation[]>([]);
+  const [article, setArticle] = useState("");
+  const [feedback, setFeedback] = useState("");
+  const [wordCount, setWordCount] = useState(0);
+  const [sourcesReferenced, setSourcesReferenced] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [citationType, setCitationType] = useState<"quote" | "example" | "data">("quote");
+  const [error, setError] = useState("");
+  const [analyzed, setAnalyzed] = useState(false);
 
-  const findCitations = async () => {
-    if (!claim.trim()) return;
+  // Handle file drop
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    const file = acceptedFiles[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      setArticle(text);
+      setAnalyzed(false);
+    };
+    reader.readAsText(file);
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'text/plain': ['.txt'],
+      'text/markdown': ['.md'],
+    },
+    multiple: false,
+  });
+
+  const analyzeArticle = async () => {
+    if (!article.trim()) {
+      setError("Please enter or drop an article to analyze");
+      return;
+    }
 
     setLoading(true);
+    setError("");
+
     try {
       const response = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          claim,
-          count: 5,
-          citationType,
-        }),
+        body: JSON.stringify({ article }),
       });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to analyze article");
+      }
+
       const data = await response.json();
-      setCitations(data.citations || []);
-    } catch (error) {
-      console.error("Error:", error);
+      setFeedback(data.feedback || "");
+      setWordCount(data.wordCount || 0);
+      setSourcesReferenced(data.sourcesReferenced || []);
+      setAnalyzed(true);
+
+      // Debug logging
+      console.log('Analysis response:', {
+        feedbackLength: data.feedback?.length || 0,
+        wordCount: data.wordCount,
+        sourcesCount: data.sourcesReferenced?.length || 0
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);
     }
   };
 
-  const exportCitations = () => {
-    const markdown = `# Citations for: ${claim}\n\n` +
-      citations
-        .map((citation, i) => {
-          return `## Citation ${i + 1}\n\n` +
-            `**Source:** ${citation.source}${citation.page ? ` (p.${citation.page})` : ""}\n\n` +
-            `**Relevance:** ${(citation.relevanceScore * 100).toFixed(0)}%\n\n` +
-            `> ${citation.text}\n\n` +
-            `**Context:** ${citation.context}\n\n`;
-        })
-        .join("---\n\n");
+  const copyFeedback = () => {
+    navigator.clipboard.writeText(feedback);
+  };
 
-    const blob = new Blob([markdown], { type: "text/markdown" });
+  const downloadFeedback = () => {
+    const blob = new Blob([feedback], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `citations-${new Date().toISOString().split("T")[0]}.md`;
+    a.download = `article-analysis-${new Date().toISOString().split('T')[0]}.md`;
     a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const reset = () => {
+    setArticle("");
+    setFeedback("");
+    setWordCount(0);
+    setSourcesReferenced([]);
+    setAnalyzed(false);
+    setError("");
   };
 
   return (
     <div className="space-y-6">
+      {/* Article Input */}
       <Card>
         <CardHeader>
-          <CardTitle>Analyze Agent</CardTitle>
+          <CardTitle>Analyze & Cite Agent</CardTitle>
           <CardDescription>
-            Find specific citations and evidence to support your claims
+            Upload or paste your article for corpus-based analysis and citation suggestions
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Claim or Statement</label>
-            <Input
-              placeholder="e.g., Toyota designs critical equipment in-house"
-              value={claim}
-              onChange={(e) => setClaim(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && findCitations()}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Citation Type</label>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant={citationType === "quote" ? "default" : "outline"}
-                onClick={() => setCitationType("quote")}
-              >
-                Quotes
-              </Button>
-              <Button
-                size="sm"
-                variant={citationType === "example" ? "default" : "outline"}
-                onClick={() => setCitationType("example")}
-              >
-                Examples
-              </Button>
-              <Button
-                size="sm"
-                variant={citationType === "data" ? "default" : "outline"}
-                onClick={() => setCitationType("data")}
-              >
-                Data/Statistics
-              </Button>
+          {/* Drag/Drop Zone */}
+          {!analyzed && (
+            <div
+              {...getRootProps()}
+              className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+                isDragActive
+                  ? "border-primary bg-primary/5"
+                  : "border-muted-foreground/25 hover:border-primary/50 hover:bg-accent"
+              }`}
+            >
+              <input {...getInputProps()} />
+              <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              {isDragActive ? (
+                <p className="text-sm text-muted-foreground">Drop your article here...</p>
+              ) : (
+                <>
+                  <p className="text-sm font-medium mb-1">
+                    Drag and drop your article (.txt or .md)
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    or click to browse files
+                  </p>
+                </>
+              )}
             </div>
-          </div>
+          )}
 
-          <div className="flex gap-2">
-            <Button onClick={findCitations} disabled={loading || !claim.trim()} className="flex-1">
-              {loading ? "Searching..." : "Find Citations"}
+          {/* Or Paste Text */}
+          {!analyzed && (
+            <>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 border-t border-muted" />
+                <span className="text-xs text-muted-foreground">OR PASTE TEXT</span>
+                <div className="flex-1 border-t border-muted" />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="article">Article Text</Label>
+                <Textarea
+                  id="article"
+                  placeholder="Paste your article here for analysis..."
+                  value={article}
+                  onChange={(e) => setArticle(e.target.value)}
+                  className="min-h-[300px] font-mono text-sm"
+                />
+                {article && (
+                  <p className="text-xs text-muted-foreground">
+                    {article.split(/\s+/).length.toLocaleString()} words
+                  </p>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Article Preview (when analyzed) */}
+          {analyzed && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Original Article</Label>
+                <Badge variant="secondary">{wordCount.toLocaleString()} words</Badge>
+              </div>
+              <div className="bg-slate-50 border rounded-md p-4 max-h-[200px] overflow-y-auto">
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap line-clamp-6">
+                  {article}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Error Display */}
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-700">
+              {error}
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          {!analyzed ? (
+            <Button
+              onClick={analyzeArticle}
+              disabled={loading || !article.trim()}
+              className="w-full"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Analyzing Article...
+                </>
+              ) : (
+                <>
+                  <FileText className="mr-2 h-4 w-4" />
+                  Analyze Against Corpus
+                </>
+              )}
             </Button>
-            {citations.length > 0 && (
-              <Button variant="outline" onClick={exportCitations}>
-                Export
-              </Button>
-            )}
-          </div>
+          ) : (
+            <Button onClick={reset} variant="outline" className="w-full">
+              Analyze Another Article
+            </Button>
+          )}
         </CardContent>
       </Card>
 
-      {/* Citation Results */}
-      {citations.length > 0 && (
+      {/* Analysis Feedback */}
+      {analyzed && (
         <Card>
           <CardHeader>
-            <CardTitle>Found Citations ({citations.length})</CardTitle>
-            <CardDescription>Ranked by relevance to your claim</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[600px]">
-              <div className="space-y-4">
-                {citations.map((citation, i) => (
-                  <Card key={i} className="border-2">
-                    <CardContent className="pt-6 space-y-3">
-                      {/* Header */}
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <Badge variant="secondary" className="mb-2">
-                            Citation {i + 1}
-                          </Badge>
-                          <p className="text-sm font-semibold">{citation.source}</p>
-                        </div>
-                        <div className="text-right">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground">Relevance:</span>
-                            <Badge
-                              variant={
-                                citation.relevanceScore > 0.8
-                                  ? "default"
-                                  : citation.relevanceScore > 0.6
-                                  ? "secondary"
-                                  : "outline"
-                              }
-                            >
-                              {(citation.relevanceScore * 100).toFixed(0)}%
-                            </Badge>
-                          </div>
-                          {citation.page && (
-                            <p className="text-xs text-muted-foreground mt-1">Page {citation.page}</p>
-                          )}
-                        </div>
-                      </div>
-
-                      <Separator />
-
-                      {/* Quote */}
-                      <div className="bg-muted p-4 rounded-lg border-l-4 border-primary">
-                        <p className="text-sm italic">{citation.text}</p>
-                      </div>
-
-                      {/* Context */}
-                      <div>
-                        <p className="text-xs font-semibold text-muted-foreground mb-1">Context:</p>
-                        <p className="text-xs text-muted-foreground">{citation.context}</p>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex gap-2 pt-2">
-                        <Button size="sm" variant="outline">
-                          Copy Citation
-                        </Button>
-                        <Button size="sm" variant="ghost">
-                          View Full Document
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Analysis Feedback</CardTitle>
+                <CardDescription>
+                  Corpus-based review with fact-checking, examples, and citation suggestions
+                </CardDescription>
               </div>
-            </ScrollArea>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={copyFeedback}>
+                  <Copy className="h-4 w-4 mr-1" />
+                  Copy
+                </Button>
+                <Button variant="outline" size="sm" onClick={downloadFeedback}>
+                  <Download className="h-4 w-4 mr-1" />
+                  Download
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Feedback Content */}
+            {feedback ? (
+              <div className="bg-slate-50 border rounded-md p-6 prose prose-sm max-w-none">
+                <div className="whitespace-pre-wrap">{feedback}</div>
+              </div>
+            ) : (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-6 text-center">
+                <p className="text-sm text-yellow-800">
+                  <strong>No feedback generated.</strong><br/>
+                  The analysis completed but didn't return any feedback. This might indicate an issue with the AI response.
+                  Please try again or check the browser console for details.
+                </p>
+              </div>
+            )}
+
+            {/* Sources Referenced */}
+            {sourcesReferenced.length > 0 && (
+              <div className="space-y-2 pt-4 border-t">
+                <Label>Corpus Sources Referenced in Analysis:</Label>
+                <div className="flex flex-wrap gap-2">
+                  {sourcesReferenced.map((source, idx) => (
+                    <Badge key={idx} variant="secondary" className="text-xs">
+                      {source}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Next Steps */}
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-4 space-y-2 mt-4">
+              <h4 className="font-medium text-sm text-blue-900">💡 Next Steps:</h4>
+              <ol className="text-sm text-blue-800 space-y-1 ml-4 list-decimal">
+                <li>Review the categorized feedback above</li>
+                <li>Implement suggested improvements and citations</li>
+                <li>Use <strong>Editorial</strong> agent for final polish</li>
+              </ol>
+            </div>
           </CardContent>
         </Card>
       )}
 
-      {citations.length === 0 && claim && !loading && (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">
-              Enter a claim and click "Find Citations" to search your corpus
-            </p>
+      {/* Instructions (when no article yet) */}
+      {!article && !analyzed && (
+        <Card className="bg-muted/50">
+          <CardContent className="pt-6">
+            <div className="space-y-3">
+              <h4 className="font-medium text-sm">How the Analyze & Cite Agent Works:</h4>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p><strong>1. Fact-Checking</strong> - Verifies claims against your corpus</p>
+                <p><strong>2. Better Examples</strong> - Suggests stronger evidence from corpus documents</p>
+                <p><strong>3. Citation Suggestions</strong> - Identifies where citations would strengthen your article</p>
+                <p><strong>4. Unsupported Claims</strong> - Flags statements lacking corpus evidence</p>
+                <p><strong>5. Coverage Gaps</strong> - Recommends additional perspectives from corpus</p>
+              </div>
+              <p className="text-xs text-muted-foreground italic pt-2">
+                This agent reviews articles you've edited offline (after using the Draft Agent) to validate them against your corpus and strengthen your arguments.
+              </p>
+            </div>
           </CardContent>
         </Card>
       )}

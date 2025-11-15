@@ -10,7 +10,7 @@ export interface DocumentMetadata {
   authors: string[];
   citationName: string | null; // Family name of first author for citations (e.g., "Takami" for Japanese or "Smith" for Western)
   year: number | null;
-  track: "PD" | "PE" | "TPS" | "Cross-Cutting" | "Unknown";
+  track: "PD" | "PE" | "TPS" | "History" | "Cross-Cutting" | "Unknown";
   language: "Japanese" | "English" | "Mixed";
   keywords: string[];
   summary: string;
@@ -31,6 +31,7 @@ Analyze the following document text and extract structured metadata in JSON form
 - PD: Product Development (CAD, PLM, simulation, design, prototyping)
 - PE: Production Engineering (equipment planning, process design, tooling, jigs, fixtures, machine tools, production preparation, 生産技術, 生産準備)
 - TPS: Toyota Production System (kaizen, quality control, daily management, automation, precision measurement)
+- History: Historical content, biographical, company history, factory history, founder stories, Toyota heritage (豊田佐吉, 75年史, 創業)
 - Cross-Cutting: Management systems, digital transformation, organizational topics
 
 **Instructions:**
@@ -168,8 +169,8 @@ export async function extractMetadataFromFile(
 // Validation helpers
 function isValidTrack(
   track: string
-): track is "PD" | "PE" | "TPS" | "Cross-Cutting" | "Unknown" {
-  return ["PD", "PE", "TPS", "Cross-Cutting", "Unknown"].includes(track);
+): track is "PD" | "PE" | "TPS" | "History" | "Cross-Cutting" | "Unknown" {
+  return ["PD", "PE", "TPS", "History", "Cross-Cutting", "Unknown"].includes(track);
 }
 
 function isValidLanguage(

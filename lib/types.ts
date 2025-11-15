@@ -12,7 +12,7 @@ export interface DocumentMetadata {
   year: number | null; // Extracted year, null if not found
   summary: string;
   keywords: string[]; // AI-extracted keywords (from text or vision analysis)
-  track: "PD" | "PE" | "TPS" | "Cross-Cutting" | "Unknown";
+  track: "PD" | "PE" | "TPS" | "History" | "Cross-Cutting" | "Unknown";
   language: "Japanese" | "English" | "Mixed";
   documentType?: string; // e.g., "Academic Paper", "Company Report", "Technical Document", "Patent", "Photo", "Diagram"
   confidence: "high" | "medium" | "low"; // AI confidence in metadata extraction

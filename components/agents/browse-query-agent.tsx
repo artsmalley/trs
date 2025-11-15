@@ -335,12 +335,12 @@ export function BrowseQueryAgent() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Tracks</SelectItem>
-                      <SelectItem value="PE">Production Engineering</SelectItem>
                       <SelectItem value="PD">Product Development</SelectItem>
+                      <SelectItem value="PE">Production Engineering</SelectItem>
                       <SelectItem value="TPS">Toyota Production System</SelectItem>
-                      <SelectItem value="Ops">Operations</SelectItem>
-                      <SelectItem value="Supplier">Supplier Development</SelectItem>
-                      <SelectItem value="General">General</SelectItem>
+                      <SelectItem value="History">History</SelectItem>
+                      <SelectItem value="Cross-Cutting">Cross-Cutting</SelectItem>
+                      <SelectItem value="Unknown">Unknown</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

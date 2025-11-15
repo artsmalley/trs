@@ -53,7 +53,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'", // Tailwind requires unsafe-inline
               "img-src 'self' data: https:",
               "font-src 'self' data:",
-              "connect-src 'self' https://generativelanguage.googleapis.com https://*.vercel-storage.com https://*.redislabs.com",
+              "connect-src 'self' https://generativelanguage.googleapis.com https://vercel.com https://*.vercel-storage.com https://*.redislabs.com https://r.jina.ai",
               "frame-ancestors 'none'",
             ].join('; '),
           },

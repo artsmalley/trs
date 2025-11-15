@@ -239,7 +239,7 @@ export function BrowseQueryAgent() {
       const data = await response.json();
 
       const assistantMessage: Message = {
-        role: "assistant",
+        role: "model",
         content: data.answer,
         citations: data.citations,
       };

@@ -43,7 +43,7 @@ export interface UploadResult {
 
 // Chat message for agents
 export interface Message {
-  role: "user" | "assistant";
+  role: "user" | "model";
   content: string;
   citations?: Citation[];
 }

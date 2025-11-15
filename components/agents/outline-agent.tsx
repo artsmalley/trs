@@ -32,7 +32,7 @@ export function OutlineAgent() {
 
       setChatMessages([
         {
-          role: "assistant",
+          role: "model",
           content: `I've generated an outline for "${topic}". Review the structure on the left. Ask me to refine sections or draft content.`,
         },
       ]);
@@ -57,7 +57,7 @@ export function OutlineAgent() {
       setChatMessages((prev) => [
         ...prev,
         {
-          role: "assistant",
+          role: "model",
           content: "I can help you refine that section. Which part would you like to expand?",
         },
       ]);

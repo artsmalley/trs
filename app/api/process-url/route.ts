@@ -67,12 +67,23 @@ export async function POST(req: NextRequest) {
 
     // STEP 2: Fetch content from Jina.ai Reader API
     console.log(`  → Fetching content from Jina.ai Reader...`);
+    const jinaApiKey = process.env.JINA_API_KEY;
+    console.log(`  → API Key present: ${jinaApiKey ? 'YES' : 'NO'}`);
+    const jinaHeaders: Record<string, string> = {
+      'Accept': 'application/json',
+      'X-Respond-With': 'markdown', // Fixed: was X-Return-Format
+      'X-With-Generated-Alt': 'true', // Include alt text for images
+    };
+
+    // Add optional API key for higher rate limits (500 req/min vs 20 req/min)
+    if (jinaApiKey) {
+      jinaHeaders['Authorization'] = `Bearer ${jinaApiKey}`;
+      console.log(`  → Using API key for authentication`);
+    }
+
+    console.log(`  → Headers:`, Object.keys(jinaHeaders));
     const jinaResponse = await fetch(`https://r.jina.ai/${url}`, {
-      headers: {
-        'Accept': 'application/json',
-        'X-Return-Format': 'markdown',
-        'X-With-Generated-Alt': 'true', // Include alt text for images
-      }
+      headers: jinaHeaders
     });
 
     if (!jinaResponse.ok) {

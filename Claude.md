@@ -11,12 +11,13 @@ npm run dev
 
 **Phase**: 2 - Agent Implementation (All Core Features Working! ✅)
 **Deployed**: https://trs-mocha.vercel.app ✅
-**Working**: Research ✅ | Upload ✅ | Browse ✅ | Query Corpus ✅ | PDF-only RAG ✅
-**Next**: Continue to 100 docs → Build Brainstorm/Analyze agents
-**Complete**: 4/6 agents (Research with 2-level nav, Upload, Browse/Query with customizable controls)
+**Working**: Research ✅ | Upload ✅ | Browse ✅ | Query Corpus ✅ | PDF-only RAG ✅ | URL Ingestion ✅
+**Next**: Test new features → Continue to 100 docs → Build Brainstorm/Analyze agents
+**Complete**: 4/6 agents (Research with searchable browser, Upload with URL ingestion, Browse/Query with customizable controls)
 **Corpus**: 37 documents in File Search Store, semantic RAG working, citations tested ✅
 **File Upload**: Up to 100MB client-side, smart queue, manual metadata editing ✅
-**Research Terms**: Hierarchical structure (4 PD, 5 PE, 6 TPS subcategories) ✅
+**URL Ingestion**: Jina.ai Reader + md-to-pdf conversion, duplicate detection ✅ (Session 16)
+**Research Terms**: All 228 terms, searchable interface, bilingual toggle ✅ (Session 16)
 **Known Limitations**:
 - ~50MB Gemini metadata extraction limit (Google API limitation)
 - Files >50MB upload successfully and are fully searchable ✅
@@ -36,6 +37,9 @@ Required keys:
 - `GOOGLE_CUSTOM_SEARCH_ENGINE_ID` - For Research Agent
 - `KV_REDIS_URL` - Auto-created when connecting Vercel Redis database
 - `BLOB_READ_WRITE_TOKEN` - Auto-created when connecting Vercel Blob storage
+
+Optional features (see `.env.example`):
+- `JINA_API_KEY` - Jina.ai Reader API key for URL ingestion (free: 20 req/min, with key: 500 req/min)
 
 Optional security settings (see `.env.example`):
 - `CLEAR_ALL_TOKEN` - Token for /api/corpus/clear-all (default: DELETE_ALL_DOCUMENTS)
@@ -79,6 +83,7 @@ bash test/security-test.sh
 app/
   api/              ← API routes for all agents + utilities
     process-blob/   ← Upload processing (Blob → File Search Store + metadata)
+    process-url/    ← URL ingestion via Jina.ai Reader (Session 16)
     summary/        ← Query Corpus with semantic RAG (File Search tool)
     migrate/        ← One-time migration endpoint (protected with env flag)
     corpus/
@@ -87,6 +92,8 @@ app/
   page.tsx          ← Main UI with 6 tabs (Research, Upload, Browse, Brainstorm, Analyze)
 components/
   agents/           ← 4 agents complete (Research, Upload, Browse/Query)
+  ui/
+    term-browser.tsx ← Searchable term browser with bilingual toggle (Session 16)
 lib/
   gemini.ts         ← Gemini 2.5 Flash client
   file-search-store.ts ← File Search Store (semantic RAG) - PRIMARY STORAGE
@@ -95,6 +102,7 @@ lib/
   kv.ts             ← Vercel KV (Redis) for metadata + status tracking + rate limiting
   rate-limit.ts     ← Custom rate limiter (sliding window, ioredis)
   sanitize.ts       ← Input validation & prompt injection protection
+  research-terms-data.ts ← 228 research terms with 4-level hierarchy (Session 16)
   types.ts          ← TypeScript definitions
 test/
   security-test.sh  ← Security test suite (rate limiting + injection tests)
@@ -112,6 +120,8 @@ test/
 - Google Custom Search API for web search
 - react-dropzone for file uploads
 - `@google/genai` SDK v1.29.0 (official SDK for File Search Store)
+- **Jina.ai Reader** - Web page content extraction for URL ingestion (Session 16)
+- **md-to-pdf** - Markdown to PDF conversion for URL ingestion (Session 16)
 
 ## ⚠️ CRITICAL: Gemini Model Policy
 
@@ -166,8 +176,8 @@ Download → Redis (get blobUrl) → Fetch from Blob → Browser
 
 ## 6 Active Agents (1 Eliminated)
 
-1. **Research** ✅ COMPLETE - 228 curated terms, Google Custom Search, targeted search (J-STAGE, Patents, Scholar)
-2. **Upload** ⚠️ MOSTLY WORKING - Client-side Blob upload, smart queue, up to 100MB, ~50MB metadata limit
+1. **Research** ✅ COMPLETE - 228 curated terms with searchable browser, bilingual toggle, Google Custom Search, targeted search (J-STAGE, Patents, Scholar) - REDESIGNED Session 16
+2. **Upload** ✅ COMPLETE - Client-side Blob upload, smart queue, up to 100MB, ~50MB metadata limit, URL ingestion via Jina.ai - URL INGESTION ADDED Session 16
 3. **Browse** ✅ COMPLETE - Sorting, infinite scroll, file details modal, delete functionality
 4. **Query Corpus** ✅ FIXED (Session 12) - Semantic RAG with File Search Store, scales to 100+ docs
 5. **Brainstorm** 🔨 TODO - Corpus-aware ideation and outlining assistant
@@ -176,7 +186,7 @@ Download → Redis (get blobUrl) → Fetch from Blob → Browser
 
 **Note:** Images eliminated from scope (user decision: PDF-only corpus)
 
-**Next Session**: Test citations → Re-upload 6 failed docs → Continue to 100 docs → Build Brainstorm/Analyze
+**Next Session**: Test new features (Research browser, URL ingestion) → Continue to 100 docs → Build Brainstorm/Analyze
 
 ## Upload Agent Architecture (Session 10 - Production-Ready!)
 
@@ -209,6 +219,14 @@ Download → Redis (get blobUrl) → Fetch from Blob → Browser
 - ✅ Bulk uploads (10+ files) queue properly
 - ✅ Vercel Pro timeout (120s) handles processing
 - ✅ No HTTP 413 errors, no crashes, smooth UX
+
+**URL Ingestion (Session 16)**:
+- Jina.ai Reader API integration for clean content extraction
+- md-to-pdf converts markdown to PDF
+- Duplicate URL detection via Redis source tracking
+- Queue system with same status display
+- Same review workflow and approval process
+- Perfect for ingesting 75+ Toyota history web pages
 
 ## ✅ Session 12 - Critical Architectural Fix
 
@@ -284,6 +302,119 @@ Download → Redis (get blobUrl) → Fetch from Blob → Browser
 - Replaced Engineering Kaizen with Methods Analysis
 
 **See**: `docs/progress/2025-11-14-Session14.md` for detailed implementation
+
+---
+
+## ✅ Session 16 - Research Agent Redesign + URL Ingestion
+
+### Problem Discovered
+- **Research Agent Issues**: Dropdown structure didn't match research_terms.md
+  - Categories appeared "hallucinated"
+  - Missing ~50+ terms (only ~170 of 228 included)
+  - PE Tooling Engineering reduced to 7 terms (should be 36 across 6 sub-areas)
+  - Missing entire "3 Pillar Activity System" subcategory
+  - No bilingual search capability
+
+### Solution 1: Research Agent Redesign
+
+**1. Rebuilt Data Structure** (`lib/research-terms-data.ts`)
+- Parsed `research_terms.md` exactly as documented
+- All 228 curated terms included
+- Proper 4-level hierarchy: Track → Subcategory → Sub-area → Terms
+- Fixed structure:
+  - **PD**: 4 subcategories (was 5 artificial splits)
+  - **PE**: 5 subcategories (was 8 over-split)
+    - Tooling Engineering: 6 sub-areas, 36 terms ✅
+  - **TPS**: 6 subcategories (added missing 3 Pillar Activity)
+  - **Cross-Cutting**: 2 subcategories (unchanged)
+
+**2. New Term Browser** (`components/ui/term-browser.tsx`)
+- Replaced 3-dropdown system with searchable list
+- Two-column layout:
+  - Left: Collapsible category filters with term counts
+  - Right: Scrollable term list with checkboxes
+- **Language toggle**: English Only | 中,日 Only | Both
+- Real-time search across all terms
+- Selected terms badge display
+- Context path shown (Track → Subcategory → Sub-area)
+
+**3. Updated Research Agent** (`components/agents/research-agent.tsx`)
+- Removed dropdown logic
+- Integrated TermBrowser component
+- Simplified state management
+- All existing functionality preserved
+
+### Solution 2: URL Ingestion System
+
+**User Request**: Wanted to ingest 75+ Toyota history web pages without manual "Save as PDF" for each.
+
+**1. Backend API** (`app/api/process-url/route.ts`)
+- **Jina.ai Reader**: Calls `https://r.jina.ai/{url}` for clean content extraction
+- **Smart Extraction**: Removes navigation, ads, headers
+- **PDF Conversion**: Uses `md-to-pdf` with Puppeteer
+- **Blob Upload**: Stores PDF in Vercel Blob
+- **File Search Store**: Adds to semantic RAG
+- **Metadata Extraction**: Gemini extracts title, summary, keywords
+- **Duplicate Detection**: Checks Redis, returns 409 with existing document info
+- **Source Tracking**: Stores original URL in `metadata.source`
+
+**2. UI Integration** (`components/agents/upload-agent.tsx`)
+- Added URL section below file upload (purple card)
+- URL input with "Add to Queue" button
+- Queue display with status icons:
+  - ⏱ Pending
+  - ⟳ Processing (spinning)
+  - ✅ Complete (green)
+  - ❌ Error (red)
+  - ⚠️ Duplicate (amber)
+- "Process All" button for batch processing
+- Same Pending Review dashboard integration
+
+**3. Dependencies**
+- Added `md-to-pdf` for markdown → PDF conversion
+
+### Workflow
+1. Paste URL in Upload tab
+2. Add to queue (can add multiple)
+3. Click "Process All"
+4. System:
+   - Fetches via Jina.ai
+   - Converts to PDF
+   - Uploads to Blob
+   - Processes through File Search Store
+   - Extracts metadata
+   - Stores in Redis with source URL
+5. Appears in Pending Review
+6. Approve → Corpus
+
+### Results
+- ✅ 228 complete terms with accurate hierarchy
+- ✅ Bilingual search capability
+- ✅ Automated web page ingestion
+- ✅ Duplicate detection
+- ✅ Queue system for batches
+- ✅ Integrated workflow
+- ✅ Perfect for Toyota history (75+ pages)
+
+**New API Endpoint:**
+```
+POST /api/process-url
+Body: { url: string }
+Returns: Same format as /api/process-blob
+Errors:
+  400 - Invalid URL
+  409 - Duplicate (with existing document details)
+  429 - Rate limit exceeded
+  500 - Processing failed
+```
+
+**Known Limitations:**
+- **Jina.ai Rate Limits**: Free tier = 20 req/min (tracked by IP). Optional `JINA_API_KEY` increases to 500 req/min.
+- **PDF Formatting**: Markdown conversion may not preserve complex layouts
+- **No Authentication**: Can't ingest pages behind login
+- **Rate Limiting**: 15/hour, 3/min burst (TRS endpoint limit, separate from Jina.ai)
+
+**See**: `docs/progress/2025-11-14-Session16.md` for detailed implementation
 
 ---
 

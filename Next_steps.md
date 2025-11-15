@@ -1,8 +1,8 @@
 # Next Steps
 
-## Current Status (Session 15 - Complete)
+## Current Status (Session 16 - Complete)
 
-**Latest**: Session 15 - Security hardening complete ✅ (Rate limiting, prompt injection protection, dangerous endpoints secured, security headers added)
+**Latest**: Session 16 - Research Agent redesigned + URL ingestion added ✅ (228 terms with searchable browser, bilingual toggle, Jina.ai Reader integration)
 
 ### What's Working ✅
 - ✅ **Security (Session 15)** - Production-ready protection ✅
@@ -13,9 +13,19 @@
   - Security headers (CSP, HSTS, X-Frame-Options, etc.)
   - CORS configured (domain whitelisting)
   - Test suite created (`test/security-test.sh`)
-- ✅ **Research Agent** - 228 curated terms, 2-level navigation (Track → Subcategory → Terms), hierarchical organization
-- ✅ **Upload Agent** - ALL FEATURES WORKING!
+- ✅ **Research Agent (Session 16 - REDESIGNED)** - ALL FEATURES WORKING!
+  - 228 curated terms (was ~170) with accurate 4-level hierarchy
+  - Searchable browser interface (replaced 3 dropdowns)
+  - Bilingual toggle (English Only | Japanese Only | Both)
+  - Two-column layout (filters left, terms right)
+  - Real-time search across all terms
+  - Tooling Engineering: 36 terms across 6 sub-areas ✅
+  - 3 Pillar Activity System added ✅
+- ✅ **Upload Agent (Session 16 - URL INGESTION ADDED)** - ALL FEATURES WORKING!
   - Client-side Blob upload (up to 100MB, bypasses 4.5MB limit)
+  - **URL Ingestion via Jina.ai Reader** ✅ NEW!
+  - Duplicate URL detection via Redis source tracking ✅
+  - Queue system for batch URL processing ✅
   - Smart queue with size-based concurrency (未然防止)
   - Bulk upload warnings (3+ large files or >100MB)
   - Pending review persistence (survives navigation/refresh)
@@ -54,71 +64,70 @@
 
 ---
 
-## Immediate Priorities - Session 16 (Next)
+## Immediate Priorities - Session 17 (Next)
 
-### 🚀 PRIORITY #1: Deploy & Test with Friends
+### 🚀 PRIORITY #1: Test Session 16 Features
 
-**Goal:** Deploy security updates to production and enable friend testing
+**Goal:** Verify Research Agent redesign and URL ingestion work in production
 
-**Tasks:**
-1. **Update Vercel environment variables** (in Vercel dashboard)
-   - Set `ALLOWED_ORIGIN=https://trs-mocha.vercel.app`
-   - Optional: Set custom `CLEAR_ALL_TOKEN` (or use default)
-   - Ensure `ENABLE_MIGRATION=false` (already migrated)
+**User tasks:**
+1. **Test Research Agent with bilingual search**
+   - Test language toggle (English Only | Japanese Only | Both)
+   - Verify all 228 terms are accessible
+   - Test search functionality
+   - Navigate through Tooling Engineering sub-areas (6 sub-areas, 36 terms)
+   - Explore 3 Pillar Activity System terms
+   - Generate search terms and perform web searches
 
-2. **Deploy to Vercel**
-   - Commit all changes
-   - Push to GitHub
-   - Verify deployment includes security headers
+2. **Test URL Ingestion**
+   - Paste Toyota history page URL: `https://www.toyota.co.jp/jpn/company/history/75years/text/...`
+   - Add to queue
+   - Click "Process All"
+   - Verify PDF conversion
+   - Check metadata extraction
+   - Test duplicate detection (try adding same URL twice)
+   - Review and approve ingested page
+   - Query corpus to verify it's searchable
 
-3. **Test production security**
-   - Verify rate limiting works
-   - Test prompt injection protection
-   - Confirm protected endpoints require tokens
-
-4. **Share with friends for testing**
-   - Provide URL: https://trs-mocha.vercel.app
-   - Monitor for any issues or abuse
-   - Rate limiting will protect against excessive usage
+3. **Verify deployment to Vercel**
+   - Confirm all features work in production
+   - Check for any build or runtime errors
+   - Test rate limiting is active
 
 **Expected result:**
-- Production deployment with security active
-- Friends can test without breaking anything
-- Rate limits prevent API abuse
+- Research Agent fully functional with all 228 terms
+- URL ingestion working smoothly for Toyota history pages
+- Duplicate detection prevents re-processing
+- PDFs generated from URLs are searchable in corpus
 
 ---
 
-### 📊 PRIORITY #2: Continue Corpus Upload
+### 📊 PRIORITY #2: Ingest Toyota History Pages
 
-**Goal:** Upload remaining Toyota research PDFs to reach 100 documents
+**Goal:** Use URL ingestion to add 75+ Toyota history web pages to corpus
 
 **User tasks:**
-1. **Compress large PDFs** (>50MB files)
-   - Use Adobe Acrobat: File → Save As → Optimized PDF
-   - Target: Reduce to <50MB for auto-metadata extraction
-   - Expected: 50-80% size reduction on scanned documents
+1. **Collect Toyota history URLs**
+   - Navigate through `https://www.toyota.co.jp/jpn/company/history/75years/`
+   - Copy URLs for all 75+ pages
 
-2. **Upload compressed files**
+2. **Batch process URLs**
+   - Add 5-10 URLs to queue at a time
+   - Click "Process All"
+   - Monitor for errors or duplicates
+   - Review and approve successful conversions
+
+3. **Continue regular PDF uploads**
    - Upload 10-20 PDFs per batch
+   - Compress large PDFs (>50MB) if needed
    - Review and approve files with successful metadata extraction
    - For failed extractions: Use Edit Metadata button
 
-3. **Test customizable Query Corpus**
-   - Try different Mode options (Find Examples, Find People, etc.)
-   - Test Length controls (Brief vs Detailed)
-   - Use Custom Instructions for targeted queries
-   - Verify citations remain accurate
-
-4. **Test 2-level Research Agent navigation**
-   - Navigate Track → Subcategory → Terms
-   - Test Tooling Engineering subcategory
-   - Explore 3 Pillar Activity System terms
-
 **Expected result:**
-- 50+ documents uploaded
-- RAG queries working smoothly with customization
-- Citation quality validated
-- Navigation improvements validated
+- 75+ Toyota history pages added to corpus
+- 50+ PDF documents uploaded
+- Corpus approaching 100+ documents
+- Rich historical context available for queries
 
 ---
 
@@ -282,6 +291,31 @@
 
 ---
 
+## Completed (Session 16) ✅
+
+- ✅ **Research Agent completely redesigned** - Accurate data from research_terms.md
+  - Rebuilt `lib/research-terms-data.ts` with all 228 terms (was ~170)
+  - Created `components/ui/term-browser.tsx` - Searchable interface (420 lines)
+  - Updated `components/agents/research-agent.tsx` - Simplified logic
+  - Added bilingual search toggle (English Only | Japanese Only | Both)
+  - Two-column layout with collapsible category filters
+  - Real-time search across all terms
+  - Fixed PE Tooling Engineering: 36 terms across 6 sub-areas
+  - Added missing TPS 3 Pillar Activity System subcategory
+- ✅ **URL Ingestion system built** - Automated web page to PDF conversion
+  - Created `/app/api/process-url/route.ts` (200 lines)
+  - Jina.ai Reader integration for clean content extraction
+  - md-to-pdf conversion with Puppeteer
+  - Duplicate URL detection via Redis source tracking
+  - Added URL section to Upload Agent (purple card)
+  - Queue system with status icons (pending/processing/complete/error/duplicate)
+  - Same review workflow and approval process
+  - Perfect for ingesting 75+ Toyota history pages
+- ✅ **Fixed pre-existing TypeScript error** - `lib/sanitize.ts` validateHistory type conflict
+  - Used `Omit<ValidationResult, 'sanitized'>` to resolve type conflict
+- ✅ **Build and deployment successful** - Pushed commits `de82162` and `954f9be` to GitHub
+- ✅ **Documentation complete** - CLAUDE.md, next_steps.md, Session 16 progress log
+
 ## Completed (Session 15) ✅
 
 - ✅ **Security hardening complete** - Production-ready protection implemented
@@ -353,5 +387,5 @@ All HIGH priority bugs resolved. Ready to proceed with:
 
 **Status**: 4/6 agents complete (Research, Upload, Browse, Query Corpus) ✅ | Security hardened ✅ | 2 remaining (Brainstorm, Analyze)
 
-**Last Updated**: 2025-11-14 (Session 15 - Security Complete)
-**Next Session**: Session 16 - Deploy to production + enable friend testing OR continue corpus upload + build Brainstorm/Analyze agents
+**Last Updated**: 2025-11-14 (Session 16 - Research Agent Redesigned + URL Ingestion Added)
+**Next Session**: Session 17 - Test new features (Research browser, URL ingestion) → Ingest Toyota history pages → Continue corpus upload → Build Brainstorm/Analyze agents

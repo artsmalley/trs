@@ -11,6 +11,7 @@ import { useDropzone } from "react-dropzone";
 
 export function AnalyzeAgent() {
   const [article, setArticle] = useState("");
+  const [customInstructions, setCustomInstructions] = useState("");
   const [feedback, setFeedback] = useState("");
   const [wordCount, setWordCount] = useState(0);
   const [sourcesReferenced, setSourcesReferenced] = useState<string[]>([]);
@@ -54,7 +55,7 @@ export function AnalyzeAgent() {
       const response = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ article }),
+        body: JSON.stringify({ article, customInstructions }),
       });
 
       if (!response.ok) {
@@ -97,6 +98,7 @@ export function AnalyzeAgent() {
 
   const reset = () => {
     setArticle("");
+    setCustomInstructions("");
     setFeedback("");
     setWordCount(0);
     setSourcesReferenced([]);
@@ -109,62 +111,57 @@ export function AnalyzeAgent() {
       {/* Article Input */}
       <Card>
         <CardHeader>
-          <CardTitle>Analyze & Cite Agent</CardTitle>
+          <CardTitle>TRS Database Validation</CardTitle>
           <CardDescription>
-            Upload or paste your article for corpus-based analysis and citation suggestions
+            Validate your article against the TRS corpus - check claims, examples, and discover alternatives
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Drag/Drop Zone */}
           {!analyzed && (
-            <div
-              {...getRootProps()}
-              className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-                isDragActive
-                  ? "border-primary bg-primary/5"
-                  : "border-muted-foreground/25 hover:border-primary/50 hover:bg-accent"
-              }`}
-            >
-              <input {...getInputProps()} />
-              <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              {isDragActive ? (
-                <p className="text-sm text-muted-foreground">Drop your article here...</p>
-              ) : (
-                <>
-                  <p className="text-sm font-medium mb-1">
-                    Drag and drop your article (.txt or .md)
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    or click to browse files
-                  </p>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* Or Paste Text */}
-          {!analyzed && (
             <>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 border-t border-muted" />
-                <span className="text-xs text-muted-foreground">OR PASTE TEXT</span>
-                <div className="flex-1 border-t border-muted" />
+              <div
+                {...getRootProps()}
+                className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-colors ${
+                  isDragActive
+                    ? "border-primary bg-primary/5"
+                    : "border-muted-foreground/25 hover:border-primary/50 hover:bg-accent"
+                }`}
+              >
+                <input {...getInputProps()} />
+                <Upload className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                {isDragActive ? (
+                  <p className="text-sm text-muted-foreground">Drop your article here...</p>
+                ) : (
+                  <>
+                    <p className="text-base font-medium mb-2">
+                      Drag and drop your article (.txt or .md)
+                    </p>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      or click to browse files
+                    </p>
+                    {article && (
+                      <Badge variant="secondary" className="text-sm">
+                        {article.split(/\s+/).length.toLocaleString()} words loaded
+                      </Badge>
+                    )}
+                  </>
+                )}
               </div>
 
+              {/* Custom Instructions */}
               <div className="space-y-2">
-                <Label htmlFor="article">Article Text</Label>
+                <Label htmlFor="customInstructions">Analysis Focus (Optional)</Label>
                 <Textarea
-                  id="article"
-                  placeholder="Paste your article here for analysis..."
-                  value={article}
-                  onChange={(e) => setArticle(e.target.value)}
-                  className="min-h-[300px] font-mono text-sm"
+                  id="customInstructions"
+                  placeholder="e.g., 'Focus on Production Engineering claims' or 'Validate TPS history section' or 'Check Section III against database'"
+                  value={customInstructions}
+                  onChange={(e) => setCustomInstructions(e.target.value)}
+                  className="min-h-[80px] text-sm"
                 />
-                {article && (
-                  <p className="text-xs text-muted-foreground">
-                    {article.split(/\s+/).length.toLocaleString()} words
-                  </p>
-                )}
+                <p className="text-xs text-muted-foreground">
+                  Optional: Guide the analysis to focus on specific sections or topics
+                </p>
               </div>
             </>
           )}
@@ -224,9 +221,9 @@ export function AnalyzeAgent() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Analysis Feedback</CardTitle>
+                <CardTitle>TRS Database Analysis</CardTitle>
                 <CardDescription>
-                  Corpus-based review with fact-checking, examples, and citation suggestions
+                  What the TRS corpus contains regarding your article's claims and examples
                 </CardDescription>
               </div>
               <div className="flex gap-2">
@@ -260,7 +257,7 @@ export function AnalyzeAgent() {
             {/* Sources Referenced */}
             {sourcesReferenced.length > 0 && (
               <div className="space-y-2 pt-4 border-t">
-                <Label>Corpus Sources Referenced in Analysis:</Label>
+                <Label>TRS Documents Referenced:</Label>
                 <div className="flex flex-wrap gap-2">
                   {sourcesReferenced.map((source, idx) => (
                     <Badge key={idx} variant="secondary" className="text-xs">
@@ -273,12 +270,15 @@ export function AnalyzeAgent() {
 
             {/* Next Steps */}
             <div className="bg-blue-50 border border-blue-200 rounded-md p-4 space-y-2 mt-4">
-              <h4 className="font-medium text-sm text-blue-900">💡 Next Steps:</h4>
-              <ol className="text-sm text-blue-800 space-y-1 ml-4 list-decimal">
-                <li>Review the categorized feedback above</li>
-                <li>Implement suggested improvements and citations</li>
-                <li>Use <strong>Editorial</strong> agent for final polish</li>
-              </ol>
+              <h4 className="font-medium text-sm text-blue-900">💡 What This Tells You:</h4>
+              <ul className="text-sm text-blue-800 space-y-1 ml-4 list-disc">
+                <li>What the TRS database contains about your topic</li>
+                <li>Alternative evidence worth considering from the corpus</li>
+                <li>Gaps between your article and what's in TRS</li>
+              </ul>
+              <p className="text-xs text-blue-700 pt-2 italic">
+                Use external LLMs (Claude, ChatGPT) for general writing feedback and style improvements.
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -289,16 +289,14 @@ export function AnalyzeAgent() {
         <Card className="bg-muted/50">
           <CardContent className="pt-6">
             <div className="space-y-3">
-              <h4 className="font-medium text-sm">How the Analyze & Cite Agent Works:</h4>
+              <h4 className="font-medium text-sm">TRS Database Analysis</h4>
               <div className="space-y-2 text-sm text-muted-foreground">
-                <p><strong>1. Fact-Checking</strong> - Verifies claims against your corpus</p>
-                <p><strong>2. Better Examples</strong> - Suggests stronger evidence from corpus documents</p>
-                <p><strong>3. Citation Suggestions</strong> - Identifies where citations would strengthen your article</p>
-                <p><strong>4. Unsupported Claims</strong> - Flags statements lacking corpus evidence</p>
-                <p><strong>5. Coverage Gaps</strong> - Recommends additional perspectives from corpus</p>
+                <p><strong>1. Upload Article</strong> - Drag and drop your .txt or .md file</p>
+                <p><strong>2. Set Focus (Optional)</strong> - Specify which sections to validate</p>
+                <p><strong>3. Get TRS-Specific Analysis</strong> - See what the database says about your claims and examples</p>
               </div>
               <p className="text-xs text-muted-foreground italic pt-2">
-                This agent reviews articles you've edited offline (after using the Draft Agent) to validate them against your corpus and strengthen your arguments.
+                This agent validates your article specifically against the TRS corpus. It identifies what's in the database, alternative evidence worth considering, and gaps. Use external LLMs (Claude, ChatGPT) for general writing feedback.
               </p>
             </div>
           </CardContent>

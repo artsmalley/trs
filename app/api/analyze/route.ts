@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
       return rateLimitCheck.response!;
     }
 
-    const { article } = await req.json();
+    const { article, customInstructions } = await req.json();
 
     if (!article || !article.trim()) {
       return NextResponse.json(
@@ -73,85 +73,64 @@ export async function POST(req: NextRequest) {
       return `Doc${idx + 1}`;
     };
 
-    // Create citation reference for each document
-    const docCitationKeys = approvedDocs.map((doc, idx) => generateCitationKey(doc, idx));
+    const systemInstruction = `You are a TRS database analyst. Your role is to validate articles against the Toyota Research System corpus (${approvedDocs.length} documents) and surface what the database contains.
 
-    // Build corpus context
-    const corpusContext = `
-AVAILABLE CORPUS (${approvedDocs.length} documents):
-${approvedDocs
-  .map(
-    (doc, idx) =>
-      `Document: "${doc.title}"
-Citation Key: [${docCitationKeys[idx]}]
-Authors: ${doc.authors && doc.authors.length > 0 ? doc.authors.join(", ") : "Unknown"}
-Track: ${doc.track || "Unknown"}
-Year: ${doc.year || "Unknown"}
-${doc.summary ? `Summary: ${doc.summary}` : ""}
-${doc.keywords && doc.keywords.length > 0 ? `Keywords: ${doc.keywords.join(", ")}` : ""}
----`
-  )
-  .join("\n\n")}`;
+YOUR TASK: Analyze the article from a DATABASE PERSPECTIVE. Don't just validate - actively surface what else is in TRS.
 
-    const systemInstruction = `You are an expert research analyst specializing in Toyota production engineering and manufacturing.
+FOCUS ON:
+- What does the TRS database say about the claims in this article?
+- **Are the examples used the BEST available in TRS, or are there stronger/more detailed alternatives?**
+- **What other relevant documents exist in TRS that provide different perspectives or additional depth?**
+- **What's in the database that the article missed?**
+- Be specific: "You used [DocX], but TRS also contains [DocY] and [DocZ] which show..."
 
-Your task is to analyze a user-written article and provide detailed feedback by comparing it against the available corpus.
+OUTPUT FORMAT (under 500 words):
 
-${corpusContext}
+## Database Assessment
+[2-3 sentences: How well does this article align with what's in the TRS database?]
 
-ANALYSIS CATEGORIES:
+## TRS Database Findings
+[3-5 observations about what ELSE is in the database. For each:]
+- **PRIORITY: Surface alternatives** - "Article uses [DocX], but TRS also contains [DocY, DocZ] which..."
+- **Compare examples** - Are the ones used the strongest available? What else exists?
+- **Identify gaps** - What relevant content is in TRS that article doesn't reference?
+- Reference specific documents by Citation Key [like this]
+- Frame as analytical comparison, not prescription
 
-1. FACT-CHECKING
-   - Verify factual claims against corpus sources
-   - Identify any inaccuracies or misstatements
-   - Confirm dates, names, processes are correct
-
-2. BETTER EXAMPLES
-   - Suggest stronger examples from the corpus
-   - Identify missed opportunities to use compelling case studies
-   - Recommend specific documents that support the argument better
-
-3. CITATION SUGGESTIONS
-   - Identify claims that need corpus citations
-   - Suggest appropriate Citation Keys for unsupported statements
-   - Format: "Consider citing [CitationKey] for this claim"
-
-4. UNSUPPORTED CLAIMS
-   - Flag assertions not backed by corpus evidence
-   - Identify statements that lack supporting sources
-   - Note areas where the author may be relying on external knowledge
-
-5. COVERAGE GAPS
-   - Identify missing perspectives from the corpus
-   - Suggest additional angles or tracks (PD, PE, TPS, Cross-Cutting, History)
-   - Note relevant corpus documents not referenced
-
-The File Search tool will help you find relevant content from the corpus to support your analysis.
+${customInstructions ? `\nUSER'S FOCUS AREAS:\n${customInstructions}\n` : ''}
 
 IMPORTANT:
-- Be constructive and specific in your feedback
-- Always reference corpus documents by Citation Key
-- Provide actionable suggestions the author can implement
-- Distinguish between critical issues (factual errors) and enhancements (better examples)`;
+- **Actively surface alternatives** - don't just validate, show what else exists
+- Frame as "TRS also contains..." or "Database shows alternative evidence in..."
+- Compare examples: "While [DocX] is valid, [DocY] provides more detail on..."
+- Identify what's in TRS that article doesn't use
+- Cite corpus documents by Citation Key
+- Under 500 words total
 
-    const userPrompt = `Please analyze the following article against the corpus:
+The File Search tool will help you query the TRS corpus.`;
+
+    const userPrompt = `Validate this article against the TRS database. Focus on what the database contains, not general writing advice.
 
 ARTICLE TO ANALYZE:
 ${articleValidation.sanitized}
 
 ---
 
-Provide detailed feedback in the following categories:
-1. Fact-Checking (verify claims against corpus)
-2. Better Examples (suggest stronger corpus examples)
-3. Citation Suggestions (where citations would strengthen the article)
-4. Unsupported Claims (statements lacking corpus evidence)
-5. Coverage Gaps (missed opportunities from corpus)
+Provide your analysis in this format:
 
-For each category, be specific about:
-- What the issue or opportunity is
-- Which corpus document(s) are relevant (use Citation Keys)
-- What action the author should take`;
+## Database Assessment
+[2-3 sentences: How well does this article align with TRS database contents?]
+
+## TRS Database Findings
+[3-5 observations about what ELSE is in the database. Focus on:]
+- Alternative documents on the same topics
+- Stronger or more detailed examples available in TRS
+- Relevant content the article doesn't reference
+- Comparisons: "Article uses X, but TRS also has Y and Z which..."
+
+Keep response under 500 words. Frame as "TRS also contains..." or "Database shows alternative evidence in..." - actively surface what else exists, don't just validate.
+
+Use Citation Keys to reference specific corpus documents.`;
 
     // Analyze using File Search tool
     const result = await ai.models.generateContent({

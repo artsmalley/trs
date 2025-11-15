@@ -1,8 +1,8 @@
 # Next Steps
 
-## Current Status (Session 18 - Partial Complete)
+## Current Status (Session 19 - Complete)
 
-**Latest**: Session 18 - Draft Agent complete ✅ | Analyze Agent built but debugging empty Gemini response ⚠️
+**Latest**: Session 19 - Analyze Agent redesigned ✅ | TRS database validation working | 165 documents in corpus ✅
 
 ### What's Working ✅
 - ✅ **Security (Session 15)** - Production-ready protection ✅
@@ -30,14 +30,15 @@
   - Copy/download markdown
   - Working perfectly with 123-document corpus
 
-### In Progress ⚠️
-- ⚠️ **Analyze & Cite Agent (Session 18)** - Built but needs debugging
-  - Drag/drop + paste article input ✅
-  - 5-category analysis framework designed ✅
-  - API endpoint created ✅
-  - **Issue:** Gemini returning empty feedback (0 characters)
-  - Detailed logging added to diagnose (finishReason, safetyRatings, usageMetadata)
-  - **Next Session:** Review logs and fix empty response issue
+### What's Working ✅ (Continued)
+- ✅ **Analyze Agent (Session 19 - REDESIGNED)** - TRS Database Validation ✅
+  - Drag/drop article input (paste textarea removed)
+  - Custom focus field (optional)
+  - TRS database validation: Surfaces alternatives, identifies gaps
+  - Analytical tone: "TRS also contains..." not "You should..."
+  - Fixed scalability: Now handles 165+ documents
+  - Under 500 words, focused on what's IN the corpus
+  - **User feedback:** "I think it is good enough" ✅
 
 ### Known Issues ⚠️
 - 🐛 **Reject button not working** - Can't delete failed uploads from review queue
@@ -46,50 +47,48 @@
 - ⚠️ **~50MB Gemini limit** - Metadata extraction fails for files >50MB
   - **IMPORTANT**: Files still upload and index successfully!
   - **Workaround**: Use Edit Metadata button ✅
-- 🐛 **Analyze Agent empty response** (NEW - Session 18)
-  - Gemini returns 0 characters of feedback
-  - May be token limit, safety filter, or tool configuration issue
-  - Priority: HIGH (blocks Analyze Agent functionality)
+- ✅ **Analyze Agent output too verbose** (Session 18 - FIXED Session 19)
+  - Was returning thousands of words (unreadable)
+  - Redesigned for TRS database validation (analytical, not prescriptive)
+  - Now under 500 words, surfaces alternatives ✅
+- ✅ **Corpus size scalability** (Session 19 - FIXED)
+  - 165 documents caused empty responses (bloated prompt with all metadata)
+  - Removed corpus context from system instruction (File Search already has access)
+  - Now handles 165+ documents successfully ✅
 
 ### Corpus Status
-- **123 documents** in File Search Store (up from 37 in Session 17!)
+- **165 documents** in File Search Store (up from 123 in Session 18!)
 - **Goal:** Continue to 200+ documents
+- **Next focus:** History track (75+ Toyota history pages), PD and PE materials
 
 ---
 
-## Immediate Priorities - Session 19 (Next)
+## Immediate Priorities - Session 20 (Next)
 
-### 🔥 PRIORITY #1: Fix Analyze Agent Empty Response (URGENT)
+### 🔥 PRIORITY #1: Build Out Corpus - History Track Focus
 
-**Status:** API complete, debugging empty Gemini response
+**Status:** Analyze Agent complete ✅ | Focus on content now
 
-**What needs to happen:**
-1. **Review detailed Gemini logs** (finishReason, safetyRatings, usageMetadata)
-   - Check if safety filters blocking content
-   - Check if token limit exceeded
-   - Check if tool configuration issue
-2. **Identify root cause** and implement fix:
-   - If token limit: Simplify system instruction or reduce corpus context
-   - If safety filter: Adjust prompting to avoid triggers
-   - If tool issue: Debug File Search Store integration
-3. **Test with various article lengths**
-   - Short (500 words)
-   - Medium (1200 words)
-   - Long (2000+ words)
-4. **Validate feedback quality**
-   - Ensure 5 categories are addressed
-   - Check citation suggestions
-   - Verify corpus references
+**User's plan:**
+1. **Complete History track** - Upload 75+ Toyota history web pages
+   - Use URL ingestion via Jina.ai Reader
+   - Expand historical/biographical content
+2. **Add PD materials** - Product Development specific documents
+3. **Add PE materials** - Production Engineering specific documents
+4. **Goal:** Reach 200+ documents in corpus
 
-**Expected outcome:**
-- Analyze Agent returns categorized feedback
-- User can fact-check articles against corpus
-- Citation suggestions working
-- Full workflow functional: Draft → Edit → Analyze → Revise
+**Current Status:**
+- 165 documents in File Search Store
+- History track has room to grow (75+ pages identified)
+- URL ingestion working well (simplified in Session 17)
 
 ---
 
-### 🎯 PRIORITY #2: Build Editorial Agent (Final Agent!)
+### 🎯 PRIORITY #2: Build Editorial Agent (Final Agent!) - OPTIONAL
+
+**Note:** May not be needed. External LLMs (Claude, ChatGPT) handle this well.
+
+**Decision Point:** After corpus is built to 200+ documents, assess if Editorial Agent adds value or if external tools are sufficient.
 
 **Purpose:** Final polish for structure, grammar, and clarity (no external fact-checking)
 
@@ -196,6 +195,25 @@
 
 ---
 
+## Completed (Session 19) ✅
+
+- ✅ **Analyze Agent redesigned** - TRS database validation (Session 19)
+  - Removed paste textarea (drag/drop only)
+  - Reframed as "TRS Database Validation" not "Writing Coach"
+  - Analytical tone: "TRS also contains..." not "You should..."
+  - Surfaces alternatives from corpus
+  - Fixed scalability: Removed bloated corpus context from prompt
+  - Now handles 165+ documents
+  - Concise output (~500 words)
+  - User feedback: "I think it is good enough" ✅
+- ✅ **Corpus scalability fixed** - 165 documents working (Session 19)
+  - Removed redundant corpus metadata from system instruction
+  - File Search tool already has access to all documents
+  - Dramatically reduced prompt size
+- ✅ **Documentation complete** - Session 19 progress log, CLAUDE.md updated
+
+---
+
 ## Completed (Session 18) ✅
 
 - ✅ **Draft Agent built** - Complete outline → draft workflow
@@ -258,17 +276,21 @@
 
 ## Current Blockers
 
-1. **Analyze Agent Empty Response** (HIGH PRIORITY)
-   - Gemini returns 0 characters
-   - Blocks full workflow testing
-   - Needs debugging with logs in Session 19
+**None!** ✅
 
-**Other than that:** Ready to build Editorial Agent and complete 6-agent system! 🎉
+All core agents working:
+- Research ✅
+- Upload ✅
+- Browse/Query ✅
+- Draft ✅
+- Analyze ✅
+
+**Focus:** Build corpus to 200+ documents (History, PD, PE materials)
 
 ---
 
-**Status**: 5/6 agents (Research, Upload, Browse/Query, Draft ✅, Analyze ⚠️) | Editorial remaining 🔨 | Security hardened ✅ | 123 documents ✅
+**Status**: 5/6 agents (Research, Upload, Browse/Query, Draft, Analyze ✅) | Editorial optional | Security hardened ✅ | **165 documents** ✅
 
-**Last Updated**: 2025-11-15 (Session 18 - Draft Agent Complete, Analyze Agent Debugging)
+**Last Updated**: 2025-11-15 (Session 19 - Analyze Agent Redesigned & Complete)
 
-**Next Session**: Session 19 - Fix Analyze Agent empty response → Build Editorial Agent → Complete 3-agent article workflow
+**Next Session**: Session 20 - Build out corpus (History track focus, PD/PE materials) → 200+ documents

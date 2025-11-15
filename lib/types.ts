@@ -19,6 +19,10 @@ export interface DocumentMetadata {
   source?: string; // Where this document came from (J-STAGE, patent, etc.)
   context?: string; // Additional notes from user
   visionAnalysis?: VisionAnalysisResult; // For images: AI-generated content description
+  qualityTier?: "Tier 1" | "Tier 2" | "Tier 3" | "Tier 4"; // Document quality classification
+  tierLabel?: "Authoritative" | "High Quality" | "Supporting" | "Background"; // Human-readable tier label
+  autoClassified?: boolean; // Whether tier was auto-assigned (true) or manually selected (false)
+  classifiedAt?: string; // ISO timestamp when tier was assigned
   status: "pending_review" | "approved" | "rejected";
   uploadedAt: string; // ISO timestamp
   approvedAt: string | null; // ISO timestamp when approved/rejected

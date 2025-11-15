@@ -85,6 +85,11 @@ export async function GET(req: NextRequest) {
           uploadedAt: doc.uploadedAt,
           approvedAt: doc.approvedAt,
           visionAnalysis: doc.visionAnalysis,
+          source: doc.source,
+          qualityTier: doc.qualityTier,
+          tierLabel: doc.tierLabel,
+          autoClassified: doc.autoClassified,
+          classifiedAt: doc.classifiedAt,
         };
       }),
       total: documents.length,

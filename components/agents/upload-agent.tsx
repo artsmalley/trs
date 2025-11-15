@@ -11,6 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,6 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { type QualityTier } from "@/lib/classify-documents";
 
 interface UploadedFile {
   id: string;
@@ -54,6 +56,7 @@ export function UploadAgent() {
   const [warningMessage, setWarningMessage] = useState("");
   const [editingMetadata, setEditingMetadata] = useState<{fileId: string; title: string; summary: string; authors: string; year: string; track: string} | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedTiers, setSelectedTiers] = useState<Map<string, QualityTier>>(new Map()); // Track tier selection for each file
   const processingRef = useRef(false);
   const filesRef = useRef<UploadedFile[]>([]); // Track current files state for processQueue
 
@@ -276,6 +279,12 @@ export function UploadAgent() {
   };
 
   const handleApprove = async (fileId: string, localId: string) => {
+    // Get selected tier (default to Tier 2 if not selected)
+    const selectedTier = selectedTiers.get(fileId) || "Tier 2";
+    const tierLabel = selectedTier === "Tier 1" ? "Authoritative" :
+                      selectedTier === "Tier 2" ? "High Quality" :
+                      selectedTier === "Tier 3" ? "Supporting" : "Background";
+
     // Optimistically remove file from UI immediately
     setFiles((prev) => prev.filter((f) => f.id !== localId));
 
@@ -288,6 +297,12 @@ export function UploadAgent() {
         body: JSON.stringify({
           fileId,
           action: "approve",
+          updates: {
+            qualityTier: selectedTier,
+            tierLabel: tierLabel,
+            autoClassified: false, // Manual classification during upload
+            classifiedAt: new Date().toISOString()
+          }
         }),
       });
 
@@ -297,7 +312,13 @@ export function UploadAgent() {
         console.error("Approval failed:", data.error);
         alert(`Failed to approve: ${data.error}\n\nThe file has been removed from the review queue. Please check the Browse tab to verify.`);
       } else {
-        console.log(`✅ Document approved: ${fileId}`);
+        console.log(`✅ Document approved: ${fileId} as ${selectedTier}`);
+        // Clean up tier selection
+        setSelectedTiers(prev => {
+          const newMap = new Map(prev);
+          newMap.delete(fileId);
+          return newMap;
+        });
       }
     } catch (error) {
       console.error("Error approving document:", error);
@@ -856,6 +877,61 @@ export function UploadAgent() {
                             <Badge variant="secondary">{file.metadata.documentType}</Badge>
                           </div>
                         </div>
+                        {/* Quality Tier Selection */}
+                        <div className="flex gap-4 items-center p-3 bg-muted/50 rounded-lg">
+                          <div className="flex-1">
+                            <label className="text-sm font-medium mb-1 block">Quality Tier</label>
+                            <Select
+                              value={selectedTiers.get(file.fileId || '') || "Tier 2"}
+                              onValueChange={(value) => {
+                                if (file.fileId) {
+                                  setSelectedTiers(prev => {
+                                    const newMap = new Map(prev);
+                                    newMap.set(file.fileId!, value as QualityTier);
+                                    return newMap;
+                                  });
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Tier 1">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full bg-blue-500" />
+                                    <span className="font-medium">Tier 1</span> - Authoritative
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="Tier 2">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                                    <span className="font-medium">Tier 2</span> - High Quality (Default)
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="Tier 3">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full bg-amber-500" />
+                                    <span className="font-medium">Tier 3</span> - Supporting
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="Tier 4">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full bg-gray-500" />
+                                    <span className="font-medium">Tier 4</span> - Background
+                                  </div>
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {selectedTiers.get(file.fileId || '') === "Tier 1" && "Primary sources from ex-Toyota authors and top experts"}
+                              {(selectedTiers.get(file.fileId || '') === "Tier 2" || !selectedTiers.get(file.fileId || '')) && "Academic papers, high-quality analyses, and detailed technical documents"}
+                              {selectedTiers.get(file.fileId || '') === "Tier 3" && "Supporting materials, web articles, and general references"}
+                              {selectedTiers.get(file.fileId || '') === "Tier 4" && "Background materials, timelines, and historical context"}
+                            </p>
+                          </div>
+                        </div>
+
                         <div className="flex gap-2">
                           <Dialog open={editDialogOpen && editingMetadata?.fileId === file.fileId} onOpenChange={setEditDialogOpen}>
                             <DialogTrigger asChild>

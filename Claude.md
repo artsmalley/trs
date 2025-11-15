@@ -11,12 +11,13 @@ npm run dev
 
 **Phase**: 2 - Agent Implementation (All Core Features Working! ✅)
 **Deployed**: https://trs-mocha.vercel.app ✅
-**Working**: Research ✅ | Upload ✅ | Browse ✅ | Query Corpus ✅ | PDF-only RAG ✅ | URL Ingestion ✅
-**Next**: Test new features → Continue to 100 docs → Build Brainstorm/Analyze agents
-**Complete**: 4/6 agents (Research with searchable browser, Upload with URL ingestion, Browse/Query with customizable controls)
-**Corpus**: 37 documents in File Search Store, semantic RAG working, citations tested ✅
-**File Upload**: Up to 100MB client-side, smart queue, manual metadata editing ✅
-**URL Ingestion**: Jina.ai Reader → direct text storage, duplicate detection ✅ (Session 17 - simplified)
+**Working**: Research ✅ | Upload ✅ | Browse ✅ | Query Corpus ✅ | PDF-only RAG ✅ | URL Ingestion ✅ | **Quality Classification ✅** (Session 20)
+**Next**: Build Editorial Agent → Complete 6-agent workflow
+**Complete**: 5/6 agents (Research, Upload, Browse/Query, Draft ✅, Analyze ✅)
+**Corpus**: 204 documents in File Search Store (Session 20), semantic RAG working, citations tested ✅
+**Quality Tiers**: 4-tier classification system, auto-classifies web content, manual review for PDFs ✅ (Session 20)
+**File Upload**: Up to 100MB client-side, smart queue, manual metadata editing, tier selection on approval ✅
+**URL Ingestion**: Jina.ai Reader → direct text storage, duplicate detection, auto-classified as Tier 3 ✅
 **Research Terms**: All 228 terms, searchable interface, bilingual toggle ✅ (Session 16)
 **Known Limitations**:
 - ~50MB Gemini metadata extraction limit (Google API limitation)
@@ -182,13 +183,13 @@ Download → Redis (get blobUrl) → Fetch from Blob → Browser
 2. **Upload** ✅ COMPLETE - Client-side Blob upload, smart queue, up to 100MB, ~50MB metadata limit, URL ingestion via Jina.ai - URL INGESTION ADDED Session 16
 3. **Browse** ✅ COMPLETE - Sorting, infinite scroll, file details modal, delete functionality
 4. **Query Corpus** ✅ FIXED (Session 12) - Semantic RAG with File Search Store, scales to 100+ docs
-5. **Brainstorm** 🔨 TODO - Corpus-aware ideation and outlining assistant
-6. **Analyze** 🔨 TODO - Draft article reviewer that finds corpus support
-7. **Editor** ❌ ELIMINATED - Use external tools (Claude.ai, Gemini, ChatGPT) for final polish
+5. **Draft** ✅ COMPLETE (Session 18) - Outline → full article generation with corpus grounding
+6. **Analyze** ✅ COMPLETE (Session 19 - Redesigned) - TRS database validation, surfaces alternatives worth considering
+7. **Editorial** 🔨 TODO - Final polish for structure, grammar, and clarity (no corpus interaction)
 
 **Note:** Images eliminated from scope (user decision: PDF-only corpus)
 
-**Next Session**: Test new features (Research browser, URL ingestion) → Continue to 100 docs → Build Brainstorm/Analyze
+**Next Session**: Test redesigned Analyze Agent → Build Editorial Agent → Complete 6-agent workflow
 
 ## Upload Agent Architecture (Session 10 - Production-Ready!)
 
@@ -418,6 +419,84 @@ Errors:
 - **Rate Limiting**: 15/hour, 3/min burst (TRS endpoint limit, can bypass with IP whitelist for solo dev)
 
 **See**: `docs/progress/2025-11-14-Session16.md` for detailed implementation
+
+---
+
+## ✅ Session 19 - Analyze Agent Redesign (TRS Database Validation)
+
+### Problem Discovered (Session 18)
+- **Massive output**: Thousands of words, line-by-line analysis (unreadable)
+- **Too prescriptive**: "Use better examples" instead of "here's what TRS database shows"
+- **Corpus size issue**: 165 documents caused empty responses (bloated prompt)
+
+### Solution Implemented (Session 19)
+- **UI Simplified**: Drag/drop only (removed paste textarea)
+- **Analysis Reframed**: "TRS Database Validation" not "Writing Coach"
+  - Analytical tone: "TRS also contains..." not "You should..."
+  - Surfaces alternatives: "Database shows X, Y, Z worth considering..."
+  - Focus: What's IN the TRS corpus, not general writing advice
+- **Scalability Fixed**: Removed corpus context from prompt (File Search tool already has access)
+  - Now handles 165+ documents without issue
+  - Previous: 10,000+ chars of metadata = context overflow
+  - After: Minimal reference, File Search does the work
+
+### Results
+- ✅ Concise output (~500 words vs. thousands)
+- ✅ Surfaces alternatives from TRS database
+- ✅ Analytical, not prescriptive
+- ✅ Scales to 165+ documents (tested successfully)
+- ✅ User feedback: "I think it is good enough"
+
+**See**: `docs/progress/2025-11-15-Session19.md` for detailed implementation
+
+---
+
+## ✅ Session 20 - Document Quality Classification System
+
+### Problem Discovered
+- **Corpus growth diluting quality**: 200+ documents now includes high-quality primary sources mixed with timelines and general history
+- Generic content (timelines, web articles) crowding out authoritative sources in RAG responses
+- No way to prioritize ex-Toyota expert sources over background material
+- User insight: All `.txt` files are URL-ingested web content → can auto-classify as Tier 3
+
+### Solution Implemented
+**4-Tier Quality Classification System** with conservative auto-classification + manual review UI
+
+**1. Classification Schema** (`lib/types.ts`)
+- Added `qualityTier`, `tierLabel`, `autoClassified`, `classifiedAt` fields to DocumentMetadata
+- 4 tiers: Tier 1 (Authoritative), Tier 2 (High Quality), Tier 3 (Supporting), Tier 4 (Background)
+
+**2. Conservative Auto-Classification** (`lib/classify-documents.ts`)
+- Tier 4: History track + timeline keywords
+- Tier 3: URL-ingested text files (`.txt` with source URL) - all web content
+- Tier 2: Academic papers and default for PDFs (safe, requires manual review)
+- Tier 1: None (user manually promotes best sources)
+
+**3. Quality Review UI** (Browse → Quality Review tab)
+- Collapsible tier sections with document counts
+- Inline tier dropdown to change classifications
+- Shows auto-classification reason for transparency
+- Batch save functionality
+- Filter/search/sort options
+- Stats bar shows tier distribution: Tier 1 (0) | Tier 2 (38 PDFs) | Tier 3 (146 .txt) | Tier 4 (20)
+
+**4. Upload Integration**
+- Tier selection dropdown in Pending Review (defaults to Tier 2)
+- Shows tier descriptions
+- Mandatory selection before approval
+
+**5. Agent Prompt Updates**
+- **Query Corpus**: Prioritizes Tier 1+2 sources, uses Tier 3 for context, Tier 4 only for dates
+- **Draft Agent**: Outline and full draft generation prioritize high-tier sources
+- **Analyze Agent**: Surfaces Tier 1+2 alternatives when article uses lower-tier sources
+
+### Results
+- ✅ 204 documents classified: 38 PDFs (Tier 2), 146 .txt (Tier 3), 20 timelines (Tier 4)
+- ✅ User only needs to review 38 PDFs to identify Tier 1 sources (vs. 204 documents)
+- ✅ Automatic prioritization in all agents - no prompting required
+- ✅ Quality improvement: RAG queries now prioritize authoritative sources over timelines
+
+**See**: `docs/progress/2025-11-15-Session20.md` for detailed implementation
 
 ---
 

@@ -21,6 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { Message } from "@/lib/types";
+import { QualityReview } from "@/components/ui/quality-review";
 
 interface Document {
   fileId: string;
@@ -298,9 +299,10 @@ export function BrowseQueryAgent() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="browse" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsList className="grid w-full grid-cols-3 mb-6">
               <TabsTrigger value="browse">Browse Documents</TabsTrigger>
               <TabsTrigger value="query">Query Corpus</TabsTrigger>
+              <TabsTrigger value="quality">Quality Review</TabsTrigger>
             </TabsList>
 
             {/* BROWSE DOCUMENTS TAB */}
@@ -868,6 +870,11 @@ export function BrowseQueryAgent() {
                   </CardContent>
                 </Card>
               </div>
+            </TabsContent>
+
+            {/* QUALITY REVIEW TAB */}
+            <TabsContent value="quality">
+              <QualityReview />
             </TabsContent>
           </Tabs>
         </CardContent>

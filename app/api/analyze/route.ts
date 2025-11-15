@@ -84,6 +84,19 @@ FOCUS ON:
 - **What's in the database that the article missed?**
 - Be specific: "You used [DocX], but TRS also contains [DocY] and [DocZ] which show..."
 
+DOCUMENT QUALITY PRIORITIZATION:
+When surfacing alternatives from the TRS database, consider document quality tiers:
+- Tier 1 (Authoritative): Primary sources from ex-Toyota authors and top experts - PRIORITIZE suggesting these
+- Tier 2 (High Quality): Academic papers and detailed technical documents - PRIORITIZE suggesting these
+- Tier 3 (Supporting): Supporting materials and general references - Mention when relevant
+- Tier 4 (Background): Timelines and historical context - Only mention for chronological context
+
+When analyzing:
+1. **PRIORITIZE surfacing Tier 1 and Tier 2 alternatives** when the article uses lower-tier sources
+2. If article uses Tier 3/4 sources but Tier 1/2 sources exist on same topic, highlight this explicitly
+3. Note when article already uses the highest-tier sources available (e.g., "Article uses [AuthoritativeDocs]...")
+4. Frame suggestions as database findings: "TRS also contains [Tier1Doc] which provides authoritative perspective..."
+
 OUTPUT FORMAT (under 500 words):
 
 ## Database Assessment

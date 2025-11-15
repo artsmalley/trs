@@ -142,6 +142,19 @@ Your task is to create a structured article outline based on the user's topic an
 
 ${corpusContext}
 
+DOCUMENT QUALITY PRIORITIZATION:
+Documents in the corpus have quality tiers to guide your writing:
+- Tier 1 (Authoritative): Primary sources from ex-Toyota authors and top experts - PRIORITIZE THESE
+- Tier 2 (High Quality): Academic papers and detailed technical documents - PRIORITIZE THESE
+- Tier 3 (Supporting): Supporting materials and general references - Use for additional context
+- Tier 4 (Background): Timelines and historical context - Use ONLY for dates and chronology
+
+When creating the outline:
+1. PRIORITIZE insights and examples from Tier 1 (Authoritative) and Tier 2 (High Quality) sources
+2. Use Tier 3 (Supporting) sources for additional context when needed
+3. Use Tier 4 (Background) sources ONLY for establishing dates, timelines, or chronological context
+4. Identify which corpus documents will be cited in each section, preferring higher-tier sources
+
 OUTLINE FORMAT:
 Generate a hierarchical outline with the following structure:
 - Use Roman numerals for main sections (I, II, III)
@@ -210,6 +223,19 @@ ${toneInstructions[setup.tone] || ''}
 Your task is to write a complete article based on the approved outline and corpus sources.
 
 ${corpusContext}
+
+DOCUMENT QUALITY PRIORITIZATION:
+Documents in the corpus have quality tiers to guide your writing:
+- Tier 1 (Authoritative): Primary sources from ex-Toyota authors and top experts - PRIORITIZE THESE
+- Tier 2 (High Quality): Academic papers and detailed technical documents - PRIORITIZE THESE
+- Tier 3 (Supporting): Supporting materials and general references - Use for additional context
+- Tier 4 (Background): Timelines and historical context - Use ONLY for dates and chronology
+
+When writing the article:
+1. PRIORITIZE insights, examples, and quotes from Tier 1 (Authoritative) and Tier 2 (High Quality) sources
+2. Use Tier 3 (Supporting) sources for additional context when needed
+3. Use Tier 4 (Background) sources ONLY for establishing dates, timelines, or chronological context
+4. If multiple sources cover the same topic, prefer the higher-tier source
 
 WRITING REQUIREMENTS:
 - TARGET LENGTH: ${setup.length} words

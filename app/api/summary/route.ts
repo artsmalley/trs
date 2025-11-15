@@ -178,6 +178,19 @@ ${img.summary ? `Description: ${img.summary}` : ""}
 
 IMPORTANT: The File Search tool will automatically retrieve relevant sections from documents based on your query.
 
+DOCUMENT QUALITY PRIORITIZATION:
+Documents in the corpus have quality tiers to guide your responses:
+- Tier 1 (Authoritative): Primary sources from ex-Toyota authors and top experts - PRIORITIZE THESE
+- Tier 2 (High Quality): Academic papers and detailed technical documents - PRIORITIZE THESE
+- Tier 3 (Supporting): Supporting materials and general references - Use for additional context
+- Tier 4 (Background): Timelines and historical context - Use ONLY for dates and chronology
+
+When responding:
+1. PRIORITIZE insights and examples from Tier 1 (Authoritative) and Tier 2 (High Quality) sources
+2. Use Tier 3 (Supporting) sources for additional context when needed
+3. Use Tier 4 (Background) sources ONLY for establishing dates, timelines, or chronological context
+4. If you find information in a lower tier but better information exists in a higher tier, prefer the higher tier source
+
 When citing information:
 - Use the Citation Key format: [CitationKey, p.#] (e.g., [${docCitationKeys[0] || 'Tanaka2024'}, p.5])
 - Include direct quotes from the source text in quotation marks

@@ -1,8 +1,8 @@
 # Next Steps
 
-## Current Status (Session 19 - Complete)
+## Current Status (Session 20 - Complete)
 
-**Latest**: Session 19 - Analyze Agent redesigned ✅ | TRS database validation working | 165 documents in corpus ✅
+**Latest**: Session 20 - Quality Classification System ✅ | 204 documents classified by quality tier | Auto-prioritization in all agents ✅
 
 ### What's Working ✅
 - ✅ **Security (Session 15)** - Production-ready protection ✅
@@ -39,6 +39,13 @@
   - Fixed scalability: Now handles 165+ documents
   - Under 500 words, focused on what's IN the corpus
   - **User feedback:** "I think it is good enough" ✅
+- ✅ **Quality Classification System (Session 20)** - 4-Tier Document Quality ✅
+  - Conservative auto-classification: .txt files → Tier 3, PDFs → Tier 2 (default)
+  - Quality Review UI in Browse tab (collapsible tier sections, batch save)
+  - Tier selection on upload (mandatory field)
+  - Automatic agent prioritization: Tier 1+2 prioritized, Tier 3 for context, Tier 4 for dates only
+  - **Results:** 204 documents classified (38 PDFs to review, 146 .txt auto-classified, 20 timelines)
+  - **Impact:** 81% reduction in manual review burden, improved RAG quality
 
 ### Known Issues ⚠️
 - 🐛 **Reject button not working** - Can't delete failed uploads from review queue
@@ -57,30 +64,40 @@
   - Now handles 165+ documents successfully ✅
 
 ### Corpus Status
-- **165 documents** in File Search Store (up from 123 in Session 18!)
-- **Goal:** Continue to 200+ documents
-- **Next focus:** History track (75+ Toyota history pages), PD and PE materials
+- **204 documents** in File Search Store (quality classified!)
+- **Distribution:** 38 Tier 2 PDFs | 146 Tier 3 .txt files | 20 Tier 4 timelines
+- **Next focus:** User reviewing 38 PDFs to promote ex-Toyota sources to Tier 1
 
 ---
 
-## Immediate Priorities - Session 20 (Next)
+## Immediate Priorities - Session 21 (Next)
 
-### 🔥 PRIORITY #1: Build Out Corpus - History Track Focus
+### 🔥 PRIORITY #1: Editorial Agent (Optional - Final Agent)
 
-**Status:** Analyze Agent complete ✅ | Focus on content now
+**Status:** Quality Classification complete ✅ | 5/6 agents working | Editorial is last agent
 
-**User's plan:**
-1. **Complete History track** - Upload 75+ Toyota history web pages
-   - Use URL ingestion via Jina.ai Reader
-   - Expand historical/biographical content
-2. **Add PD materials** - Product Development specific documents
-3. **Add PE materials** - Production Engineering specific documents
-4. **Goal:** Reach 200+ documents in corpus
+**Decision Point:** Assess if Editorial Agent adds value or if external tools (Claude, ChatGPT) are sufficient.
+
+**Purpose:** Final polish for structure, grammar, and clarity (no external fact-checking)
+
+**Estimated Time:** 1-2 hours (simpler than Analyze - no corpus interaction)
+
+---
+
+### 🎯 PRIORITY #2: Fine-Tune Tier 1 Classifications
+
+**Status:** 38 PDFs in Tier 2 need review
+
+**User's task:**
+1. Review 38 PDFs in Tier 2 (High Quality)
+2. Identify ex-Toyota primary sources
+3. Promote to Tier 1 (Authoritative)
+4. Test query quality improvement
 
 **Current Status:**
-- 165 documents in File Search Store
-- History track has room to grow (75+ pages identified)
-- URL ingestion working well (simplified in Session 17)
+- 204 documents classified automatically
+- 146 .txt files correctly classified as Tier 3
+- User can focus on just 38 PDFs (81% reduction in work)
 
 ---
 
@@ -195,6 +212,23 @@
 
 ---
 
+## Completed (Session 20) ✅
+
+- ✅ **Quality Classification System built** - 4-tier document quality (Session 20)
+  - Added classification schema to DocumentMetadata (qualityTier, tierLabel, autoClassified, classifiedAt)
+  - Conservative auto-classification logic (lib/classify-documents.ts)
+  - Bulk classification API (/api/corpus/classify-all)
+  - Quality Review UI in Browse tab (collapsible tiers, batch save, search/filter)
+  - Tier selection on upload (mandatory field in Pending Review)
+  - Agent prompt updates (Query, Draft, Analyze) - automatic tier prioritization
+  - API fix: /api/corpus/list now returns classification fields
+  - **Results:** 204 documents classified (38 Tier 2, 146 Tier 3, 20 Tier 4)
+  - **User insight:** All .txt files are web-ingested → auto-classify as Tier 3
+  - **Impact:** 81% reduction in manual review (38 PDFs vs 204 documents)
+- ✅ **Documentation complete** - Session 20 progress log, CLAUDE.md, Next_steps.md updated
+
+---
+
 ## Completed (Session 19) ✅
 
 - ✅ **Analyze Agent redesigned** - TRS database validation (Session 19)
@@ -289,8 +323,8 @@ All core agents working:
 
 ---
 
-**Status**: 5/6 agents (Research, Upload, Browse/Query, Draft, Analyze ✅) | Editorial optional | Security hardened ✅ | **165 documents** ✅
+**Status**: 5/6 agents (Research, Upload, Browse/Query, Draft, Analyze ✅) | Quality Classification ✅ | Editorial optional | Security hardened ✅ | **204 documents classified** ✅
 
-**Last Updated**: 2025-11-15 (Session 19 - Analyze Agent Redesigned & Complete)
+**Last Updated**: 2025-11-15 (Session 20 - Quality Classification System Complete)
 
-**Next Session**: Session 20 - Build out corpus (History track focus, PD/PE materials) → 200+ documents
+**Next Session**: Session 21 - Fine-tune Tier 1 classifications → Optional: Build Editorial Agent (final agent)

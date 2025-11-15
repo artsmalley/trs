@@ -33,6 +33,15 @@ interface UploadedFile {
   fileId?: string; // Gemini File API ID for approval
 }
 
+interface UrlQueueItem {
+  id: string;
+  url: string;
+  status: "pending" | "processing" | "complete" | "error" | "duplicate";
+  title?: string;
+  error?: string;
+  fileId?: string;
+}
+
 // Size categories for concurrency limits
 const SIZE_SMALL = 10 * 1024 * 1024; // 10MB
 const SIZE_MEDIUM = 30 * 1024 * 1024; // 30MB
@@ -47,6 +56,10 @@ export function UploadAgent() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const processingRef = useRef(false);
   const filesRef = useRef<UploadedFile[]>([]); // Track current files state for processQueue
+
+  // URL ingestion state
+  const [urlInput, setUrlInput] = useState("");
+  const [urlQueue, setUrlQueue] = useState<UrlQueueItem[]>([]);
 
   // Sync filesRef with files state (so processQueue can access current state)
   useEffect(() => {
@@ -369,6 +382,115 @@ export function UploadAgent() {
     }
   };
 
+  // URL ingestion functions
+  const addUrlToQueue = () => {
+    if (!urlInput.trim()) return;
+
+    // Basic URL validation
+    try {
+      new URL(urlInput);
+    } catch {
+      alert("Please enter a valid URL");
+      return;
+    }
+
+    const newItem: UrlQueueItem = {
+      id: `url-${Date.now()}`,
+      url: urlInput.trim(),
+      status: "pending",
+    };
+
+    setUrlQueue((prev) => [...prev, newItem]);
+    setUrlInput("");
+  };
+
+  const processUrl = async (id: string) => {
+    const item = urlQueue.find((u) => u.id === id);
+    if (!item) return;
+
+    // Update status to processing
+    setUrlQueue((prev) =>
+      prev.map((u) => (u.id === id ? { ...u, status: "processing" as const } : u))
+    );
+
+    try {
+      const response = await fetch("/api/process-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: item.url }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update to complete and add title
+        setUrlQueue((prev) =>
+          prev.map((u) =>
+            u.id === id
+              ? { ...u, status: "complete" as const, title: data.title, fileId: data.fileId }
+              : u
+          )
+        );
+
+        // Add to files list for review dashboard
+        const newFile: UploadedFile = {
+          id: data.fileId,
+          name: data.title || "Web Page",
+          size: 0,
+          status: "complete",
+          progress: 100,
+          metadata: data.extractedMetadata,
+          fileId: data.fileId,
+        };
+
+        setFiles((prev) => [...prev, newFile]);
+
+        console.log(`✅ URL processed: ${item.url}`);
+      } else if (data.duplicate) {
+        // Handle duplicate
+        setUrlQueue((prev) =>
+          prev.map((u) =>
+            u.id === id
+              ? {
+                  ...u,
+                  status: "duplicate" as const,
+                  error: `Already processed: ${data.existingDocument.title}`,
+                }
+              : u
+          )
+        );
+      } else {
+        throw new Error(data.error || "Processing failed");
+      }
+    } catch (error) {
+      console.error("URL processing error:", error);
+      setUrlQueue((prev) =>
+        prev.map((u) =>
+          u.id === id
+            ? {
+                ...u,
+                status: "error" as const,
+                error: error instanceof Error ? error.message : "Processing failed",
+              }
+            : u
+        )
+      );
+    }
+  };
+
+  const processAllUrls = async () => {
+    const pending = urlQueue.filter((u) => u.status === "pending");
+    for (const item of pending) {
+      await processUrl(item.id);
+      // Small delay between requests to avoid overwhelming the server
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+  };
+
+  const removeUrlFromQueue = (id: string) => {
+    setUrlQueue((prev) => prev.filter((u) => u.id !== id));
+  };
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
@@ -441,6 +563,134 @@ export function UploadAgent() {
               <p className="text-xs text-muted-foreground">Documents: PDF, DOCX, TXT • Images: JPG, PNG, GIF, WEBP</p>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* URL Ingestion Section */}
+      <Card className="border-purple-200">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            🌐 Ingest Web Pages
+          </CardTitle>
+          <CardDescription>
+            Convert web pages to PDFs and add them to your corpus. Paste URLs from Toyota history, J-STAGE articles, or any web content.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* URL Input */}
+          <div className="flex gap-2">
+            <Input
+              placeholder="https://www.toyota.co.jp/jpn/company/history/..."
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") addUrlToQueue();
+              }}
+              className="flex-1"
+            />
+            <Button onClick={addUrlToQueue} disabled={!urlInput.trim()}>
+              Add to Queue
+            </Button>
+          </div>
+
+          {/* URL Queue */}
+          {urlQueue.length > 0 && (
+            <>
+              <div className="space-y-2">
+                {urlQueue.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center gap-3 p-3 border rounded-lg"
+                  >
+                    {/* Status Icon */}
+                    {item.status === "complete" && (
+                      <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
+                        <span className="text-green-600 text-xs">✓</span>
+                      </div>
+                    )}
+                    {item.status === "processing" && (
+                      <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
+                    )}
+                    {item.status === "error" && (
+                      <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center">
+                        <span className="text-red-600 text-xs">!</span>
+                      </div>
+                    )}
+                    {item.status === "duplicate" && (
+                      <div className="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center">
+                        <span className="text-amber-600 text-xs">⚠</span>
+                      </div>
+                    )}
+                    {item.status === "pending" && (
+                      <div className="w-5 h-5 border-2 border-gray-300 rounded-full" />
+                    )}
+
+                    {/* URL Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium truncate">
+                        {item.title || new URL(item.url).pathname.split('/').pop() || item.url}
+                      </div>
+                      <div className="text-xs text-gray-500 truncate">
+                        {item.url}
+                      </div>
+                      {item.error && (
+                        <div className="text-xs text-red-600 mt-1">
+                          {item.error}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Status Badge */}
+                    <Badge
+                      variant={
+                        item.status === "complete"
+                          ? "default"
+                          : item.status === "error"
+                          ? "destructive"
+                          : item.status === "duplicate"
+                          ? "outline"
+                          : "secondary"
+                      }
+                      className={
+                        item.status === "duplicate"
+                          ? "border-amber-300 text-amber-700 bg-amber-50"
+                          : ""
+                      }
+                    >
+                      {item.status}
+                    </Badge>
+
+                    {/* Remove Button */}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => removeUrlFromQueue(item.id)}
+                      disabled={item.status === "processing"}
+                    >
+                      ×
+                    </Button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                <Button
+                  onClick={processAllUrls}
+                  disabled={urlQueue.every((u) => u.status !== "pending")}
+                  className="flex-1 bg-purple-600 hover:bg-purple-700"
+                >
+                  Process All ({urlQueue.filter((u) => u.status === "pending").length})
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setUrlQueue([])}
+                >
+                  Clear Queue
+                </Button>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 

@@ -7,30 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Check, X, ExternalLink, Search } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { RESEARCH_CATEGORIES, getTermsForCategory, getSubcategoriesForTrack, getTermsForSubcategory, ResearchTerm } from "@/lib/research-terms-data";
+import { ExternalLink, Search } from "lucide-react";
+import { ResearchTerm } from "@/lib/research-terms-data";
 import { generateSearchUrls } from "@/lib/google-search";
+import { TermBrowser } from "@/components/ui/term-browser";
 
 interface WebSearchResult {
   title: string;
@@ -40,10 +20,7 @@ interface WebSearchResult {
 }
 
 export function ResearchAgent() {
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string>("all");
   const [selectedTerms, setSelectedTerms] = useState<ResearchTerm[]>([]);
-  const [termPickerOpen, setTermPickerOpen] = useState(false);
   const [freeFormTopic, setFreeFormTopic] = useState("");
   const [loading, setLoading] = useState(false);
   const [searchTerms, setSearchTerms] = useState<any>(null);
@@ -54,53 +31,6 @@ export function ResearchAgent() {
   const [totalResults, setTotalResults] = useState("0");
   const [nextStartIndex, setNextStartIndex] = useState<number | null>(null);
   const [isSearching, setIsSearching] = useState(false);
-
-  // Get available subcategories and terms based on selections
-  const availableSubcategories = selectedCategory ? getSubcategoriesForTrack(selectedCategory) : [];
-  const availableTerms = selectedCategory && selectedSubcategory && selectedSubcategory !== "all"
-    ? getTermsForSubcategory(selectedCategory, selectedSubcategory)
-    : selectedCategory
-      ? getTermsForCategory(selectedCategory)
-      : [];
-
-  const handleCategoryChange = (categoryId: string) => {
-    setSelectedCategory(categoryId);
-    setSelectedSubcategory("all"); // Reset to all subcategories when track changes
-    setSelectedTerms([]); // Clear selected terms when category changes
-  };
-
-  const handleSubcategoryChange = (subcategoryId: string) => {
-    setSelectedSubcategory(subcategoryId);
-    setSelectedTerms([]); // Clear selected terms when subcategory changes
-  };
-
-  const toggleTerm = (term: ResearchTerm) => {
-    setSelectedTerms((prev) => {
-      const exists = prev.find(
-        (t) => t.english === term.english && t.japanese === term.japanese
-      );
-      if (exists) {
-        return prev.filter(
-          (t) => !(t.english === term.english && t.japanese === term.japanese)
-        );
-      }
-      return [...prev, term];
-    });
-  };
-
-  const removeTerm = (term: ResearchTerm) => {
-    setSelectedTerms((prev) =>
-      prev.filter(
-        (t) => !(t.english === term.english && t.japanese === term.japanese)
-      )
-    );
-  };
-
-  const isTermSelected = (term: ResearchTerm) => {
-    return selectedTerms.some(
-      (t) => t.english === term.english && t.japanese === term.japanese
-    );
-  };
 
   const handleGenerateFromGuided = async () => {
     if (selectedTerms.length === 0) return;
@@ -211,145 +141,11 @@ export function ResearchAgent() {
               <div className="h-px bg-gradient-to-l from-blue-200 to-transparent flex-1" />
             </div>
 
-            {/* Track Selector */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
-                1. Select Research Track
-              </label>
-              <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-                <SelectTrigger className="w-full border-blue-200 focus:ring-blue-500">
-                  <SelectValue placeholder="Choose a track (PD, PE, TPS, or Cross-Cutting)" />
-                </SelectTrigger>
-                <SelectContent>
-                  {RESEARCH_CATEGORIES.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Subcategory Selector */}
-            {selectedCategory && availableSubcategories.length > 0 && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
-                  2. Select Subcategory <span className="text-xs text-gray-500">(optional - leave blank for all)</span>
-                </label>
-                <Select value={selectedSubcategory} onValueChange={handleSubcategoryChange}>
-                  <SelectTrigger className="w-full border-blue-200 focus:ring-blue-500">
-                    <SelectValue placeholder="Choose a subcategory or select all" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Subcategories</SelectItem>
-                    {availableSubcategories.map((subcategory) => (
-                      <SelectItem key={subcategory.id} value={subcategory.id}>
-                        {subcategory.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Term Multi-Selector */}
-            {selectedCategory && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
-                  3. Select Research Terms
-                </label>
-                <Popover open={termPickerOpen} onOpenChange={setTermPickerOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={termPickerOpen}
-                      className="w-full justify-between border-blue-200 hover:bg-blue-50"
-                    >
-                      {selectedTerms.length === 0
-                        ? "Select terms to search..."
-                        : `${selectedTerms.length} term${selectedTerms.length > 1 ? "s" : ""} selected`}
-                      <span className="ml-2 text-xs text-muted-foreground">
-                        (searchable)
-                      </span>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[600px] p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder="Search terms in English or Japanese..." />
-                      <CommandList>
-                        <CommandEmpty>No terms found.</CommandEmpty>
-                        <ScrollArea className="h-[300px]">
-                          {RESEARCH_CATEGORIES.find((c) => c.id === selectedCategory)?.subcategories
-                            .filter((subcategory) => selectedSubcategory === "all" || subcategory.id === selectedSubcategory)
-                            .map((subcategory) => (
-                              <CommandGroup key={subcategory.id} heading={subcategory.name}>
-                                {subcategory.terms.map((term) => (
-                                  <CommandItem
-                                    key={`${term.english}-${term.japanese}`}
-                                    value={`${term.english} ${term.japanese}`}
-                                    onSelect={() => toggleTerm(term)}
-                                  >
-                                    <div
-                                      className={cn(
-                                        "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                                        isTermSelected(term)
-                                          ? "bg-primary text-primary-foreground"
-                                          : "opacity-50 [&_svg]:invisible"
-                                      )}
-                                    >
-                                      <Check className="h-4 w-4" />
-                                    </div>
-                                    <div className="flex-1">
-                                      <div className="font-medium">{term.english}</div>
-                                      <div className="text-sm text-muted-foreground">
-                                        {term.japanese}
-                                        {term.notes && (
-                                          <span className="ml-2 text-xs italic">
-                                            ({term.notes})
-                                          </span>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            )
-                          )}
-                        </ScrollArea>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-            )}
-
-            {/* Selected Terms Display */}
-            {selectedTerms.length > 0 && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
-                  Selected Terms ({selectedTerms.length})
-                </label>
-                <div className="flex flex-wrap gap-2 p-3 bg-blue-50 rounded-md border border-blue-200">
-                  {selectedTerms.map((term, index) => (
-                    <Badge
-                      key={index}
-                      variant="secondary"
-                      className="bg-blue-100 text-blue-900 hover:bg-blue-200 pl-3 pr-1 py-1 flex items-center gap-2"
-                    >
-                      <span className="font-medium">{term.english}</span>
-                      <span className="text-xs text-blue-700">({term.japanese})</span>
-                      <button
-                        onClick={() => removeTerm(term)}
-                        className="ml-1 rounded-full hover:bg-blue-300 p-0.5"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Term Browser Component */}
+            <TermBrowser
+              selectedTerms={selectedTerms}
+              onTermsChange={setSelectedTerms}
+            />
 
             {/* Action Buttons */}
             {selectedTerms.length > 0 && (

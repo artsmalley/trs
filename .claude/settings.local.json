@@ -12,7 +12,10 @@
       "Bash(bash test/security-test.sh:*)",
       "Bash(redis-cli:*)",
       "Bash(xargs:*)",
-      "Bash(node test/clear-rate-limits.js:*)"
+      "Bash(node test/clear-rate-limits.js:*)",
+      "Bash(git push:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": [],
     "ask": []

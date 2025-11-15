@@ -37,6 +37,7 @@ interface Document {
   summary: string;
   documentType: string;
   confidence: string;
+  source?: string; // Source URL for URL-ingested documents
   status: string;
   uploadedAt: string;
   approvedAt: string | null;
@@ -470,6 +471,20 @@ export function BrowseQueryAgent() {
                                 </Badge>
                               </div>
                               <p className="text-sm text-muted-foreground line-clamp-2">{doc.summary}</p>
+                              {doc.source && (
+                                <div className="flex items-center gap-2 text-xs">
+                                  <span className="text-muted-foreground">🌐 Source:</span>
+                                  <a
+                                    href={doc.source}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:underline truncate max-w-md"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    {doc.source}
+                                  </a>
+                                </div>
+                              )}
                               <div className="flex gap-3 text-xs text-muted-foreground">
                                 {doc.authors.length > 0 && (
                                   <>

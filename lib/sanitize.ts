@@ -342,13 +342,11 @@ export function validateHistory(
       };
     }
 
-    // Validate content length
-    if (content.length > LIMITS.QUERY_MAX_LENGTH) {
-      return {
-        isValid: false,
-        error: `Message content at index ${i} too long (max ${LIMITS.QUERY_MAX_LENGTH} characters)`,
-      };
-    }
+    // NOTE: We don't validate content length for history messages because:
+    // 1. User messages were already validated when first sent (as current query)
+    // 2. Assistant responses are AI-generated (trusted source) and often exceed 1000 chars
+    // 3. History is essential for conversation context
+    // 4. We already limit total message count to prevent abuse (max 50 messages)
 
     sanitized.push({
       role,

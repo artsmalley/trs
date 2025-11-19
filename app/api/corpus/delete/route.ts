@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { deleteDocumentMetadata, getDocumentMetadata } from "@/lib/kv";
 import { deleteFromBlob } from "@/lib/blob-storage";
 import { GoogleAIFileManager } from "@google/generative-ai/server";
+import { deleteDocumentFromStore } from "@/lib/file-search-store";
 import { checkRateLimit, getClientIdentifier, rateLimitPresets } from "@/lib/rate-limit";
 
 // POST /api/corpus/delete - Delete a file from Blob, File Search, and Redis
@@ -48,15 +49,25 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2. Delete from File Search (documents only, if fileUri exists)
-    if (doc.fileType === "document" && doc.fileUri && doc.fileId.startsWith("files/")) {
+    // 2. Delete from File Search Store or Files API
+    // - File Search Store documents: fileId starts with "corpora/" (permanent storage)
+    // - Files API uploads (images): fileId starts with "files/" (48-hour expiry)
+    if (doc.fileUri) {
       try {
-        const apiKey = process.env.GOOGLE_AI_API_KEY;
-        if (apiKey) {
-          const fileManager = new GoogleAIFileManager(apiKey);
-          await fileManager.deleteFile(doc.fileId);
+        if (doc.fileId.startsWith("corpora/")) {
+          // File Search Store document (permanent semantic RAG)
+          await deleteDocumentFromStore(doc.fileId);
           deletionResults.fileSearch = true;
-          console.log(`✅ Deleted from File Search: ${doc.fileId}`);
+          console.log(`✅ Deleted from File Search Store: ${doc.fileId}`);
+        } else if (doc.fileId.startsWith("files/")) {
+          // Files API upload (temporary, used for images)
+          const apiKey = process.env.GOOGLE_AI_API_KEY;
+          if (apiKey) {
+            const fileManager = new GoogleAIFileManager(apiKey);
+            await fileManager.deleteFile(doc.fileId);
+            deletionResults.fileSearch = true;
+            console.log(`✅ Deleted from Files API: ${doc.fileId}`);
+          }
         }
       } catch (error) {
         console.warn(`⚠️ Failed to delete from File Search: ${error}`);

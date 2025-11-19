@@ -1,8 +1,8 @@
 # Next Steps
 
-## Current Status (Session 21 - Complete)
+## Current Status (Session 22 - In Progress)
 
-**Latest**: Session 21 - Two-Tab Architecture ✅ | Query Corpus + Search Web separated | Strict citations enforced | 7 tabs total | All core agents working ✅
+**Latest**: Session 22 - UI Polish ✅ + Citation Investigation 🔍 | Query input text wrapping fixed | Citation issue root cause identified | Solution ready for implementation
 
 ### What's Working ✅
 - ✅ **Security (Session 15)** - Production-ready protection ✅
@@ -68,9 +68,34 @@
 
 ---
 
-## Immediate Priorities - Session 22 (Next)
+## Immediate Priorities - Session 23 (Next)
 
-### 🎯 PRIORITY #1: Editorial Agent (Optional - Final Agent)
+### 🐛 PRIORITY #1: Fix Citation & Duplication Issues (URGENT)
+
+**Status**: Root cause identified, solution ready, awaiting implementation
+
+**Problem**:
+- Duplicate response lists
+- Missing inline citations
+- Generic citation numbers `[cite: 4]` instead of `[Yoshino1985, p.1]`
+
+**Root Cause** (from Session 22 investigation):
+1. **47K token metadata bloat** in system instruction overwhelming critical rules
+2. **Gemini behavior**: File Search returns grounding metadata separately, not inline
+3. **Architecture issue**: Asking model to do impossible task (format citations during generation)
+
+**Solution** (from citation.md):
+- **Phase 1** (5 min): Remove 47K token document metadata from system instruction
+- **Phase 2** (1 hour): Implement post-processing citation injection using grounding metadata
+- **Phase 3** (30 min): Test and refine
+
+**Estimated time**: 1-2 hours
+**Priority**: HIGH - Blocks core research functionality
+**See**: `citation.md` for comprehensive analysis and solution options
+
+---
+
+### 🎯 PRIORITY #2: Editorial Agent (Optional - Final Agent)
 
 **Status:** 7/7 agents working (Session 21) ✅ | Editorial is last agent (optional)
 
@@ -207,6 +232,48 @@
    - Should agents remember previous steps?
    - Export/import between agents?
    - Or keep session-based as is?
+
+---
+
+## Completed (Session 22) ✅
+
+### UI Polish
+- ✅ **Query Input Text Wrapping Fixed** - Changed Input to Textarea
+  - Long queries now wrap within visible area instead of scrolling horizontally
+  - Added 3-row textarea with resize-none class
+  - Applied to both Query Corpus and Search Web tabs
+  - Improved UX for detailed queries
+
+### Citation Investigation
+- ✅ **Root Cause Analysis Complete** - Identified three critical issues
+  - **47K token metadata bloat**: System instruction wastes 40% of context window
+  - **Gemini behavior**: File Search returns grounding metadata separately
+  - **Architecture mismatch**: Asking model to format citations during generation (impossible)
+- ✅ **Comprehensive Analysis Document** - Created citation.md
+  - Background and problem documentation
+  - Four root causes with evidence
+  - Four solution options ranked by effort
+  - Recommended path forward (post-processing citation injection)
+- ✅ **Multiple Fix Attempts** - Iterative debugging process
+  - Reorganized system instruction with visual indicators
+  - Strengthened citation requirements (too aggressive - user feedback corrected)
+  - Adjusted to academic standard (reasonable frequency)
+  - Radically simplified instruction (bare essentials)
+  - **Result**: Learned what doesn't work, identified what will
+
+### Git Commits
+- `fc41bdc` - UI: Change query input from single-line to multi-line textarea
+- `8767ecf` - BUGFIX: Add back Input import for Browse tab search field
+- `89c7d54` - CRITICAL: Reorganize system instruction to prevent duplicates
+- `38ceae6` - CRITICAL: Strengthen citation requirement with concrete example
+- `6340d2e` - FIX: Reasonable citation frequency (not every sentence)
+- `a5f8442` - RADICAL: Simplify system instruction to bare essentials
+
+### Status
+- **UI**: Text wrapping fixed ✅
+- **Investigation**: Root cause identified ✅
+- **Solution**: Designed and documented ✅
+- **Next**: Implementation ready (1-2 hours)
 
 ---
 
@@ -356,8 +423,8 @@ All core agents working:
 
 ---
 
-**Status**: 7/7 agents (Research, Upload, Browse, Query Corpus, Search Web, Draft, Analyze ✅) | Quality Classification ✅ | Editorial optional | Security hardened ✅ | **240 documents** ✅ | **Two-tab architecture working** ✅
+**Status**: 7/7 agents working | Quality Classification ✅ | Security hardened ✅ | **240 documents** ✅ | Two-tab architecture ✅ | **Citation issue identified** ⚠️
 
-**Last Updated**: 2025-01-18 (Session 21 - Two-Tab Architecture Complete)
+**Last Updated**: 2025-01-18 (Session 22 - UI Polish + Citation Investigation)
 
-**Next Session**: Session 22 - **Build Editorial Agent (optional)** OR **Continue corpus expansion to 300+ documents**
+**Next Session**: Session 23 - **Fix Citation & Duplication (1-2 hours)** → Solution ready in citation.md

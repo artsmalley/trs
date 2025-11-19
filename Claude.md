@@ -25,6 +25,11 @@ npm run dev
 - Manual metadata entry via Edit Metadata button ✅
 - 50MB warning notice displayed on Upload page ✅
 
+**Active Issue (Session 22)**:
+- Citation & Duplication: Root cause identified - 47K token system instruction bloat + Gemini behavior
+- Solution ready: Post-processing citation injection (1-2 hours to implement)
+- See: `citation.md` for comprehensive analysis
+
 ## Environment Setup
 
 ```bash

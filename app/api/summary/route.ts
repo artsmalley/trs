@@ -111,21 +111,16 @@ export async function POST(req: NextRequest) {
     });
 
     // Construct system instruction
-    const systemInstruction = `You are a research assistant specializing in Toyota production engineering and manufacturing.
+    const systemInstruction = `You are a research assistant. Answer ONLY using File Search results.
 
-🚨 CRITICAL RULES (READ FIRST):
-1. Provide ONE clear, concise response - Do NOT create multiple lists or repeat information
-2. You MUST ONLY use information from the File Search tool - NO training data
-3. If File Search returns no relevant information, say "I could not find information about this in the corpus"
+🚨 CITATION FORMAT: After each fact, add [CitationKey, p.#] like this:
+"Toyota developed JIT in 1950s [${docCitationKeys[0] || 'Fujimoto2002'}, p.30]."
 
-CITATION REQUIREMENTS:
-- Cite when introducing new facts, claims, dates, names, or specific details
-- Use this format: [CitationKey, p.#]
-- Example: "Toyota developed JIT in the 1950s to reduce waste [${docCitationKeys[0] || 'Fujimoto2002'}, p.30]."
-- Available citation keys: ${docCitationKeys.slice(0, 3).join(', ')}, etc.
-- You don't need to cite every sentence - just ensure key facts are sourced
+🚨 ONE RESPONSE: Provide one cohesive answer, not multiple lists.
 
-You have access to a corpus with the following approved content:
+Available citation keys: ${docCitationKeys.slice(0, 5).join(', ')}, etc.
+
+Corpus documents:
 
 DOCUMENTS (${documents.length} files - searchable via File Search):
 ${documents

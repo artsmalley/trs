@@ -235,46 +235,66 @@ When citing information:
       parts: queryParts,
     });
 
-    // Generate response with File Search tool (semantic retrieval) + Google Search (web grounding)
-    console.log(`Querying File Search Store: ${storeName} + Google Search grounding`);
-    const result = await ai.models.generateContent({
+    // SEQUENTIAL DUAL-QUERY APPROACH (File Search + Google Search can't be used together)
+    // Query 1: Corpus (File Search) - Your uploaded documents
+    console.log(`Query 1/2: Searching corpus (File Search Store: ${storeName})`);
+    const corpusResult = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents,
       config: {
-        systemInstruction,
+        systemInstruction: systemInstruction + '\n\nFocus on information from the uploaded corpus documents.',
         tools: [
           {
             fileSearch: {
               fileSearchStoreNames: [storeName],
-              // Optional: can add metadata filters here
             },
-          },
-          {
-            googleSearch: {}, // Enable web search grounding for external source citations
           },
         ],
       },
     });
 
-    // Get response text (new SDK structure)
-    const responseText = result.text || "";
+    const corpusAnswer = corpusResult.text || "";
+    const corpusGrounding = corpusResult.candidates?.[0]?.groundingMetadata;
+
+    // Query 2: Web (Google Search) - External sources
+    console.log(`Query 2/2: Searching web (Google Search) for additional sources`);
+    const webResult = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents,
+      config: {
+        systemInstruction: systemInstruction + '\n\nSearch the web to find additional authoritative sources and recent information that supplements the corpus.',
+        tools: [
+          {
+            googleSearch: {},
+          },
+        ],
+      },
+    });
+
+    const webAnswer = webResult.text || "";
+    const webGrounding = webResult.candidates?.[0]?.groundingMetadata;
+
+    // Combine answers intelligently
+    const responseText = `**From Your Corpus (${documents.length} documents):**\n${corpusAnswer}\n\n**From Web Search (Additional Sources):**\n${webAnswer}`;
 
     // Log grounding metadata if available (for debugging)
-    const groundingMetadata = result.candidates?.[0]?.groundingMetadata;
-    if (groundingMetadata) {
-      console.log('Grounding metadata:', JSON.stringify(groundingMetadata, null, 2));
+    if (corpusGrounding) {
+      console.log('Corpus grounding:', JSON.stringify(corpusGrounding, null, 2));
+    }
+    if (webGrounding) {
+      console.log('Web grounding:', JSON.stringify(webGrounding, null, 2));
     }
 
-    // Extract citations from File Search Store grounding metadata + Google Search
+    // Extract citations from both queries
     const citations: any[] = [];
     const referencedDocIds: string[] = [];
 
-    // 1. Extract File Search citations (corpus documents)
-    if (groundingMetadata?.groundingChunks) {
+    // 1. Extract File Search citations (corpus documents) from Query 1
+    if (corpusGrounding?.groundingChunks) {
       // Track unique documents by title
       const docMap = new Map<string, { doc: any; pages: Set<number>; citationKey: string }>();
 
-      groundingMetadata.groundingChunks.forEach((chunk: any) => {
+      corpusGrounding.groundingChunks.forEach((chunk: any) => {
         const chunkTitle = chunk.retrievedContext?.title;
         if (!chunkTitle) return;
 
@@ -333,9 +353,9 @@ When citing information:
       });
     }
 
-    // 2. Extract Google Search citations (web sources)
-    if (groundingMetadata?.searchEntryPoint) {
-      const renderedContent = groundingMetadata.searchEntryPoint.renderedContent;
+    // 2. Extract Google Search citations (web sources) from Query 2
+    if (webGrounding?.searchEntryPoint) {
+      const renderedContent = webGrounding.searchEntryPoint.renderedContent;
       if (renderedContent) {
         // Google Search provides rendered snippets with source URLs
         // Extract unique web sources
@@ -348,9 +368,9 @@ When citing information:
       }
     }
 
-    // Also check for groundingSupports (newer grounding format)
-    if (groundingMetadata?.groundingSupports) {
-      groundingMetadata.groundingSupports.forEach((support: any) => {
+    // Also check for groundingSupports in web results (newer grounding format)
+    if (webGrounding?.groundingSupports) {
+      webGrounding.groundingSupports.forEach((support: any) => {
         if (support.segment && support.groundingChunkIndices) {
           // This is a File Search support - already handled above
         } else if (support.webSearchQueries) {

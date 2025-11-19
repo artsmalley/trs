@@ -54,6 +54,7 @@ export interface Citation {
   title: string;
   excerpt: string;
   pageNumber?: number;
+  source?: 'corpus' | 'web'; // Track whether from corpus or web search
 }
 
 // Query filters for Summary/Analyze agents

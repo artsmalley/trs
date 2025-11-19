@@ -235,8 +235,8 @@ When citing information:
       parts: queryParts,
     });
 
-    // Generate response with File Search tool (semantic retrieval)
-    console.log(`Querying File Search Store: ${storeName}`);
+    // Generate response with File Search tool (semantic retrieval) + Google Search (web grounding)
+    console.log(`Querying File Search Store: ${storeName} + Google Search grounding`);
     const result = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents,
@@ -248,6 +248,9 @@ When citing information:
               fileSearchStoreNames: [storeName],
               // Optional: can add metadata filters here
             },
+          },
+          {
+            googleSearch: {}, // Enable web search grounding for external source citations
           },
         ],
       },
@@ -262,10 +265,11 @@ When citing information:
       console.log('Grounding metadata:', JSON.stringify(groundingMetadata, null, 2));
     }
 
-    // Extract citations from File Search Store grounding metadata
+    // Extract citations from File Search Store grounding metadata + Google Search
     const citations: any[] = [];
     const referencedDocIds: string[] = [];
 
+    // 1. Extract File Search citations (corpus documents)
     if (groundingMetadata?.groundingChunks) {
       // Track unique documents by title
       const docMap = new Map<string, { doc: any; pages: Set<number>; citationKey: string }>();
@@ -310,7 +314,7 @@ When citing information:
         }
       });
 
-      // Build citations from matched documents
+      // Build citations from matched documents (corpus sources)
       docMap.forEach(({ doc, pages, citationKey }) => {
         referencedDocIds.push(doc.fileId);
 
@@ -324,7 +328,42 @@ When citing information:
           title: `[${citationKey}${pageInfo}] ${doc.title}`,
           excerpt: doc.summary ? doc.summary.substring(0, 150) + "..." : "No summary available",
           pageNumber: pageNumbers[0] || undefined,
+          source: 'corpus', // Mark as corpus source
         });
+      });
+    }
+
+    // 2. Extract Google Search citations (web sources)
+    if (groundingMetadata?.searchEntryPoint) {
+      const renderedContent = groundingMetadata.searchEntryPoint.renderedContent;
+      if (renderedContent) {
+        // Google Search provides rendered snippets with source URLs
+        // Extract unique web sources
+        citations.push({
+          documentId: 'google-search',
+          title: '[Web Search] Google Search Results',
+          excerpt: renderedContent.substring(0, 150) + "...",
+          source: 'web', // Mark as web source
+        });
+      }
+    }
+
+    // Also check for groundingSupports (newer grounding format)
+    if (groundingMetadata?.groundingSupports) {
+      groundingMetadata.groundingSupports.forEach((support: any) => {
+        if (support.segment && support.groundingChunkIndices) {
+          // This is a File Search support - already handled above
+        } else if (support.webSearchQueries) {
+          // Web search support
+          support.webSearchQueries.forEach((query: string) => {
+            citations.push({
+              documentId: `web-${query}`,
+              title: `[Web] Search: "${query}"`,
+              excerpt: 'Information verified via Google Search',
+              source: 'web',
+            });
+          });
+        }
       });
     }
 

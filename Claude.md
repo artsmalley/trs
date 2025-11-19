@@ -24,7 +24,6 @@ npm run dev
 - Files >50MB upload successfully and are fully searchable ✅
 - Manual metadata entry via Edit Metadata button ✅
 - 50MB warning notice displayed on Upload page ✅
-- Reject button not working (bug - MEDIUM priority, workaround exists)
 
 ## Environment Setup
 
@@ -89,13 +88,16 @@ app/
     process-blob/   ← Upload processing (Blob → File Search Store + metadata)
     process-url/    ← URL ingestion via Jina.ai Reader (Session 16)
     summary/        ← Query Corpus with semantic RAG (File Search tool)
+    web-search/     ← Google Search for generic web knowledge (Session 21)
     migrate/        ← One-time migration endpoint (protected with env flag)
     corpus/
       clear-all/    ← Delete all documents (protected with token)
       delete/       ← Delete single document (rate limited)
-  page.tsx          ← Main UI with 6 tabs (Research, Upload, Browse, Brainstorm, Analyze)
+  page.tsx          ← Main UI with 7 tabs (Research, Upload, Browse, Search Web, Draft, Analyze, Editor)
 components/
-  agents/           ← 4 agents complete (Research, Upload, Browse/Query)
+  agents/           ← 6 agents complete (Research, Upload, Browse/Query, Web Search, Draft, Analyze)
+    browse-query-agent.tsx ← Query Corpus (simplified, no Mode/Length/Custom)
+    web-search-agent.tsx   ← Search Web with Google Search (Session 21)
   ui/
     term-browser.tsx ← Searchable term browser with bilingual toggle (Session 16)
 lib/
@@ -177,19 +179,20 @@ Download → Redis (get blobUrl) → Fetch from Blob → Browser
 - Parses page numbers from chunk text (`--- PAGE X ---` markers)
 - Format: `[CitationKey, p.5]` or `[FamilyName2024, p.1, 2, 5]`
 
-## 6 Active Agents (1 Eliminated)
+## 7 Active Agents (1 Eliminated)
 
 1. **Research** ✅ COMPLETE - 228 curated terms with searchable browser, bilingual toggle, Google Custom Search, targeted search (J-STAGE, Patents, Scholar) - REDESIGNED Session 16
 2. **Upload** ✅ COMPLETE - Client-side Blob upload, smart queue, up to 100MB, ~50MB metadata limit, URL ingestion via Jina.ai - URL INGESTION ADDED Session 16
-3. **Browse** ✅ COMPLETE - Sorting, infinite scroll, file details modal, delete functionality
-4. **Query Corpus** ✅ FIXED (Session 12) - Semantic RAG with File Search Store, scales to 100+ docs
-5. **Draft** ✅ COMPLETE (Session 18) - Outline → full article generation with corpus grounding
-6. **Analyze** ✅ COMPLETE (Session 19 - Redesigned) - TRS database validation, surfaces alternatives worth considering
-7. **Editorial** 🔨 TODO - Final polish for structure, grammar, and clarity (no corpus interaction)
+3. **Browse** ✅ COMPLETE - Sorting, infinite scroll, file details modal, delete functionality, quality tier management
+4. **Query Corpus** ✅ COMPLETE (Session 21 - Simplified) - Semantic RAG with strict citations, no UI constraints
+5. **Search Web** ✅ COMPLETE (Session 21) - Google Search for generic web knowledge, separate from corpus
+6. **Draft** ✅ COMPLETE (Session 18) - Outline → full article generation with corpus grounding
+7. **Analyze** ✅ COMPLETE (Session 19 - Redesigned) - TRS database validation, surfaces alternatives worth considering
+8. **Editorial** 🔨 OPTIONAL - Final polish for structure, grammar, and clarity (external LLMs may be sufficient)
 
 **Note:** Images eliminated from scope (user decision: PDF-only corpus)
 
-**Next Session**: Test redesigned Analyze Agent → Build Editorial Agent → Complete 6-agent workflow
+**Architecture Decision (Session 21)**: Separated Query Corpus and Search Web into independent tabs to highlight knowledge gap between authoritative corpus facts and generic web knowledge.
 
 ## Upload Agent Architecture (Session 10 - Production-Ready!)
 
@@ -500,23 +503,44 @@ Errors:
 
 ---
 
-## ✅ Session 21 - Bug Fixes + Sequential Query Attempt (2025-01-18)
+## ✅ Session 21 - Two-Tab Architecture: Query Corpus + Search Web (2025-01-18)
 
 ### Bug Fixes Completed
 - ✅ **Reject Button Fixed**: Now properly deletes from File Search Store (not just Redis)
 - ✅ **Follow-up Queries Fixed**: Removed 1000-char limit on history messages
 
-### Feature Attempted (BROKEN)
-- ❌ **Sequential Dual-Query System**: File Search + Google Search
-  - Google API limitation: Can't use both tools together
-  - Implemented sequential approach (Query 1 → Query 2)
-  - Deployed but Query 2 never executes (debugging needed)
-  - User wants: Corpus results + Web discovery with full citations
+### Architectural Pivot: Sequential → Separate Tabs
+**Problem**: Sequential dual-query executed but Query 2 returned generic "Lean 101" knowledge while corpus had specific facts
 
-### Status
-- **Working**: Reject button, Follow-up queries, Corpus search
-- **Broken**: Web search (Query 2/2 not executing)
-- **Priority**: Debug sequential query or implement toggle fallback
+**User Insight**: "The google search of the internet will always return the perceived common answer but not the best facts and details."
+
+**Solution**: Separated into two independent tabs to highlight knowledge gap
+- **Query Corpus Tab**: Strict citations, corpus-only responses, specific dates/names/tools
+- **Search Web Tab**: Google Search, generic web knowledge, surface-level principles
+
+### Implementation Changes
+**Backend**:
+- Reverted `/api/summary` to corpus-only with strict citation requirements
+- Created new `/api/web-search` endpoint (Google Search tool)
+- Added anti-duplication instruction ("CRITICAL: Provide ONE clear, concise response")
+- Removed Mode/Length/Custom Instructions parameters
+
+**Frontend**:
+- Simplified `browse-query-agent.tsx` (removed Mode/Length/Custom UI)
+- Created `web-search-agent.tsx` (clean query input only)
+- Updated `app/page.tsx` (7 tabs: added "Search Web")
+
+**Citation Requirements (Corpus)**:
+- "You MUST ONLY use information retrieved by the File Search tool"
+- "You MUST cite EVERY factual claim using [CitationKey, p.#]"
+- "Every sentence with factual information MUST include citation"
+
+### Results
+**Corpus Query**: Specific dates (1934, 1950s), names (Kiichiro Toyoda), tools (TOGO CAD, Shusa system), full citations like `[History2012, p.1]`
+
+**Web Search**: Generic principles (Chief Engineer, Set-Based Design), no specific implementations, abstract concepts
+
+**Impact**: System now demonstrates hidden knowledge gap between authoritative TRS corpus and generic web knowledge
 
 **See**: `docs/progress/2025-01-18-Session21.md` for detailed implementation
 
@@ -566,16 +590,6 @@ Errors:
 ---
 
 ## Known Issues (Current)
-
-### 🐛 Sequential Query Bug (Session 21 - ACTIVE)
-
-**1. Query 2 Not Executing in Dual-Query System**
-- Issue: Sequential File Search + Google Search - only Query 1 executes
-- Symptoms: Logs show "Query 1/2" but never "Query 2/2", no errors
-- Impact: Web search results always empty, only corpus results shown
-- Status: DEBUGGING - Deployed but broken
-- Priority: HIGH - Blocks dual-source feature
-- See: `docs/progress/2025-01-18-Session21.md` for details
 
 ### ⚠️ Known Limitations
 

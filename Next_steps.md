@@ -1,8 +1,8 @@
 # Next Steps
 
-## Current Status (Session 20 - Complete)
+## Current Status (Session 21 - Complete)
 
-**Latest**: Session 20 - Quality Classification System ✅ | 204 documents classified by quality tier | Auto-prioritization in all agents ✅
+**Latest**: Session 21 - Two-Tab Architecture ✅ | Query Corpus + Search Web separated | Strict citations enforced | 7 tabs total | All core agents working ✅
 
 ### What's Working ✅
 - ✅ **Security (Session 15)** - Production-ready protection ✅
@@ -21,7 +21,8 @@
   - URL ingestion via Jina.ai Reader (text storage)
   - Duplicate URL detection, queue system
 - ✅ **Browse/Query Agent** - Browse with filters + semantic RAG queries
-- ✅ **Query Corpus** - Customizable controls (Mode, Length, Custom Instructions)
+- ✅ **Query Corpus (Session 21 - SIMPLIFIED)** - Strict citations, corpus-only, no UI constraints
+- ✅ **Search Web (Session 21 - NEW)** - Google Search for generic web knowledge
 - ✅ **Draft Agent (Session 18)** - NEW! Outline → Full Article Generation ✅
   - Two-step workflow: Generate Outline → Edit → Generate Draft
   - 6 article types, 5 lengths, 4 tones
@@ -48,9 +49,6 @@
   - **Impact:** 81% reduction in manual review burden, improved RAG quality
 
 ### Known Issues ⚠️
-- 🐛 **Reject button not working** - Can't delete failed uploads from review queue
-  - Workaround: Approve → Delete from Browse tab
-  - Priority: MEDIUM (annoying but workaround exists)
 - ⚠️ **~50MB Gemini limit** - Metadata extraction fails for files >50MB
   - **IMPORTANT**: Files still upload and index successfully!
   - **Workaround**: Use Edit Metadata button ✅
@@ -72,36 +70,9 @@
 
 ## Immediate Priorities - Session 22 (Next)
 
-### 🐛 PRIORITY #1: DEBUG Sequential Query Bug (URGENT)
+### 🎯 PRIORITY #1: Editorial Agent (Optional - Final Agent)
 
-**Status:** Deployed but broken - Query 2/2 never executes
-
-**Issue**: Sequential dual-query system (File Search + Google Search)
-- Query 1 (corpus) works ✅
-- Query 2 (web) never runs ❌
-- No errors in logs
-- Code is correct and deployed
-- User sees "From Web Search" section but empty
-
-**Debug Steps**:
-1. Add detailed logging between Query 1 and Query 2
-2. Add explicit try/catch with error logging around Query 2
-3. Verify Google Search tool syntax for `@google/genai` SDK
-4. Check if Query 1 result structure causes execution to stop
-5. Test Google Search query in isolation (without File Search)
-
-**Fallback Options** (if Google Search doesn't work):
-- Option A: Remove web search, keep corpus-only (already working)
-- Option B: Implement toggle mode (user picks Corpus OR Web, not both)
-- Option C: Use different web search implementation
-
-**User Expectation**: Wants comprehensive source attribution (corpus + web discovery)
-
----
-
-### 🎯 PRIORITY #2: Editorial Agent (Optional - Final Agent)
-
-**Status:** Quality Classification complete ✅ | 5/6 agents working | Editorial is last agent (PAUSED due to bug)
+**Status:** 7/7 agents working (Session 21) ✅ | Editorial is last agent (optional)
 
 **Decision Point:** Assess if Editorial Agent adds value or if external tools (Claude, ChatGPT) are sufficient.
 
@@ -241,6 +212,7 @@
 
 ## Completed (Session 21) ✅
 
+### Bug Fixes
 - ✅ **Reject Button Fixed** - Now properly deletes from File Search Store + Blob + Redis
   - Added deleteDocumentFromStore() for File Search Store documents
   - Detects both `corpora/` (File Search Store) and `files/` (Files API) prefixes
@@ -249,10 +221,26 @@
   - Assistant responses often exceed 1000 chars (4-6 paragraphs)
   - History validation now allows any length (already trusted content)
   - Multi-turn conversations now work correctly
-- ❌ **Sequential Dual-Query Attempted** - Deployed but broken (Query 2 doesn't execute)
-  - Implemented File Search (Query 1) + Google Search (Query 2)
-  - Query 1 works, Query 2 never runs (no logs, no errors)
-  - Needs debugging in Session 22
+
+### Architectural Pivot: Two-Tab Architecture
+- ✅ **Query Corpus + Search Web Separated** - Independent tabs to highlight knowledge gap
+  - **User Insight:** "The google search of the internet will always return the perceived common answer but not the best facts and details."
+  - Query Corpus: Strict citations, corpus-only responses, specific facts
+  - Search Web: Google Search, generic web knowledge, surface-level principles
+- ✅ **UI Simplified** - Removed Mode/Length/Custom Instructions from both tabs
+  - User has full control through detailed prompts
+  - No UI constraints interfering with citations
+- ✅ **Strict Citation Enforcement** - "You MUST cite EVERY factual claim"
+  - Corpus queries now return full citations like `[History2012, p.1]`
+  - Prevents model from using training data instead of corpus
+- ✅ **Anti-Duplication Instruction** - Single cohesive response, no redundant lists
+- ✅ **7 Tabs Total** - Research, Upload, Browse, Query Corpus, Search Web, Draft, Analyze, (Editor optional)
+
+### Results
+- **Corpus Query**: Specific dates, names, tools with full citations
+- **Web Search**: Generic principles, no primary sources
+- **Impact**: System demonstrates hidden knowledge gap in TRS database
+
 - ✅ **Documentation Updated** - Session 21 progress log, CLAUDE.md, Next_steps.md
 
 ---
@@ -368,8 +356,8 @@ All core agents working:
 
 ---
 
-**Status**: 5/6 agents (Research, Upload, Browse/Query, Draft, Analyze ✅) | Quality Classification ✅ | Editorial optional | Security hardened ✅ | **240 documents** ✅ | **🐛 Sequential query bug active**
+**Status**: 7/7 agents (Research, Upload, Browse, Query Corpus, Search Web, Draft, Analyze ✅) | Quality Classification ✅ | Editorial optional | Security hardened ✅ | **240 documents** ✅ | **Two-tab architecture working** ✅
 
-**Last Updated**: 2025-01-18 (Session 21 - Bug Fixes + Sequential Query Attempt)
+**Last Updated**: 2025-01-18 (Session 21 - Two-Tab Architecture Complete)
 
-**Next Session**: Session 22 - **DEBUG: Sequential query (Query 2/2 not executing)** → Fallback to corpus-only or toggle mode if needed
+**Next Session**: Session 22 - **Build Editorial Agent (optional)** OR **Continue corpus expansion to 300+ documents**

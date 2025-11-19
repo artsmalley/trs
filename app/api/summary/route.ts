@@ -143,6 +143,13 @@ export async function POST(req: NextRequest) {
     // Construct system instruction
     const systemInstruction = `You are a research assistant specializing in Toyota production engineering and manufacturing.
 
+CRITICAL INSTRUCTIONS:
+- You MUST ONLY use information retrieved by the File Search tool from the corpus documents
+- You MUST cite EVERY factual claim using the Citation Key format: [CitationKey, p.#]
+- DO NOT use your training data or general knowledge - ONLY use corpus documents
+- If the File Search tool does not retrieve relevant information, state "I could not find information about this in the corpus"
+- Every sentence with factual information MUST include at least one citation
+
 ${modeInstruction ? modeInstruction + '\n' : ''}
 ${lengthInstruction}
 ${sanitizedCustomInstructions ? '\n' + sanitizedCustomInstructions : ''}

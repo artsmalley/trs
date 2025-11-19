@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ResearchAgent } from "@/components/agents/research-agent";
 import { UploadAgent } from "@/components/agents/upload-agent";
 import { BrowseQueryAgent } from "@/components/agents/browse-query-agent";
+import { WebSearchAgent } from "@/components/agents/web-search-agent";
 import { DraftAgent } from "@/components/agents/draft-agent";
 import { AnalyzeAgent } from "@/components/agents/analyze-agent";
 import { EditorAgent } from "@/components/agents/editor-agent";
@@ -55,7 +56,7 @@ export default function Home() {
       {/* Main Content with Tabs */}
       <main className="flex-1 container mx-auto px-4 py-6 bg-slate-50">
         <Tabs defaultValue="research" className="h-full">
-          <TabsList className="grid w-full grid-cols-6 mb-6 bg-white shadow-sm p-1">
+          <TabsList className="grid w-full grid-cols-7 mb-6 bg-white shadow-sm p-1">
             <TabsTrigger value="research">Research</TabsTrigger>
             <TabsTrigger value="upload" className="relative">
               Upload
@@ -69,6 +70,7 @@ export default function Home() {
               )}
             </TabsTrigger>
             <TabsTrigger value="browse">Browse</TabsTrigger>
+            <TabsTrigger value="websearch">Search Web</TabsTrigger>
             <TabsTrigger value="draft">Draft</TabsTrigger>
             <TabsTrigger value="analyze">Analyze</TabsTrigger>
             <TabsTrigger value="editor">Editor</TabsTrigger>
@@ -84,6 +86,10 @@ export default function Home() {
 
           <TabsContent value="browse" className="space-y-4">
             <BrowseQueryAgent />
+          </TabsContent>
+
+          <TabsContent value="websearch" className="space-y-4">
+            <WebSearchAgent />
           </TabsContent>
 
           <TabsContent value="draft" className="space-y-4">

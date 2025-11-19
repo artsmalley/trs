@@ -235,14 +235,12 @@ When citing information:
       parts: queryParts,
     });
 
-    // SEQUENTIAL DUAL-QUERY APPROACH (File Search + Google Search can't be used together)
-    // Query 1: Corpus (File Search) - Your uploaded documents
-    console.log(`Query 1/2: Searching corpus (File Search Store: ${storeName})`);
-    const corpusResult = await ai.models.generateContent({
+    // Query corpus using File Search Store
+    const result = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents,
       config: {
-        systemInstruction: systemInstruction + '\n\nFocus on information from the uploaded corpus documents.',
+        systemInstruction,
         tools: [
           {
             fileSearch: {
@@ -253,48 +251,18 @@ When citing information:
       },
     });
 
-    const corpusAnswer = corpusResult.text || "";
-    const corpusGrounding = corpusResult.candidates?.[0]?.groundingMetadata;
+    const answer = result.text || "";
+    const grounding = result.candidates?.[0]?.groundingMetadata;
 
-    // Query 2: Web (Google Search) - External sources
-    console.log(`Query 2/2: Searching web (Google Search) for additional sources`);
-    const webResult = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents,
-      config: {
-        systemInstruction: systemInstruction + '\n\nSearch the web to find additional authoritative sources and recent information that supplements the corpus.',
-        tools: [
-          {
-            googleSearch: {},
-          },
-        ],
-      },
-    });
-
-    const webAnswer = webResult.text || "";
-    const webGrounding = webResult.candidates?.[0]?.groundingMetadata;
-
-    // Combine answers intelligently
-    const responseText = `**From Your Corpus (${documents.length} documents):**\n${corpusAnswer}\n\n**From Web Search (Additional Sources):**\n${webAnswer}`;
-
-    // Log grounding metadata if available (for debugging)
-    if (corpusGrounding) {
-      console.log('Corpus grounding:', JSON.stringify(corpusGrounding, null, 2));
-    }
-    if (webGrounding) {
-      console.log('Web grounding:', JSON.stringify(webGrounding, null, 2));
-    }
-
-    // Extract citations from both queries
+    // Extract citations from corpus query
     const citations: any[] = [];
     const referencedDocIds: string[] = [];
 
-    // 1. Extract File Search citations (corpus documents) from Query 1
-    if (corpusGrounding?.groundingChunks) {
+    if (grounding?.groundingChunks) {
       // Track unique documents by title
       const docMap = new Map<string, { doc: any; pages: Set<number>; citationKey: string }>();
 
-      corpusGrounding.groundingChunks.forEach((chunk: any) => {
+      grounding.groundingChunks.forEach((chunk: any) => {
         const chunkTitle = chunk.retrievedContext?.title;
         if (!chunkTitle) return;
 
@@ -334,7 +302,7 @@ When citing information:
         }
       });
 
-      // Build citations from matched documents (corpus sources)
+      // Build citations from matched documents
       docMap.forEach(({ doc, pages, citationKey }) => {
         referencedDocIds.push(doc.fileId);
 
@@ -348,47 +316,12 @@ When citing information:
           title: `[${citationKey}${pageInfo}] ${doc.title}`,
           excerpt: doc.summary ? doc.summary.substring(0, 150) + "..." : "No summary available",
           pageNumber: pageNumbers[0] || undefined,
-          source: 'corpus', // Mark as corpus source
         });
-      });
-    }
-
-    // 2. Extract Google Search citations (web sources) from Query 2
-    if (webGrounding?.searchEntryPoint) {
-      const renderedContent = webGrounding.searchEntryPoint.renderedContent;
-      if (renderedContent) {
-        // Google Search provides rendered snippets with source URLs
-        // Extract unique web sources
-        citations.push({
-          documentId: 'google-search',
-          title: '[Web Search] Google Search Results',
-          excerpt: renderedContent.substring(0, 150) + "...",
-          source: 'web', // Mark as web source
-        });
-      }
-    }
-
-    // Also check for groundingSupports in web results (newer grounding format)
-    if (webGrounding?.groundingSupports) {
-      webGrounding.groundingSupports.forEach((support: any) => {
-        if (support.segment && support.groundingChunkIndices) {
-          // This is a File Search support - already handled above
-        } else if (support.webSearchQueries) {
-          // Web search support
-          support.webSearchQueries.forEach((query: string) => {
-            citations.push({
-              documentId: `web-${query}`,
-              title: `[Web] Search: "${query}"`,
-              excerpt: 'Information verified via Google Search',
-              source: 'web',
-            });
-          });
-        }
       });
     }
 
     return NextResponse.json({
-      answer: responseText,
+      answer,
       citations,
       referencedDocuments: referencedDocIds,
     });

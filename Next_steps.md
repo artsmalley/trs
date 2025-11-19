@@ -70,11 +70,38 @@
 
 ---
 
-## Immediate Priorities - Session 21 (Next)
+## Immediate Priorities - Session 22 (Next)
 
-### 🔥 PRIORITY #1: Editorial Agent (Optional - Final Agent)
+### 🐛 PRIORITY #1: DEBUG Sequential Query Bug (URGENT)
 
-**Status:** Quality Classification complete ✅ | 5/6 agents working | Editorial is last agent
+**Status:** Deployed but broken - Query 2/2 never executes
+
+**Issue**: Sequential dual-query system (File Search + Google Search)
+- Query 1 (corpus) works ✅
+- Query 2 (web) never runs ❌
+- No errors in logs
+- Code is correct and deployed
+- User sees "From Web Search" section but empty
+
+**Debug Steps**:
+1. Add detailed logging between Query 1 and Query 2
+2. Add explicit try/catch with error logging around Query 2
+3. Verify Google Search tool syntax for `@google/genai` SDK
+4. Check if Query 1 result structure causes execution to stop
+5. Test Google Search query in isolation (without File Search)
+
+**Fallback Options** (if Google Search doesn't work):
+- Option A: Remove web search, keep corpus-only (already working)
+- Option B: Implement toggle mode (user picks Corpus OR Web, not both)
+- Option C: Use different web search implementation
+
+**User Expectation**: Wants comprehensive source attribution (corpus + web discovery)
+
+---
+
+### 🎯 PRIORITY #2: Editorial Agent (Optional - Final Agent)
+
+**Status:** Quality Classification complete ✅ | 5/6 agents working | Editorial is last agent (PAUSED due to bug)
 
 **Decision Point:** Assess if Editorial Agent adds value or if external tools (Claude, ChatGPT) are sufficient.
 
@@ -212,6 +239,24 @@
 
 ---
 
+## Completed (Session 21) ✅
+
+- ✅ **Reject Button Fixed** - Now properly deletes from File Search Store + Blob + Redis
+  - Added deleteDocumentFromStore() for File Search Store documents
+  - Detects both `corpora/` (File Search Store) and `files/` (Files API) prefixes
+  - No more orphaned files in storage
+- ✅ **Follow-up Queries Fixed** - Removed 1000-char limit on history messages
+  - Assistant responses often exceed 1000 chars (4-6 paragraphs)
+  - History validation now allows any length (already trusted content)
+  - Multi-turn conversations now work correctly
+- ❌ **Sequential Dual-Query Attempted** - Deployed but broken (Query 2 doesn't execute)
+  - Implemented File Search (Query 1) + Google Search (Query 2)
+  - Query 1 works, Query 2 never runs (no logs, no errors)
+  - Needs debugging in Session 22
+- ✅ **Documentation Updated** - Session 21 progress log, CLAUDE.md, Next_steps.md
+
+---
+
 ## Completed (Session 20) ✅
 
 - ✅ **Quality Classification System built** - 4-tier document quality (Session 20)
@@ -323,8 +368,8 @@ All core agents working:
 
 ---
 
-**Status**: 5/6 agents (Research, Upload, Browse/Query, Draft, Analyze ✅) | Quality Classification ✅ | Editorial optional | Security hardened ✅ | **204 documents classified** ✅
+**Status**: 5/6 agents (Research, Upload, Browse/Query, Draft, Analyze ✅) | Quality Classification ✅ | Editorial optional | Security hardened ✅ | **240 documents** ✅ | **🐛 Sequential query bug active**
 
-**Last Updated**: 2025-11-15 (Session 20 - Quality Classification System Complete)
+**Last Updated**: 2025-01-18 (Session 21 - Bug Fixes + Sequential Query Attempt)
 
-**Next Session**: Session 21 - Fine-tune Tier 1 classifications → Optional: Build Editorial Agent (final agent)
+**Next Session**: Session 22 - **DEBUG: Sequential query (Query 2/2 not executing)** → Fallback to corpus-only or toggle mode if needed

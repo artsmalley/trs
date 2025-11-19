@@ -500,6 +500,28 @@ Errors:
 
 ---
 
+## ✅ Session 21 - Bug Fixes + Sequential Query Attempt (2025-01-18)
+
+### Bug Fixes Completed
+- ✅ **Reject Button Fixed**: Now properly deletes from File Search Store (not just Redis)
+- ✅ **Follow-up Queries Fixed**: Removed 1000-char limit on history messages
+
+### Feature Attempted (BROKEN)
+- ❌ **Sequential Dual-Query System**: File Search + Google Search
+  - Google API limitation: Can't use both tools together
+  - Implemented sequential approach (Query 1 → Query 2)
+  - Deployed but Query 2 never executes (debugging needed)
+  - User wants: Corpus results + Web discovery with full citations
+
+### Status
+- **Working**: Reject button, Follow-up queries, Corpus search
+- **Broken**: Web search (Query 2/2 not executing)
+- **Priority**: Debug sequential query or implement toggle fallback
+
+**See**: `docs/progress/2025-01-18-Session21.md` for detailed implementation
+
+---
+
 ## ✅ Session 17 - URL Ingestion Simplification + History Track
 
 ### Architecture Simplification
@@ -545,14 +567,15 @@ Errors:
 
 ## Known Issues (Current)
 
-### 🐛 Upload Agent Bugs
+### 🐛 Sequential Query Bug (Session 21 - ACTIVE)
 
-**1. Reject Button Not Working**
-- Issue: Reject button fails to delete files from review queue
-- Error: Calls wrong endpoint or cache issue
-- Impact: Can't delete failed uploads during review
-- Workaround: Approve → Delete from Browse tab
-- Priority: MEDIUM - Annoying but workaround exists
+**1. Query 2 Not Executing in Dual-Query System**
+- Issue: Sequential File Search + Google Search - only Query 1 executes
+- Symptoms: Logs show "Query 1/2" but never "Query 2/2", no errors
+- Impact: Web search results always empty, only corpus results shown
+- Status: DEBUGGING - Deployed but broken
+- Priority: HIGH - Blocks dual-source feature
+- See: `docs/progress/2025-01-18-Session21.md` for details
 
 ### ⚠️ Known Limitations
 

@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
       return rateLimitCheck.response!;
     }
 
-    const { query, history, mode = 'standard', length = 'medium', customInstructions = '' } = await req.json();
+    const { query, history } = await req.json();
 
     if (!query) {
       return NextResponse.json(
@@ -32,14 +32,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const customInstructionsValidation = sanitizeCustomInstructions(customInstructions);
-    if (!customInstructionsValidation.isValid) {
-      return NextResponse.json(
-        { error: customInstructionsValidation.error, warnings: customInstructionsValidation.warnings },
-        { status: 400 }
-      );
-    }
-
     const historyValidation = validateHistory(history);
     if (!historyValidation.isValid) {
       return NextResponse.json(
@@ -50,7 +42,6 @@ export async function POST(req: NextRequest) {
 
     // Use sanitized values
     const sanitizedQuery = queryValidation.sanitized!;
-    const sanitizedCustomInstructions = customInstructionsValidation.sanitized || '';
     const sanitizedHistory = historyValidation.sanitized || [];
 
     const apiKey = process.env.GOOGLE_AI_API_KEY;
@@ -61,32 +52,8 @@ export async function POST(req: NextRequest) {
     // Initialize Gemini AI
     const ai = new GoogleGenAI({ apiKey });
 
-    // Mode modifiers - add focus/lens to the query
-    const modeInstructions: Record<string, string> = {
-      standard: '',
-      'find-examples': 'Focus on identifying specific case studies, examples, and real-world implementations. Provide concrete instances and practical applications.',
-      'find-people': 'Emphasize key researchers, authors, teams, and their contributions. Highlight who did what and their roles in development.',
-      'compare': 'Analyze and contrast different methods, approaches, schools of thought, or implementations. Show similarities and differences.',
-      'timeline': 'Present information chronologically, showing evolution over time. Emphasize when things happened and how they developed.',
-      'technical': 'Provide detailed technical explanations including formulas, methods, processes, and specifications. Use precise technical language.',
-    };
-
-    // Length modifiers - control response detail level
-    const lengthInstructions: Record<string, string> = {
-      brief: 'Provide a concise 2-3 sentence response with only the most essential information.',
-      medium: 'Provide a balanced response of 2-3 paragraphs with key details and citations.',
-      detailed: 'Provide a comprehensive, detailed analysis of 4-6 paragraphs covering all relevant aspects with extensive citations.',
-    };
-
-    const modeInstruction = modeInstructions[mode] || '';
-    const lengthInstruction = lengthInstructions[length] || lengthInstructions.medium;
-
     // Minimal system instruction - no corpus context (forces web search)
     const systemInstruction = `You are a research assistant specializing in Toyota production engineering and manufacturing.
-
-${modeInstruction ? modeInstruction + '\n' : ''}
-${lengthInstruction}
-${sanitizedCustomInstructions ? '\n' + sanitizedCustomInstructions : ''}
 
 You have access to Google Search. Use it to find authoritative external sources, recent information, and expert perspectives.
 

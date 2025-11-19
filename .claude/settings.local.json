@@ -19,7 +19,17 @@
       "WebSearch",
       "WebFetch(domain:jina.ai)",
       "WebFetch(domain:github.com)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill /F /PID 8592)",
+      "Bash(timeout /t 2 /nobreak)",
+      "Bash(nul)",
+      "Bash(taskkill //F //PID 8592)",
+      "Bash(timeout /t 3 /nobreak)",
+      "Bash(taskkill:*)",
+      "Bash(timeout /t 5 /nobreak)"
     ],
     "deny": [],
     "ask": []

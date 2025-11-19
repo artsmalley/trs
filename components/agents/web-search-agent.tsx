@@ -22,10 +22,6 @@ interface Citation {
 
 export function WebSearchAgent() {
   const [query, setQuery] = useState("");
-  const [mode, setMode] = useState("standard");
-  const [length, setLength] = useState("medium");
-  const [customInstructions, setCustomInstructions] = useState("");
-  const [isCustomOpen, setIsCustomOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [answer, setAnswer] = useState("");
   const [citations, setCitations] = useState<Citation[]>([]);
@@ -44,9 +40,6 @@ export function WebSearchAgent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           query,
-          mode,
-          length,
-          customInstructions,
           history,
         }),
       });
@@ -121,58 +114,6 @@ export function WebSearchAgent() {
               className="text-base"
             />
           </div>
-
-          {/* Mode and Length Selectors */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium mb-1.5 block">Mode</label>
-              <Select value={mode} onValueChange={setMode}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="standard">Standard</SelectItem>
-                  <SelectItem value="find-examples">Find Examples</SelectItem>
-                  <SelectItem value="find-people">Find People</SelectItem>
-                  <SelectItem value="compare">Compare Approaches</SelectItem>
-                  <SelectItem value="timeline">Timeline/History</SelectItem>
-                  <SelectItem value="technical">Technical Deep-Dive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-1.5 block">Length</label>
-              <Select value={length} onValueChange={setLength}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="brief">Brief (2-3 sentences)</SelectItem>
-                  <SelectItem value="medium">Medium (2-3 paragraphs)</SelectItem>
-                  <SelectItem value="detailed">Detailed (4-6 paragraphs)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Custom Instructions (Collapsible) */}
-          <Collapsible open={isCustomOpen} onOpenChange={setIsCustomOpen}>
-            <CollapsibleTrigger asChild>
-              <Button variant="outline" className="w-full justify-between">
-                Custom Instructions (Optional)
-                <ChevronDown className={`h-4 w-4 transition-transform ${isCustomOpen ? "rotate-180" : ""}`} />
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="pt-4">
-              <Textarea
-                placeholder="Add specific context or requirements for your search..."
-                value={customInstructions}
-                onChange={(e) => setCustomInstructions(e.target.value)}
-                className="min-h-[100px]"
-              />
-            </CollapsibleContent>
-          </Collapsible>
 
           {/* Action Buttons */}
           <div className="flex gap-2">

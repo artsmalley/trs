@@ -195,7 +195,9 @@ When citing information:
 - Use the Citation Key format: [CitationKey, p.#] (e.g., [${docCitationKeys[0] || 'Tanaka2024'}, p.5])
 - Include direct quotes from the source text in quotation marks
 - Be specific about which section or heading the information comes from
-- The citation key corresponds to the document listed above`;
+- The citation key corresponds to the document listed above
+
+CRITICAL: Provide ONE clear, concise response. Do NOT repeat information, create multiple lists, or generate redundant content. Answer directly and comprehensively in a single cohesive response.`;
 
     // Get File Search Store name for semantic retrieval
     const storeName = await getStoreName();

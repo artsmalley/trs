@@ -90,7 +90,9 @@ ${sanitizedCustomInstructions ? '\n' + sanitizedCustomInstructions : ''}
 
 You have access to Google Search. Use it to find authoritative external sources, recent information, and expert perspectives.
 
-IMPORTANT: You MUST search the web for this query. Provide well-sourced information with citations.`;
+IMPORTANT: You MUST search the web for this query. Provide well-sourced information with citations.
+
+CRITICAL: Provide ONE clear, concise response. Do NOT repeat information, create multiple lists, or generate redundant content. Answer directly and comprehensively in a single cohesive response.`;
 
     // Build conversation history
     const contents: any[] = [];

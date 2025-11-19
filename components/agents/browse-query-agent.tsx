@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -818,12 +817,14 @@ export function BrowseQueryAgent() {
 
                     {/* Input */}
                     <div className="flex gap-2">
-                      <Input
+                      <Textarea
                         placeholder="Ask a question about your corpus..."
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
                         disabled={loading}
+                        rows={3}
+                        className="resize-none"
                       />
                       <Button onClick={handleSend} disabled={loading || !input.trim()}>
                         Search

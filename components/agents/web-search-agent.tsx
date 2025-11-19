@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -69,13 +68,6 @@ export function WebSearchAgent() {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSearch();
-    }
-  };
-
   const clearConversation = () => {
     setHistory([]);
     setAnswer("");
@@ -106,12 +98,13 @@ export function WebSearchAgent() {
         <CardContent className="space-y-4">
           {/* Query Input */}
           <div>
-            <Input
+            <Textarea
               placeholder="Enter your search query..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              onKeyPress={handleKeyPress}
-              className="text-base"
+              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSearch()}
+              rows={3}
+              className="text-base resize-none"
             />
           </div>
 

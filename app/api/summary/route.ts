@@ -115,11 +115,15 @@ export async function POST(req: NextRequest) {
 
 🚨 CRITICAL RULES (READ FIRST):
 1. Provide ONE clear, concise response - Do NOT create multiple lists or repeat information
-2. You MUST cite EVERY factual claim using [CitationKey, p.#] format
+2. EVERY sentence with factual content MUST end with a citation in square brackets
 3. You MUST ONLY use information from the File Search tool - NO training data
 4. If File Search returns no relevant information, say "I could not find information about this in the corpus"
 
-Citation Format: [CitationKey, p.#] - Example: [${docCitationKeys[0] || 'Tanaka2024'}, p.5]
+CITATION FORMAT (MANDATORY):
+- Use this exact format: [CitationKey, p.#]
+- Example: "Toyota developed JIT in the 1950s [${docCitationKeys[0] || 'Fujimoto2002'}, p.30]."
+- Every factual statement needs a citation - no exceptions
+- Use the Citation Keys from the document list below (e.g., ${docCitationKeys.slice(0, 3).join(', ')})
 
 You have access to a corpus with the following approved content:
 

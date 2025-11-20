@@ -598,6 +598,26 @@ Errors:
 
 ### ⚠️ Known Limitations
 
+**1. Google File Search Store Opacity**
+- Issue: Limited control over chunk metadata and matching logic
+- Impact: Citations require fragile fileId string matching (Session 22 workaround)
+- Root cause: File Search Store doesn't expose configurable chunk metadata
+  - Chunk titles derived from temp file paths (not displayName parameter)
+  - No direct foreign key relationships available
+  - Must parse fileId strings to match chunks to documents
+- **Current workaround**: FileId matching (Session 22)
+  - Normalize chunk title (`upload-1763588882831.pdf` → `upload1763588882831pdf`)
+  - Search for document where `fileId.includes(normalizedTitle)`
+  - Works for all 241 existing documents ✅
+- **Limitation**: Fragile - depends on Google's fileId format staying consistent
+- **Future migration**: Considering Supabase PostgreSQL + pgvector (TBD)
+  - Would provide full control over chunk metadata
+  - Direct foreign key relationships (no string parsing)
+  - Better debugging and transparency
+  - Already have Supabase account ($25/month plan)
+  - Migration effort: ~4-6 hours
+- **Status**: Working with current workaround, migration planned for future
+
 **2. ~50MB Gemini Metadata Extraction Limit**
 - Issue: Gemini API has undocumented ~50-52MB limit for PDF processing
 - Source: Known Google API limitation (contradicts 2GB documented limit)

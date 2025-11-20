@@ -108,10 +108,10 @@ export async function uploadToStore(
 
   try {
     // Write buffer to temp file (SDK requires file path)
-    // Use ASCII-safe filename for temp file (SDK can't handle Unicode in file paths)
+    // Include original filename for chunk title matching (needed for citations)
     const tempDir = os.tmpdir();
-    const fileExt = path.extname(fileName); // e.g., ".pdf"
-    const sanitizedFileName = `upload-${Date.now()}${fileExt}`;
+    const timestamp = Date.now();
+    const sanitizedFileName = `${timestamp}-${fileName}`;
     const tempFilePath = path.join(tempDir, sanitizedFileName);
     fs.writeFileSync(tempFilePath, buffer);
 

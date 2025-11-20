@@ -425,4 +425,113 @@ if (grounding?.groundingChunks) {
 
 ---
 
-**Status**: Awaiting user review and decision on approach.
+## Session 22 Resolution - FileId Matching Solution (2025-01-19)
+
+**Status**: ✅ RESOLVED - Citations restored for all 241 existing documents
+
+### What Actually Happened
+
+**Timeline of the Problem**:
+1. **Session 12** (Nov 14 AM): Citations working perfectly
+   - Chunk titles: `upload-{timestamp}-{filename}.pdf`
+   - Example: `upload-1763123009682-Yoshino1985.pdf`
+   - Filename parsing worked → citations extracted ✅
+
+2. **Session 13** (Nov 14 PM): **REGRESSION** - Unicode fix broke citations
+   - Problem: Japanese characters in filenames caused ByteString errors in Google SDK
+   - Solution: Strip filename from temp file → use only timestamp
+   - New format: `upload-{timestamp}.pdf` (NO original filename!)
+   - Result: All 241 documents uploaded after this have broken chunk titles → no citation extraction ❌
+
+3. **Session 22** (Jan 19): Investigation and fix
+   - User reported: "We had the names displaying before somehow"
+   - Root cause identified: Session 13's Unicode workaround removed filenames
+   - 241 documents affected with chunk titles like `upload-1763588882831.pdf`
+
+### The Solution: FileId Matching
+
+**Discovery**: While chunk titles lost original filenames, the `fileId` field in Redis still contains them!
+
+**Data correlation**:
+```
+Chunk title (from Gemini):
+  "upload-1763588882831.pdf"
+
+Document fileId (in Redis):
+  "fileSearchStores/toyotaresearchsystem-b8v65yx9esml/upload/operations/upload1763588882831pdf-0wvmirtphxwz"
+```
+
+**Matching strategy**:
+1. Normalize chunk title: `upload-1763588882831.pdf` → `upload1763588882831pdf` (remove dashes/dots)
+2. Find document where `fileId.includes(normalizedTitle)`
+3. Match found! Extract citation key and pages
+
+**Implementation** (`app/api/summary/route.ts` lines 220-229):
+```typescript
+// Normalize chunk title by removing dashes and dots
+const normalizedTitle = chunkTitle.replace(/-/g, '').replace(/\./g, '');
+
+// Find matching document by checking if fileId contains normalized chunk title
+const matchedDoc = approvedDocs.find(doc => {
+  return doc.fileId && doc.fileId.includes(normalizedTitle);
+});
+```
+
+### Results
+
+✅ **All 241 existing documents now have citations**
+✅ **Basic format working**: `[Yoshino1985, p.1, 2, 3]` or `[History2012; Yoshino1985, p.1-14]`
+✅ **No re-upload needed** - Works with existing corpus
+✅ **Inline citations injected** at end of paragraphs
+
+### Limitations & Why Supabase Would Be Better
+
+**Current Workaround Issues**:
+1. **Fragile matching** - Depends on Google's fileId format staying consistent
+2. **Opaque File Search Store** - No control over chunk metadata structure
+3. **Unicode workarounds** - Had to strip filenames to avoid SDK errors
+4. **No direct foreign keys** - Must parse and string-match instead of clean DB joins
+
+**With Supabase (PostgreSQL + pgvector)**:
+```typescript
+// Clean foreign key relationship
+await supabase.from('chunks').insert({
+  id: chunk.id,
+  document_id: doc.id,        // Direct foreign key!
+  citation_key: 'Yoshino1985', // Stored explicitly
+  page_number: 5,
+  text: chunk.text,
+  embedding: vector
+});
+
+// Citation extraction = simple SQL join
+const results = await supabase
+  .from('chunks')
+  .select('*, documents(citation_key, title)')
+  .match({ query_embedding: queryVector });
+// Done. No string parsing, no fragile matching.
+```
+
+**Advantages of migration**:
+- Full control over chunk metadata
+- Direct foreign key relationships
+- No filename parsing gymnastics
+- Better debugging and transparency
+- Industry-standard tools with good docs
+- Already paying for Supabase ($25/month plan)
+
+### Recommendation for Future
+
+**Short-term** (this week): Current fileId matching works, continue using it
+
+**Long-term** (next week+): Migrate to Supabase for:
+- Better control
+- Cleaner architecture
+- No vendor lock-in to Google's opaque File Search Store
+- Easier maintenance and debugging
+
+**Migration effort**: 4-6 hours (create tables, chunk documents, generate embeddings, update API routes)
+
+---
+
+**Final Status**: Problem solved with fileId matching. Citations working. Supabase migration TBD based on user's schedule and priorities.

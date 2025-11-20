@@ -1,8 +1,8 @@
 # Next Steps
 
-## Current Status (Session 22 - In Progress)
+## Current Status (Session 22 - COMPLETE ✅)
 
-**Latest**: Session 22 - UI Polish ✅ + Citation Investigation 🔍 | Query input text wrapping fixed | Citation issue root cause identified | Solution ready for implementation
+**Latest**: Session 22 - Citation Fix Complete ✅ | UI text wrapping fixed | FileId matching solution restored citations for all 241 documents | Considering Supabase migration
 
 ### What's Working ✅
 - ✅ **Security (Session 15)** - Production-ready protection ✅
@@ -62,36 +62,49 @@
   - Now handles 165+ documents successfully ✅
 
 ### Corpus Status
-- **204 documents** in File Search Store (quality classified!)
-- **Distribution:** 38 Tier 2 PDFs | 146 Tier 3 .txt files | 20 Tier 4 timelines
-- **Next focus:** User reviewing 38 PDFs to promote ex-Toyota sources to Tier 1
+- **241 documents** in File Search Store (quality classified!)
+- **Citations working** for all documents (Session 22 - FileId matching solution) ✅
+- User completed Tier 1 PDF review ✅
 
 ---
 
-## Immediate Priorities - Session 23 (Next)
+## Immediate Priorities - Session 23 (Next Week)
 
-### 🐛 PRIORITY #1: Fix Citation & Duplication Issues (URGENT)
+### 🎯 PRIORITY #1: Consider Supabase Migration (TBD)
 
-**Status**: Root cause identified, solution ready, awaiting implementation
+**Status**: Working solution exists (fileId matching), migration under consideration
 
-**Problem**:
-- Duplicate response lists
-- Missing inline citations
-- Generic citation numbers `[cite: 4]` instead of `[Yoshino1985, p.1]`
+**Current State** (Session 22 - WORKING ✅):
+- Citations restored using fileId string matching
+- All 241 documents have working citations
+- Format: `[Yoshino1985, p.1, 2, 3]` at end of paragraphs
+- **User feedback**: "Ok this works as a temporary countermeasure"
 
-**Root Cause** (from Session 22 investigation):
-1. **47K token metadata bloat** in system instruction overwhelming critical rules
-2. **Gemini behavior**: File Search returns grounding metadata separately, not inline
-3. **Architecture issue**: Asking model to do impossible task (format citations during generation)
+**Why Consider Migration?**:
+- **Current limitation**: Fragile fileId string parsing (depends on Google's format)
+- **Better control**: Supabase would provide direct foreign key relationships
+- **Already have account**: $25/month plan with existing RAG database
+- **User priority**: Customization > speed
 
-**Solution** (from citation.md):
-- **Phase 1** (5 min): Remove 47K token document metadata from system instruction
-- **Phase 2** (1 hour): Implement post-processing citation injection using grounding metadata
-- **Phase 3** (30 min): Test and refine
+**Supabase Benefits**:
+- Full control over chunk metadata (store citation_key directly)
+- Direct foreign keys: `chunk.document_id → document.id`
+- No string parsing needed
+- Better debugging and transparency
+- SQL flexibility for complex queries
+- Industry-standard tools
 
-**Estimated time**: 1-2 hours
-**Priority**: HIGH - Blocks core research functionality
-**See**: `citation.md` for comprehensive analysis and solution options
+**Migration Effort**: ~4-6 hours
+- Create tables (documents, chunks)
+- Re-process 241 documents (chunk + embed)
+- Update API routes (replace File Search calls with Supabase queries)
+- Test citation extraction
+
+**Decision Point**: User wants time to reflect and plan
+- This week: Continue with fileId matching (working)
+- Next week+: Evaluate Supabase migration based on priorities
+
+**See**: `citation.md` for detailed analysis
 
 ---
 
@@ -235,45 +248,52 @@
 
 ---
 
-## Completed (Session 22) ✅
+## Completed (Session 22) ✅ - Citation Fix Complete
 
 ### UI Polish
 - ✅ **Query Input Text Wrapping Fixed** - Changed Input to Textarea
-  - Long queries now wrap within visible area instead of scrolling horizontally
-  - Added 3-row textarea with resize-none class
-  - Applied to both Query Corpus and Search Web tabs
-  - Improved UX for detailed queries
+  - Applied to Query Corpus and Search Web tabs
+  - 3-row textarea with proper wrapping
 
-### Citation Investigation
-- ✅ **Root Cause Analysis Complete** - Identified three critical issues
-  - **47K token metadata bloat**: System instruction wastes 40% of context window
-  - **Gemini behavior**: File Search returns grounding metadata separately
-  - **Architecture mismatch**: Asking model to format citations during generation (impossible)
-- ✅ **Comprehensive Analysis Document** - Created citation.md
-  - Background and problem documentation
-  - Four root causes with evidence
-  - Four solution options ranked by effort
-  - Recommended path forward (post-processing citation injection)
-- ✅ **Multiple Fix Attempts** - Iterative debugging process
-  - Reorganized system instruction with visual indicators
-  - Strengthened citation requirements (too aggressive - user feedback corrected)
-  - Adjusted to academic standard (reasonable frequency)
-  - Radically simplified instruction (bare essentials)
-  - **Result**: Learned what doesn't work, identified what will
+### Citation Fix - FileId Matching Solution
+- ✅ **Root Cause Identified** - Session 13 regression broke citations
+  - Unicode fix stripped filenames from chunk titles
+  - All 241 documents affected (no way to match chunks to documents)
+- ✅ **Solution Implemented** - FileId matching approach
+  - Discovered fileId in Redis contains normalized chunk title
+  - Implemented string matching: `fileId.includes(normalizedTitle)`
+  - Works for all 241 existing documents
+- ✅ **Results** - Citations restored ✅
+  - Format: `[Yoshino1985, p.1, 2, 3]` at end of paragraphs
+  - No re-upload needed
+  - User satisfied: "Ok this works as a temporary countermeasure"
 
-### Git Commits
-- `fc41bdc` - UI: Change query input from single-line to multi-line textarea
-- `8767ecf` - BUGFIX: Add back Input import for Browse tab search field
-- `89c7d54` - CRITICAL: Reorganize system instruction to prevent duplicates
-- `38ceae6` - CRITICAL: Strengthen citation requirement with concrete example
-- `6340d2e` - FIX: Reasonable citation frequency (not every sentence)
-- `a5f8442` - RADICAL: Simplify system instruction to bare essentials
+### Documentation
+- ✅ **Updated citation.md** - Session 22 Resolution section
+  - Full timeline (Session 12 → 13 regression → 22 fix)
+  - FileId matching implementation details
+  - Supabase migration comparison
+- ✅ **Updated CLAUDE.md** - Known Issues section
+  - Added File Search Store limitations
+  - Documented current workaround
+  - Noted Supabase migration consideration
+- ✅ **Created Session 22 progress doc** - Comprehensive session log
+- ✅ **Updated Next_steps.md** - This file
 
-### Status
-- **UI**: Text wrapping fixed ✅
-- **Investigation**: Root cause identified ✅
-- **Solution**: Designed and documented ✅
-- **Next**: Implementation ready (1-2 hours)
+### Code Cleanup
+- ✅ **Removed DEBUG statements** - Cleaned up console logging
+  - Removed from `app/api/summary/route.ts`
+  - Removed from `lib/inject-citations.ts`
+
+### Files Modified
+1. `components/agents/browse-query-agent.tsx` - Textarea
+2. `components/agents/web-search-agent.tsx` - Textarea
+3. `app/api/summary/route.ts` - FileId matching + cleanup
+4. `lib/inject-citations.ts` - Cleanup
+5. `citation.md` - Session 22 resolution
+6. `CLAUDE.md` - Known issues update
+7. `docs/progress/2025-01-19-Session22.md` - New session doc
+8. `Next_steps.md` - Status update
 
 ---
 

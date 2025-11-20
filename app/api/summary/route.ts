@@ -5,6 +5,7 @@ import { listAllDocuments } from "@/lib/kv";
 import { getStoreName } from "@/lib/file-search-store";
 import { checkRateLimit, getClientIdentifier, rateLimitPresets } from "@/lib/rate-limit";
 import { sanitizeQuery, sanitizeCustomInstructions, validateHistory } from "@/lib/sanitize";
+import { injectCitations } from "@/lib/inject-citations";
 
 // POST /api/summary - Query corpus with RAG
 export async function POST(req: NextRequest) {
@@ -110,64 +111,23 @@ export async function POST(req: NextRequest) {
       }
     });
 
-    // Construct system instruction
-    const systemInstruction = `You are a research assistant. Answer ONLY using File Search results.
+    // Construct system instruction (minimal - citations added via post-processing)
+    const systemInstruction = `You are a research assistant with access to ${documents.length} documents about Toyota Product Development, Production Engineering, and TPS via File Search.
 
-🚨 CITATION FORMAT: After each fact, add [CitationKey, p.#] like this:
-"Toyota developed JIT in 1950s [${docCitationKeys[0] || 'Fujimoto2002'}, p.30]."
-
-🚨 ONE RESPONSE: Provide one cohesive answer, not multiple lists.
-
-Available citation keys: ${docCitationKeys.slice(0, 5).join(', ')}, etc.
-
-Corpus documents:
-
-DOCUMENTS (${documents.length} files - searchable via File Search):
-${documents
-  .map(
-    (doc, idx) =>
-      `Document: "${doc.title}"
-Citation Key: [${docCitationKeys[idx]}]
-Authors: ${doc.authors && doc.authors.length > 0 ? doc.authors.join(", ") : "Unknown"}
-Track: ${doc.track || "Unknown"}
-Year: ${doc.year || "Unknown"}
-${doc.summary ? `Summary: ${doc.summary}` : ""}
-${doc.keywords && doc.keywords.length > 0 ? `Keywords: ${doc.keywords.join(", ")}` : ""}
----`
-  )
-  .join("\n\n")}
-
-${images.length > 0 ? `
-IMAGES (${images.length} files):
-${images
-  .map(
-    (img, idx) =>
-      `Image: "${img.title}"
-${img.summary ? `Description: ${img.summary}` : ""}
----`
-  )
-  .join("\n\n")}
-` : ''}
-
-IMPORTANT: The File Search tool will automatically retrieve relevant sections from documents based on your query.
+Answer queries using ONLY information from File Search results. Provide one cohesive response (not multiple lists or duplicate content).
 
 DOCUMENT QUALITY PRIORITIZATION:
-Documents in the corpus have quality tiers to guide your responses:
+The corpus contains ${documents.length} documents with quality tiers:
 - Tier 1 (Authoritative): Primary sources from ex-Toyota authors and top experts - PRIORITIZE THESE
 - Tier 2 (High Quality): Academic papers and detailed technical documents - PRIORITIZE THESE
 - Tier 3 (Supporting): Supporting materials and general references - Use for additional context
 - Tier 4 (Background): Timelines and historical context - Use ONLY for dates and chronology
 
 When responding:
-1. PRIORITIZE insights and examples from Tier 1 (Authoritative) and Tier 2 (High Quality) sources
-2. Use Tier 3 (Supporting) sources for additional context when needed
-3. Use Tier 4 (Background) sources ONLY for establishing dates, timelines, or chronological context
-4. If you find information in a lower tier but better information exists in a higher tier, prefer the higher tier source
-
-When citing information:
-- Every sentence with factual content MUST include at least one [CitationKey, p.#] citation
-- Include direct quotes from the source text in quotation marks when appropriate
-- Be specific about which section or heading the information comes from`;
+1. PRIORITIZE insights and examples from Tier 1 and Tier 2 sources
+2. Use Tier 3 sources for additional context when needed
+3. Use Tier 4 sources ONLY for dates, timelines, or chronological context
+4. If information exists in multiple tiers, prefer the higher tier source`;
 
     // Get File Search Store name for semantic retrieval
     const storeName = await getStoreName();
@@ -229,12 +189,12 @@ When citing information:
     // Extract citations from corpus query
     const citations: any[] = [];
     const referencedDocIds: string[] = [];
+    const docMap = new Map<string, { doc: any; pages: Set<number>; citationKey: string }>();
 
     if (grounding?.groundingChunks) {
-      // Track unique documents by title
-      const docMap = new Map<string, { doc: any; pages: Set<number>; citationKey: string }>();
+      // Track unique documents by title (docMap already declared above)
 
-      grounding.groundingChunks.forEach((chunk: any) => {
+      grounding.groundingChunks.forEach((chunk: any, idx: number) => {
         const chunkTitle = chunk.retrievedContext?.title;
         if (!chunkTitle) return;
 
@@ -246,16 +206,15 @@ When citing information:
           return match ? parseInt(match[1]) : null;
         }).filter((p: number | null) => p !== null);
 
-        // Try to match chunk title to original document
-        // Chunk titles are like "upload-1763123009682-TPS_history_timeline.pdf"
-        // Extract the actual filename part
-        const filenamePart = chunkTitle.replace(/^upload-\d+-/, '');
+        // Try to match chunk title to original document using fileId
+        // Chunk title: "upload-1763588882831.pdf"
+        // FileId contains: "fileSearchStores/.../upload1763588882831pdf-randomId"
+        // Normalize chunk title by removing dashes and dots to match fileId format
+        const normalizedTitle = chunkTitle.replace(/-/g, '').replace(/\./g, '');
 
-        // Find matching document by filename
+        // Find matching document by checking if fileId contains normalized chunk title
         const matchedDoc = approvedDocs.find(doc => {
-          return doc.fileName === filenamePart ||
-                 chunkTitle.includes(doc.fileName) ||
-                 doc.fileName.includes(filenamePart);
+          return doc.fileId && doc.fileId.includes(normalizedTitle);
         });
 
         if (matchedDoc && !docMap.has(matchedDoc.fileId)) {
@@ -292,9 +251,12 @@ When citing information:
       });
     }
 
+    // Inject citations into response text (post-processing)
+    const annotatedAnswer = injectCitations(answer, docMap);
+
     return NextResponse.json({
-      answer,
-      citations,
+      answer: annotatedAnswer,  // Now contains inline citations at end of paragraphs
+      citations,                // Keep separate citations for UI display
       referencedDocuments: referencedDocIds,
     });
   } catch (error) {

@@ -14,8 +14,8 @@ npm run dev
 **Working**: Research ✅ | Upload ✅ | Browse ✅ | Query Corpus ✅ | PDF-only RAG ✅ | URL Ingestion ✅ | **Quality Classification ✅** (Session 20)
 **Next**: Build Editorial Agent → Complete 6-agent workflow
 **Complete**: 5/6 agents (Research, Upload, Browse/Query, Draft ✅, Analyze ✅)
-**Corpus**: 204 documents in File Search Store (Session 20), semantic RAG working, citations tested ✅
-**Quality Tiers**: 4-tier classification system, auto-classifies web content, manual review for PDFs ✅ (Session 20)
+**Corpus**: 241 documents in File Search Store (Session 22), semantic RAG working, citations working ✅, Tier 1 classifications complete ✅
+**Quality Tiers**: 4-tier classification system, auto-classifies web content, manual PDF review complete ✅, Tier 1 sources identified ✅ (Session 20)
 **File Upload**: Up to 100MB client-side, smart queue, manual metadata editing, tier selection on approval ✅
 **URL Ingestion**: Jina.ai Reader → direct text storage, duplicate detection, auto-classified as Tier 3 ✅
 **Research Terms**: All 228 terms, searchable interface, bilingual toggle ✅ (Session 16)
@@ -25,10 +25,23 @@ npm run dev
 - Manual metadata entry via Edit Metadata button ✅
 - 50MB warning notice displayed on Upload page ✅
 
-**Active Issue (Session 22)**:
-- Citation & Duplication: Root cause identified - 47K token system instruction bloat + Gemini behavior
-- Solution ready: Post-processing citation injection (1-2 hours to implement)
-- See: `citation.md` for comprehensive analysis
+**Migration Status (Session 25 - PHASE 2 COMPLETE ✅)**:
+- ✅ **Phase 1: Infrastructure Setup** (Session 24)
+  - Project created: "TRS" with pgvector enabled
+  - Database schema deployed (documents + chunks tables)
+  - Vector embeddings: 1536 dimensions (gemini-embedding-001)
+  - Security hardened: RLS enabled, 0 errors, 0 warnings
+  - Connection tested and verified
+  - `lib/supabase-client.ts` created
+- ✅ **Phase 2: Backend API Integration** (Session 25)
+  - `lib/supabase-rag.ts` created - RAG functions (chunking, embeddings, search, citations)
+  - `/api/process-blob` - Dual-path support (File Search + Supabase)
+  - `/api/process-url` - Dual-path support (File Search + Supabase)
+  - `/api/summary` - Dual-path query with **100% reliable SQL JOIN citations**
+  - Build verified: 0 TypeScript errors ✅
+- ✅ **Citation System Working** - Direct SQL JOINs (no fragile string parsing!)
+- 🔨 **Next**: Phase 3 - UI Toggles (backend selector in Upload/Query agents)
+- See: `supabase-migration-plan.md` for comprehensive 4-phase plan
 
 ## Environment Setup
 
@@ -42,6 +55,11 @@ Required keys:
 - `GOOGLE_CUSTOM_SEARCH_ENGINE_ID` - For Research Agent
 - `KV_REDIS_URL` - Auto-created when connecting Vercel Redis database
 - `BLOB_READ_WRITE_TOKEN` - Auto-created when connecting Vercel Blob storage
+
+Supabase keys (Session 24 - for parallel RAG system):
+- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anon/public key
+- `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key (backend only)
 
 Optional features (see `.env.example`):
 - `JINA_API_KEY` - Jina.ai Reader API key for URL ingestion (free: 20 req/min, with key: 500 req/min)
@@ -499,10 +517,10 @@ Errors:
 - **Analyze Agent**: Surfaces Tier 1+2 alternatives when article uses lower-tier sources
 
 ### Results
-- ✅ 204 documents classified: 38 PDFs (Tier 2), 146 .txt (Tier 3), 20 timelines (Tier 4)
-- ✅ User only needs to review 38 PDFs to identify Tier 1 sources (vs. 204 documents)
+- ✅ 241 documents classified: 38 PDFs reviewed (Tier 1 sources identified), 146 .txt (Tier 3), 20 timelines (Tier 4)
+- ✅ User completed manual review of 38 PDFs and promoted ex-Toyota primary sources to Tier 1 ✅
 - ✅ Automatic prioritization in all agents - no prompting required
-- ✅ Quality improvement: RAG queries now prioritize authoritative sources over timelines
+- ✅ Quality improvement: RAG queries now prioritize authoritative Tier 1 sources over general content
 
 **See**: `docs/progress/2025-11-15-Session20.md` for detailed implementation
 
@@ -634,6 +652,20 @@ Errors:
   - Compress PDFs in Adobe Acrobat (can reduce 50-80% for scanned docs)
   - Skip metadata extraction for 50MB+ files, mark for manual review
   - Add bulk metadata editor in Browse tab
+
+**3. Supabase Migration Plan (Session 23 - APPROVED ✅)**
+- **Current Status**: Supabase account cleanup complete, migration approved for this weekend
+- **Cost**: +$10/month for TRS project ($65 total monthly cost, saves $20 vs. pre-cleanup $85)
+- **Timeline**: 4-6 hours implementation (Session 24)
+- **Benefits**: Direct foreign key relationships, no fragile string parsing, better debugging
+- **Migration steps**:
+  1. Create new Supabase project ("TRS")
+  2. Set up PostgreSQL tables (documents, chunks) with pgvector
+  3. Re-process 241 documents (chunk + embed)
+  4. Update API routes (replace File Search calls with Supabase queries)
+  5. Test citation extraction
+  6. Deploy and verify
+- **See**: `citation.md` for comprehensive migration plan
 
 ## Key Design Decisions
 

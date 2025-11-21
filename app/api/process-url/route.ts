@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 import { uploadToStore } from "@/lib/file-search-store";
 import { uploadToFileSearch } from "@/lib/file-search";
+import { storeDocument as storeDocumentSupabase } from "@/lib/supabase-rag"; // Supabase RAG (alternative backend)
 import { extractMetadataFromFile } from "@/lib/metadata-extraction";
 import { storeDocumentMetadata, listAllDocuments } from "@/lib/kv";
 import { DocumentMetadata } from "@/lib/types";
@@ -25,11 +26,19 @@ export async function POST(req: NextRequest) {
       return rateLimitCheck.response!;
     }
 
-    const { url } = await req.json();
+    const { url, backend = 'file_search' } = await req.json();
 
     if (!url) {
       return NextResponse.json(
         { error: 'Missing required field: url' },
+        { status: 400 }
+      );
+    }
+
+    // Validate backend parameter
+    if (backend !== 'file_search' && backend !== 'supabase') {
+      return NextResponse.json(
+        { error: 'Invalid backend parameter. Must be "file_search" or "supabase"' },
         { status: 400 }
       );
     }
@@ -129,16 +138,7 @@ ${content}`;
     blobUrl = blob.url;
     console.log(`  ✓ Uploaded to Blob: ${blobUrl}`);
 
-    // STEP 5: Upload to File Search Store for semantic RAG
-    console.log(`  → Uploading to File Search Store...`);
-    const storeDocument = await uploadToStore(
-      textBuffer,
-      fileName,
-      'text/plain',
-      fileName
-    );
-
-    // STEP 6: Upload to Files API for metadata extraction
+    // STEP 5: Upload to Files API for metadata extraction (temporary)
     console.log(`  → Uploading to Files API for metadata extraction...`);
     const tempFile = await uploadToFileSearch(
       textBuffer,
@@ -147,7 +147,7 @@ ${content}`;
       fileName
     );
 
-    // STEP 7: Extract metadata using Gemini
+    // STEP 6: Extract metadata using Gemini
     console.log(`  → Extracting metadata with Gemini...`);
     const metadata = await extractMetadataFromFile(
       tempFile.uri,
@@ -155,10 +155,65 @@ ${content}`;
       fileName
     );
 
+    // STEP 7: Backend-specific storage
+    let storageId: string;
+
+    if (backend === 'supabase') {
+      // === SUPABASE PATH ===
+      console.log(`  → Uploading to Supabase (PostgreSQL + pgvector)...`);
+
+      // Build metadata for Supabase
+      const supabaseMetadata: DocumentMetadata = {
+        fileId: '', // Will be set after storage
+        fileUri: '',
+        fileName: fileName,
+        mimeType: 'text/plain',
+        blobUrl: blobUrl,
+        fileType: 'document',
+        title: metadata.title || title || 'Web Page',
+        authors: metadata.authors || [],
+        citationName: metadata.citationName,
+        year: metadata.year,
+        track: metadata.track || 'Unknown',
+        language: metadata.language || 'Mixed',
+        keywords: metadata.keywords || [],
+        summary: metadata.summary || description || 'Web page content',
+        documentType: 'Web Page (Text)',
+        confidence: metadata.confidence || 'medium',
+        source: canonicalUrl || url,
+        status: 'pending_review',
+        uploadedAt: new Date().toISOString(),
+        approvedAt: null,
+      };
+
+      // Store in Supabase (chunks + embeddings)
+      // Text content is already available (textContent variable)
+      storageId = await storeDocumentSupabase(
+        supabaseMetadata,
+        blobUrl,
+        textContent
+      );
+
+      console.log(`  ✓ Stored in Supabase with ID: ${storageId}`);
+
+    } else {
+      // === FILE SEARCH STORE PATH (CURRENT) ===
+      console.log(`  → Uploading to File Search Store...`);
+      const storeDocument = await uploadToStore(
+        textBuffer,
+        fileName,
+        'text/plain',
+        fileName
+      );
+
+      storageId = storeDocument.name;
+      console.log(`  ✓ Stored in File Search Store: ${storageId}`);
+    }
+
     // STEP 8: Build document metadata
     const documentMetadata: DocumentMetadata = {
-      fileId: storeDocument.name, // File Search Store document ID
-      fileUri: storeDocument.name,
+      fileId: storageId,
+      fileUri: storageId,
       fileName: fileName,
       mimeType: 'text/plain',
       blobUrl: blobUrl,
@@ -177,6 +232,7 @@ ${content}`;
       status: 'pending_review',
       uploadedAt: new Date().toISOString(),
       approvedAt: null,
+      storageBackend: backend, // Track which backend was used
     };
 
     // STEP 9: Store metadata in Redis

@@ -27,6 +27,7 @@ export interface DocumentMetadata {
   uploadedAt: string; // ISO timestamp
   approvedAt: string | null; // ISO timestamp when approved/rejected
   needsReview?: boolean; // Whether human review is needed
+  storageBackend?: "file_search" | "supabase"; // Which backend stores this document
 }
 
 // Upload processing status

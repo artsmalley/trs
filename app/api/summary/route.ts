@@ -3,6 +3,7 @@ import { GoogleGenAI } from "@google/genai"; // New SDK for File Search Store
 import { GoogleGenerativeAI } from "@google/generative-ai"; // Legacy SDK for Files API (images)
 import { listAllDocuments } from "@/lib/kv";
 import { getStoreName } from "@/lib/file-search-store";
+import { searchCorpus, extractCitations, formatCitation } from "@/lib/supabase-rag"; // Supabase RAG
 import { checkRateLimit, getClientIdentifier, rateLimitPresets } from "@/lib/rate-limit";
 import { sanitizeQuery, sanitizeCustomInstructions, validateHistory } from "@/lib/sanitize";
 import { injectCitations } from "@/lib/inject-citations";
@@ -18,11 +19,19 @@ export async function POST(req: NextRequest) {
       return rateLimitCheck.response!;
     }
 
-    const { query, history } = await req.json();
+    const { query, history, backend = 'file_search' } = await req.json();
 
     if (!query) {
       return NextResponse.json(
         { error: "Query is required" },
+        { status: 400 }
+      );
+    }
+
+    // Validate backend parameter
+    if (backend !== 'file_search' && backend !== 'supabase') {
+      return NextResponse.json(
+        { error: 'Invalid backend parameter. Must be "file_search" or "supabase"' },
         { status: 400 }
       );
     }
@@ -65,8 +74,121 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // === DUAL-PATH BACKEND LOGIC ===
+    if (backend === 'supabase') {
+      // === SUPABASE PATH: PostgreSQL + pgvector with SQL JOIN citations ===
+      console.log(`Query corpus: Supabase backend (PostgreSQL + pgvector)`);
+
+      // Filter for Supabase documents only
+      const supabaseDocs = approvedDocs.filter(
+        (doc) => doc.storageBackend === 'supabase'
+      );
+
+      if (supabaseDocs.length === 0) {
+        return NextResponse.json({
+          answer: "No Supabase documents available yet. Please upload some documents using the Supabase backend.",
+          citations: [],
+          referencedDocuments: [],
+          backend: 'supabase'
+        });
+      }
+
+      console.log(`  → ${supabaseDocs.length} documents in Supabase`);
+
+      // 1. Search corpus using semantic similarity
+      const searchResults = await searchCorpus(
+        sanitizedQuery,
+        [1, 2, 3, 4], // All quality tiers for now
+        10, // Return top 10 chunks
+        0.7 // Minimum similarity threshold
+      );
+
+      console.log(`  → Found ${searchResults.length} relevant chunks`);
+
+      // 2. Build context from search results
+      const context = searchResults
+        .map((result) => {
+          const citation = formatCitation(result.citationKey, [result.pageNumber]);
+          return `${citation}\n${result.text}`;
+        })
+        .join('\n\n---\n\n');
+
+      // 3. Build system instruction
+      const systemInstruction = `You are a research assistant with access to ${supabaseDocs.length} documents about Toyota Product Development, Production Engineering, and TPS.
+
+Answer queries using ONLY the information provided in the context below. Provide one cohesive response.
+
+CRITICAL CITATION REQUIREMENTS:
+- You MUST cite EVERY factual claim using the format [CitationKey, p.#]
+- Each paragraph with factual information MUST include at least one citation
+- Place citations at the end of sentences or paragraphs
+- You MUST ONLY use citation keys found in the context below
+- DO NOT make up or infer information not in the context
+
+DOCUMENT QUALITY PRIORITIZATION:
+- Tier 1 (Authoritative): Primary sources - PRIORITIZE THESE
+- Tier 2 (High Quality): Academic papers - PRIORITIZE THESE
+- Tier 3 (Supporting): Supporting materials - Use for context
+- Tier 4 (Background): Timelines - Use ONLY for dates
+
+Context:
+${context}`;
+
+      // 4. Build conversation history
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+      const contents: any[] = [];
+
+      if (sanitizedHistory && sanitizedHistory.length > 0) {
+        for (const msg of sanitizedHistory) {
+          contents.push({
+            role: msg.role === "model" ? "model" : "user",
+            parts: [{ text: msg.content }],
+          });
+        }
+      }
+
+      // Add current query
+      contents.push({
+        role: "user",
+        parts: [{ text: sanitizedQuery }],
+      });
+
+      // 5. Query Gemini with context (NO File Search tool - we provide context directly)
+      const result = await model.generateContent({
+        contents,
+        systemInstruction,
+      });
+
+      const answer = result.response.text() || "";
+
+      // 6. Extract citations (CLEAN! Direct from SQL JOIN results)
+      const citationData = extractCitations(searchResults);
+      const citations = citationData.map((c) => ({
+        documentId: c.citationKey,
+        title: formatCitation(c.citationKey, c.pageNumbers) + ` ${c.title}`,
+        excerpt: c.excerpts[0] || "No excerpt available",
+        pageNumber: c.pageNumbers[0] || undefined,
+      }));
+
+      const referencedDocIds = searchResults.map((r) => r.documentId);
+
+      console.log(`  ✓ Generated answer with ${citations.length} citations`);
+
+      return NextResponse.json({
+        answer,
+        citations,
+        referencedDocuments: [...new Set(referencedDocIds)],
+        backend: 'supabase'
+      });
+    }
+
+    // === FILE SEARCH STORE PATH (CURRENT) ===
+    console.log(`Query corpus: File Search Store backend`);
+
     // Separate documents (in File Search Store) from images (in Files API)
-    const documents = approvedDocs.filter((doc) => doc.fileType === "document");
+    const documents = approvedDocs.filter((doc) => doc.fileType === "document" && doc.storageBackend !== 'supabase');
     const images = approvedDocs.filter((doc) => doc.fileType === "image");
 
     console.log(`Query corpus: ${documents.length} documents (File Search Store), ${images.length} images (Files API)`);

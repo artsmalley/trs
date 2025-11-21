@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { extractMetadataFromFile } from "@/lib/metadata-extraction";
 import { uploadToFileSearch } from "@/lib/file-search"; // Files API for images (48-hour expiry)
 import { uploadToStore } from "@/lib/file-search-store"; // File Search Store for documents (permanent + semantic RAG)
+import { storeDocument as storeDocumentSupabase } from "@/lib/supabase-rag"; // Supabase RAG (alternative backend)
 import { storeDocumentMetadata } from "@/lib/kv";
 import {
   analyzeImageWithVision,
@@ -11,9 +12,47 @@ import { DocumentMetadata } from "@/lib/types";
 import { del as deleteBlob } from "@vercel/blob";
 import { checkRateLimit, getClientIdentifier, rateLimitPresets } from "@/lib/rate-limit";
 import { validateBlobUrl, sanitizeFilename } from "@/lib/sanitize";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+/**
+ * Extract full text from PDF for Supabase chunking
+ * Uses Gemini to read the PDF and extract all text with page markers
+ */
+async function extractFullText(fileUri: string, mimeType: string): Promise<string> {
+  const apiKey = process.env.GOOGLE_AI_API_KEY;
+  if (!apiKey) {
+    throw new Error("GOOGLE_AI_API_KEY is not set");
+  }
+
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+  const prompt = `Extract ALL text from this document.
+For PDFs with multiple pages, add a page marker like "--- PAGE 2 ---" before the text from each new page.
+This helps with citation extraction later.
+
+Return ONLY the extracted text, no additional commentary.`;
+
+  try {
+    const result = await model.generateContent([
+      {
+        fileData: {
+          fileUri: fileUri,
+          mimeType: mimeType
+        }
+      },
+      { text: prompt }
+    ]);
+
+    return result.response.text();
+  } catch (error) {
+    console.error('Text extraction error:', error);
+    throw new Error(`Failed to extract text: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
 
 // POST /api/process-blob - Process files uploaded directly to Blob (client-side upload)
 export async function POST(req: NextRequest) {
@@ -28,12 +67,20 @@ export async function POST(req: NextRequest) {
       return rateLimitCheck.response!;
     }
 
-    const { blobUrl: url, fileName, mimeType } = await req.json();
+    const { blobUrl: url, fileName, mimeType, backend = 'file_search' } = await req.json();
     blobUrl = url;
 
     if (!blobUrl || !fileName || !mimeType) {
       return NextResponse.json(
         { error: 'Missing required fields: blobUrl, fileName, or mimeType' },
+        { status: 400 }
+      );
+    }
+
+    // Validate backend parameter
+    if (backend !== 'file_search' && backend !== 'supabase') {
+      return NextResponse.json(
+        { error: 'Invalid backend parameter. Must be "file_search" or "supabase"' },
         { status: 400 }
       );
     }
@@ -111,24 +158,14 @@ export async function POST(req: NextRequest) {
     let documentMetadata: DocumentMetadata;
 
     if (isDocument) {
-      // === DOCUMENT FLOW (File Search Store) ===
-      console.log(`📄 Document detected - routing to File Search Store (semantic RAG) + metadata extraction`);
+      // === DOCUMENT FLOW ===
+      console.log(`📄 Document detected - backend: ${backend}`);
 
-      // Upload to File Search Store for permanent semantic RAG
-      console.log(`  → Uploading to File Search Store (persistent, semantic retrieval)...`);
-      const storeDocument = await uploadToStore(
-        buffer,
-        sanitizedFileName,
-        mimeType,
-        sanitizedFileName
-      );
-
-      // Extract metadata using Gemini
-      // Note: We need to create a temporary Files API upload for metadata extraction
-      // because Gemini needs a fileUri to read the file content
-      console.log(`  → Uploading to Files API (temporary, for metadata extraction)...`);
+      // STEP 1: Upload to Files API for metadata/text extraction (temporary)
+      console.log(`  → Uploading to Files API (temporary, for extraction)...`);
       const tempFile = await uploadToFileSearch(buffer, sanitizedFileName, mimeType, sanitizedFileName);
 
+      // STEP 2: Extract metadata using Gemini
       console.log(`  → Extracting metadata with Gemini...`);
       const metadata = await extractMetadataFromFile(
         tempFile.uri,
@@ -136,10 +173,67 @@ export async function POST(req: NextRequest) {
         sanitizedFileName
       );
 
+      // STEP 3: Backend-specific storage
+      let storageId: string;
+
+      if (backend === 'supabase') {
+        // === SUPABASE PATH ===
+        console.log(`  → Uploading to Supabase (PostgreSQL + pgvector)...`);
+
+        // Extract full text for chunking
+        console.log(`  → Extracting full text for chunking...`);
+        const fullText = await extractFullText(tempFile.uri, mimeType);
+
+        // Build metadata for Supabase
+        const supabaseMetadata: DocumentMetadata = {
+          fileId: '', // Will be set after storage
+          fileUri: '',
+          fileName: sanitizedFileName,
+          mimeType: mimeType,
+          blobUrl: blobUrl,
+          fileType: "document",
+          title: metadata.title,
+          authors: metadata.authors,
+          citationName: metadata.citationName,
+          year: metadata.year,
+          track: metadata.track,
+          language: metadata.language,
+          keywords: metadata.keywords,
+          summary: metadata.summary,
+          documentType: metadata.documentType,
+          confidence: metadata.confidence,
+          status: "pending_review",
+          uploadedAt: new Date().toISOString(),
+          approvedAt: null,
+        };
+
+        // Store in Supabase (chunks + embeddings)
+        storageId = await storeDocumentSupabase(
+          supabaseMetadata,
+          blobUrl,
+          fullText
+        );
+
+        console.log(`  ✓ Stored in Supabase with ID: ${storageId}`);
+
+      } else {
+        // === FILE SEARCH STORE PATH (CURRENT) ===
+        console.log(`  → Uploading to File Search Store (persistent, semantic retrieval)...`);
+        const storeDocument = await uploadToStore(
+          buffer,
+          sanitizedFileName,
+          mimeType,
+          sanitizedFileName
+        );
+
+        storageId = storeDocument.name;
+        console.log(`  ✓ Stored in File Search Store: ${storageId}`);
+      }
+
       // Build document metadata
       documentMetadata = {
-        fileId: storeDocument.name, // File Search Store document ID
-        fileUri: storeDocument.name, // Store document name (used for queries)
+        fileId: storageId,
+        fileUri: storageId,
         fileName: sanitizedFileName,
         mimeType: mimeType,
         blobUrl: blobUrl,
@@ -157,6 +251,7 @@ export async function POST(req: NextRequest) {
         status: "pending_review",
         uploadedAt: new Date().toISOString(),
         approvedAt: null,
+        storageBackend: backend, // Track which backend was used
       };
     } else if (isImage) {
       // === IMAGE FLOW (Files API - 48-hour expiry) ===

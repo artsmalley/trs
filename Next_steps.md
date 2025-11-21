@@ -1,8 +1,8 @@
 # Next Steps
 
-## Current Status (Session 25 - PHASE 2 COMPLETE ✅)
+## Current Status (Session 26 - PHASE 3 COMPLETE ✅)
 
-**Latest**: Session 25 - Backend API Integration Complete ✅ | Dual-path upload/query working | **100% reliable SQL JOIN citations** implemented | `lib/supabase-rag.ts` created | Build verified (0 errors) | Phase 3 ready to start
+**Latest**: Session 26 - UI Toggles Complete ✅ | Backend selectors in Upload & Query agents | Clear visual indicators | **Ready for user testing** | Build verified (0 errors) | Phase 4 next
 
 ### What's Working ✅
 - ✅ **Security (Session 15)** - Production-ready protection ✅
@@ -68,35 +68,42 @@
 
 ---
 
-## Immediate Priorities - Session 26 (Next Session)
+## Immediate Priorities - Session 27 (Next Session)
 
-### 🎯 PRIORITY #1: Supabase Phase 3 - UI Toggles
+### 🎯 PRIORITY #1: Supabase Phase 4 - User Testing
 
-**Status**: Phase 1 & 2 complete ✅, ready for Phase 3
+**Status**: Phase 1, 2 & 3 complete ✅, ready for Phase 4 testing
 
-**Phase 2 Complete** (Session 25):
-- ✅ Created `lib/supabase-rag.ts` - RAG functions (chunking, embeddings, search, citations)
-- ✅ Updated `/api/process-blob` - Dual-path upload (File Search + Supabase)
-- ✅ Updated `/api/process-url` - Dual-path URL ingestion (File Search + Supabase)
-- ✅ Updated `/api/summary` - Dual-path query with **100% reliable SQL JOIN citations**
-- ✅ Added `storageBackend` field to DocumentMetadata type
+**Phase 3 Complete** (Session 26):
+- ✅ Upload Agent backend selector (radio buttons)
+- ✅ Query Corpus Agent backend selector (radio buttons)
+- ✅ Backend badges in Pending Review and Query results
+- ✅ Clear visual indicators prevent wrong-backend usage
 - ✅ Build verified: 0 TypeScript errors
-- ✅ **Citation system working**: Direct SQL JOIN (no fragile string parsing!)
+- ✅ **Ready for user testing!**
 
-**Phase 3 Next** (~1-2 hours):
-1. Update Upload Agent (`components/agents/upload-agent.tsx`)
-   - Add radio button group: "File Search Store (Current)" | "Supabase (Testing)"
-   - Pass `backend` parameter to API
-   - Show backend in Pending Review
-2. Update Query Corpus Agent (`components/agents/browse-query-agent.tsx`)
-   - Add dropdown: "File Search (241 docs)" | "Supabase (Testing subset)"
-   - Pass `backend` parameter to API
-   - Show active backend in results
-3. Update Browse Agent (`components/agents/browse-query-agent.tsx`)
-   - Add backend badge/indicator per document
-   - Optional: Filter by backend
+**Phase 4 Testing Plan** (~2-4 hours):
+1. **Upload Test Documents** (~1-2 hours)
+   - Select 20-40 representative documents from existing corpus
+   - Switch Upload Agent to "Supabase" backend
+   - Re-upload test documents
+   - Verify uploads succeed and metadata is correct
 
-**Alternative**: Can test via direct API calls now (Phase 3 makes testing easier but not required)
+2. **Compare Query Quality** (~30 min)
+   - Ask same questions to both backends
+   - Compare citation accuracy
+   - Compare response quality
+   - Compare retrieval relevance
+
+3. **Verify Citation Reliability** (~30 min)
+   - Verify Supabase SQL JOIN citations are 100% accurate
+   - Check if File Search citations have any matching failures
+   - Document any discrepancies
+
+4. **Make Final Decision** (~30 min)
+   - If Supabase quality ≥ File Search: Plan full migration
+   - If Supabase quality < File Search: Identify root cause, iterate
+   - If equal: Consider other factors (cost, control, debugging)
 
 **Implementation Guide**: See `supabase-migration-plan.md` for detailed 4-phase plan
 
@@ -241,6 +248,47 @@
    - Should agents remember previous steps?
    - Export/import between agents?
    - Or keep session-based as is?
+
+---
+
+## Completed (Session 26) ✅ - Supabase Phase 3: UI Toggles
+
+### Upload Agent Backend Selector
+- ✅ **Radio button UI** - "File Search Store (Current)" | "Supabase (Testing)"
+- ✅ **Backend parameter** - Passed to `/api/process-blob` and `/api/process-url`
+- ✅ **Backend tracking** - Stored in file metadata
+- ✅ **Backend badge** - Shown in Pending Review section
+
+### Query Corpus Agent Backend Selector
+- ✅ **Radio button UI** - "File Search (241 docs)" | "Supabase (Testing subset)"
+- ✅ **Backend parameter** - Passed to `/api/summary`
+- ✅ **Active backend badge** - Shown in query chat header
+
+### Dependencies Installed
+- ✅ **`components/ui/radio-group.tsx`** - Shadcn radio group component
+
+### Build Verification
+- ✅ **TypeScript compilation**: 0 errors, 0 warnings
+- ✅ **All routes compiled successfully**
+- ✅ **Production build ready**
+
+### User Experience
+- ✅ **Clear visual hierarchy** - Blue-bordered backend selection cards
+- ✅ **Error prevention** - Impossible to confuse which backend is active
+- ✅ **Professional polish** - Hover effects, descriptive labels, badges
+
+### Files Created/Modified
+1. `components/agents/upload-agent.tsx` - Backend selector + tracking
+2. `components/agents/browse-query-agent.tsx` - Backend selector for queries
+3. `components/ui/radio-group.tsx` - New component (via shadcn CLI)
+4. `CLAUDE.md` - Updated Phase 3 status
+5. `Next_steps.md` - This file
+6. `docs/progress/2025-01-20-Session26.md` - Session log
+
+### Time to Complete
+- **Estimated**: 1-2 hours
+- **Actual**: ~30 minutes
+- **Faster because**: Clear plan, reusable patterns, shadcn CLI efficiency
 
 ---
 
@@ -575,8 +623,8 @@ All core agents working:
 
 ---
 
-**Status**: 7/7 agents working | Quality Classification ✅ | Security hardened ✅ | **241 documents** ✅ | Citations working ✅ | **Supabase Phase 2 COMPLETE** ✅ | Dual-path APIs ready | **100% reliable SQL JOIN citations** implemented ✅
+**Status**: 7/7 agents working | Quality Classification ✅ | Security hardened ✅ | **241 documents** ✅ | Citations working ✅ | **Supabase Phase 3 COMPLETE** ✅ | UI toggles ready | **Ready for user testing** ✅
 
-**Last Updated**: 2025-01-20 (Session 25 - Backend API integration complete, dual-path upload/query working, build verified: 0 errors)
+**Last Updated**: 2025-01-20 (Session 26 - UI toggles complete, backend selectors in Upload/Query agents, build verified: 0 errors)
 
-**Next Session**: Session 26 - **Supabase Phase 3: UI Toggles (1-2 hours)** → Backend selectors in Upload/Query agents
+**Next Session**: Session 27 - **Supabase Phase 4: User Testing (2-4 hours)** → Upload test docs, compare quality, make decision

@@ -12,6 +12,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Dialog,
   DialogContent,
@@ -56,6 +58,7 @@ export function BrowseQueryAgent() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [referencedDocs, setReferencedDocs] = useState<string[]>([]);
+  const [selectedBackend, setSelectedBackend] = useState<"file_search" | "supabase">("file_search");
 
   // Browse Documents state
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -226,6 +229,7 @@ export function BrowseQueryAgent() {
         body: JSON.stringify({
           query: input,
           history: messages,
+          backend: selectedBackend,
         }),
       });
 
@@ -687,7 +691,45 @@ export function BrowseQueryAgent() {
             </TabsContent>
 
             {/* QUERY CORPUS TAB */}
-            <TabsContent value="query">
+            <TabsContent value="query" className="space-y-4">
+              {/* Backend Selection */}
+              <Card className="border-blue-200 bg-blue-50/50">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-base">Query Backend</CardTitle>
+                  <CardDescription className="text-sm">
+                    Select which corpus to query
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <RadioGroup
+                    value={selectedBackend}
+                    onValueChange={(value) => setSelectedBackend(value as "file_search" | "supabase")}
+                    className="space-y-2"
+                  >
+                    <div className="flex items-center space-x-3 rounded-lg border p-3 hover:bg-accent cursor-pointer">
+                      <RadioGroupItem value="file_search" id="query_file_search" />
+                      <Label htmlFor="query_file_search" className="flex-1 cursor-pointer">
+                        <div className="font-semibold text-sm">File Search Store (241 documents)</div>
+                        <div className="text-xs text-muted-foreground">
+                          Current production corpus • All approved documents
+                        </div>
+                      </Label>
+                      <Badge variant="default">Current</Badge>
+                    </div>
+                    <div className="flex items-center space-x-3 rounded-lg border p-3 hover:bg-accent cursor-pointer">
+                      <RadioGroupItem value="supabase" id="query_supabase" />
+                      <Label htmlFor="query_supabase" className="flex-1 cursor-pointer">
+                        <div className="font-semibold text-sm">Supabase PostgreSQL (Testing subset)</div>
+                        <div className="text-xs text-muted-foreground">
+                          Testing phase • 100% reliable citations via SQL JOIN
+                        </div>
+                      </Label>
+                      <Badge variant="secondary">Testing</Badge>
+                    </div>
+                  </RadioGroup>
+                </CardContent>
+              </Card>
+
               <div className="grid md:grid-cols-4 gap-6 h-[600px]">
                 {/* Sidebar - Referenced Documents */}
                 <Card className="md:col-span-1">
@@ -719,7 +761,12 @@ export function BrowseQueryAgent() {
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <div>
-                        <CardTitle>Query Corpus</CardTitle>
+                        <div className="flex items-center gap-2">
+                          <CardTitle>Query Corpus</CardTitle>
+                          <Badge variant={selectedBackend === "supabase" ? "secondary" : "default"}>
+                            {selectedBackend === "supabase" ? "Supabase" : "File Search"}
+                          </Badge>
+                        </div>
                         <CardDescription>Ask questions and get RAG-powered answers</CardDescription>
                       </div>
                       <Button

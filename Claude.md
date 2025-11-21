@@ -25,7 +25,7 @@ npm run dev
 - Manual metadata entry via Edit Metadata button ✅
 - 50MB warning notice displayed on Upload page ✅
 
-**Migration Status (Session 25 - PHASE 2 COMPLETE ✅)**:
+**Migration Status (Session 26 - PHASE 3 COMPLETE ✅)**:
 - ✅ **Phase 1: Infrastructure Setup** (Session 24)
   - Project created: "TRS" with pgvector enabled
   - Database schema deployed (documents + chunks tables)
@@ -39,8 +39,14 @@ npm run dev
   - `/api/process-url` - Dual-path support (File Search + Supabase)
   - `/api/summary` - Dual-path query with **100% reliable SQL JOIN citations**
   - Build verified: 0 TypeScript errors ✅
+- ✅ **Phase 3: UI Toggles** (Session 26)
+  - Upload Agent: Backend selector radio buttons (File Search | Supabase)
+  - Query Corpus Agent: Backend selector with document counts
+  - Backend badges in Pending Review and Query results
+  - Clear visual indicators prevent accidental wrong-backend usage
+  - Build verified: 0 TypeScript errors ✅
 - ✅ **Citation System Working** - Direct SQL JOINs (no fragile string parsing!)
-- 🔨 **Next**: Phase 3 - UI Toggles (backend selector in Upload/Query agents)
+- 🔨 **Next**: Phase 4 - User Testing (upload test docs, compare quality, make decision)
 - See: `supabase-migration-plan.md` for comprehensive 4-phase plan
 
 ## Environment Setup

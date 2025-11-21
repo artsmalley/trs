@@ -608,11 +608,42 @@ Optional: Filter by backend
 
 ---
 
-### Phase 4: User Testing
+### Phase 4: User Testing ⚠️ IN PROGRESS (Session 27)
 **Goal**: Manual upload subset, compare quality
-**Estimated Time**: User-paced
+**Estimated Time**: User-paced (BLOCKED - Query broken)
 
-#### Process:
+**Status**: Upload working ✅ | Query broken ❌
+
+#### Session 27 Updates (2025-01-21):
+
+**Accomplishments**:
+- ✅ Fixed stale closure bug in upload routing (selectedBackendRef pattern)
+- ✅ Fixed embedding dimensions: 1536 → 768 (see Technical Update below)
+- ✅ Switched to gemini-embedding-001 (stable Japanese tokenization)
+- ✅ Updated to @google/genai v1.29.0 SDK (proper API structure)
+- ✅ Implemented transaction support (duplicate detection + rollback)
+- ✅ Fixed Browse tab backend filtering (storageBackend field)
+- ✅ Fixed Delete endpoint to handle Supabase documents
+- ✅ Upload succeeds: Document stored with 768-dim embeddings
+
+**Current Blocker** ❌:
+- **Query broken**: RAG retrieval not working, returns generic non-answers
+- **Example**: Query "give me an example from your database" returns "I apologize, but I do not have a database..."
+- **Expected**: Should retrieve Braid Super Mechatronics document
+- **Impact**: Cannot proceed with quality comparison until retrieval works
+
+**Investigation Needed (Session 28)**:
+1. Verify chunks in database (`SELECT COUNT(*), document_id FROM chunks GROUP BY document_id`)
+2. Test search function directly (bypass API)
+3. Check embedding generation (query vs stored format)
+4. Verify `/api/summary` Supabase path
+5. Test with known relevant query about measurement technology
+
+**See**: `docs/progress/2025-01-21-Session27.md` for detailed debugging steps
+
+---
+
+#### Original Process (Resume after query fix):
 
 **1. Upload Test Documents (User Action)**
 - Select 20-40 representative documents from corpus
@@ -686,27 +717,47 @@ Evaluation criteria:
 
 ### Embedding Configuration
 
-**Model**: gemini-embedding-001
-**Dimensions**: 1536 (safe middle ground)
+**Model**: gemini-embedding-001 (NOT text-embedding-004)
+**Dimensions**: 768 ⭐ **UPDATED Session 27**
 **Rationale**:
-- Matryoshka Representation Learning: First 1536 dims retain 98-99% of semantic information
-- Balances nuance (technical Toyota terms) with efficiency
-- Same dimensionality as OpenAI text-embedding-3-small
+- Matryoshka Representation Learning: 768 dims retain 95-98% of semantic information
+- Lower storage costs vs 1536 dimensions
+- **Critical**: Stable Japanese tokenization (text-embedding-004 has instability issues)
+- Sufficient semantic accuracy for RAG retrieval
 
-**API Call**:
+**Session 27 Decision** (2025-01-21):
+- **Researched text-embedding-004**: Fixed 768 dims, Japanese tokenization instability
+- **Researched gemini-embedding-001**: Configurable 128-3072 dims, stable Japanese
+- **User insight**: TRS corpus is English + Japanese technical terms → gemini-embedding-001 required
+- **Cost difference negligible** (~$0.01 difference between models)
+- **Optimized for accuracy, not cost**
+
+**API Call** (Updated for @google/genai v1.29.0):
 ```typescript
-const model = genAI.getGenerativeModel({ model: 'embedding-001' });
-const result = await model.embedContent({
-  content: text,
-  taskType: 'RETRIEVAL_DOCUMENT', // vs RETRIEVAL_QUERY for queries
-  outputDimensionality: 1536 // Recommended: 768, 1536, or 3072
+import { GoogleGenAI } from '@google/genai';
+const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
+
+const result = await ai.models.embedContent({
+  model: 'gemini-embedding-001',
+  contents: [{ parts: [{ text }] }],
+  config: {
+    outputDimensionality: 768,
+    taskType: 'RETRIEVAL_DOCUMENT' // vs RETRIEVAL_QUERY for queries
+  }
 });
+
+const embedding = result.embeddings?.[0]?.values;
 ```
 
-**Why 1536 over 768 or 3072**:
-- **768**: 95-98% performance, very efficient (good for general content)
-- **1536**: 98-99% performance, excellent for technical content ⭐ **CHOSEN**
-- **3072**: 100% performance, maximum nuance (overkill for most cases)
+**Why 768 over 1536 or 3072**:
+- **768**: 95-98% performance, very efficient, excellent for RAG ⭐ **CHOSEN**
+- **1536**: 98-99% performance, higher storage costs (2x)
+- **3072**: 100% performance, maximum nuance (overkill, 4x storage cost)
+
+**Database Schema Update** (Session 27):
+```sql
+ALTER TABLE chunks ALTER COLUMN embedding TYPE vector(768);
+```
 
 ### Chunking Strategy
 

@@ -2,15 +2,15 @@
  * Supabase RAG Functions
  *
  * Text chunking, embedding generation, document storage, and semantic search
- * using PostgreSQL + pgvector with gemini-embedding-001 (1536 dimensions)
+ * using PostgreSQL + pgvector with gemini-embedding-001 (768 dimensions)
  */
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import { supabase } from './supabase-client';
 import type { DocumentMetadata } from './types';
 
 // Initialize Gemini AI
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
+const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY! });
 
 // ============================================================================
 // TYPES
@@ -89,6 +89,9 @@ export function chunkText(text: string): Chunk[] {
   const chunks: Chunk[] = [];
   const sentences = text.split(/(?<=[.!?])\s+/);
 
+  console.log(`  DEBUG: Text length: ${text.length} chars, Split into ${sentences.length} sentences`);
+  console.log(`  DEBUG: First sentence: ${sentences[0]?.substring(0, 100)}...`);
+
   let currentChunk = '';
   let tokenCount = 0;
   let currentPage = 1;
@@ -138,21 +141,31 @@ export function chunkText(text: string): Chunk[] {
 // ============================================================================
 
 /**
- * Generate 1536-dimensional embeddings using gemini-embedding-001
+ * Generate 768-dimensional embeddings using gemini-embedding-001
  *
- * Uses Matryoshka Representation Learning - 1536 dimensions retain
- * 98-99% of semantic information while being more efficient than 3072
+ * Uses Matryoshka Representation Learning with 768 dimensions for optimal
+ * balance of performance, cost, and Japanese tokenization stability
  */
 export async function generateEmbedding(
   text: string,
   taskType: 'RETRIEVAL_DOCUMENT' | 'RETRIEVAL_QUERY' = 'RETRIEVAL_DOCUMENT'
 ): Promise<number[]> {
   try {
-    const model = genAI.getGenerativeModel({ model: 'embedding-001' });
+    const result = await ai.models.embedContent({
+      model: 'gemini-embedding-001',  // Stable Japanese tokenization
+      contents: [{ parts: [{ text }] }],  // Array format for API
+      config: {
+        outputDimensionality: 768,    // Match database schema (vector(768))
+        taskType: taskType             // Optimize for RAG (RETRIEVAL_DOCUMENT/QUERY)
+      }
+    });
 
-    const result = await model.embedContent(text);
-
-    return result.embedding.values;
+    // API returns embeddings array when using contents array
+    const embedding = result.embeddings?.[0]?.values;
+    if (!embedding) {
+      throw new Error('No embedding returned from API');
+    }
+    return embedding;
   } catch (error) {
     console.error('Embedding generation error:', error);
     throw new Error(
@@ -199,10 +212,33 @@ export async function storeDocument(
   pdfText: string
 ): Promise<string> {
   try {
-    // 1. Insert document metadata
+    // 1. Build citation key and check for duplicates
     const citationKey = buildCitationKey(metadata);
     const qualityTier = qualityTierToNumber(metadata.qualityTier);
 
+    // Check if document already exists (from previous failed upload)
+    const { data: existingDoc } = await supabase
+      .from('documents')
+      .select('id')
+      .eq('citation_key', citationKey)
+      .maybeSingle(); // Use maybeSingle() to avoid error if not found
+
+    // Delete existing document if found (chunks cascade via foreign key)
+    if (existingDoc) {
+      console.log(`⚠️  Document ${citationKey} already exists (orphaned from previous upload), deleting...`);
+      const { error: deleteError } = await supabase
+        .from('documents')
+        .delete()
+        .eq('id', existingDoc.id);
+
+      if (deleteError) {
+        console.error('Delete existing document error:', deleteError);
+        throw new Error(`Failed to delete existing document: ${deleteError.message}`);
+      }
+      console.log(`✓ Cleaned up orphaned document ${citationKey}`);
+    }
+
+    // 2. Insert document metadata
     const { data: doc, error: docError } = await supabase
       .from('documents')
       .insert({
@@ -230,43 +266,65 @@ export async function storeDocument(
 
     console.log(`✓ Document inserted: ${doc.id} (${citationKey})`);
 
-    // 2. Chunk text
+    // 3. Chunk text
     const chunks = chunkText(pdfText);
     console.log(`Chunking: ${chunks.length} chunks created`);
 
-    // 3. Generate embeddings and store chunks
-    for (let i = 0; i < chunks.length; i++) {
-      const chunk = chunks[i];
+    // 4. Generate embeddings and store chunks (with rollback on failure)
+    try {
+      for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i];
 
-      // Generate embedding
-      const embedding = await generateEmbedding(chunk.text, 'RETRIEVAL_DOCUMENT');
+        // Generate embedding
+        const embedding = await generateEmbedding(chunk.text, 'RETRIEVAL_DOCUMENT');
 
-      // Insert chunk
-      const { error: chunkError } = await supabase
-        .from('chunks')
-        .insert({
-          document_id: doc.id,
-          text: chunk.text,
-          page_number: chunk.pageNumber,
-          chunk_index: i,
-          embedding: embedding,
-          token_count: chunk.tokenCount
-        });
+        // DEBUG: Log embedding details
+        console.log(`  DEBUG: Chunk ${i} - Embedding length: ${embedding.length}, First 3 values: [${embedding.slice(0, 3).join(', ')}]`);
 
-      if (chunkError) {
-        console.error(`Chunk ${i} insert error:`, chunkError);
-        throw new Error(`Failed to insert chunk ${i}: ${chunkError.message}`);
+        // Insert chunk
+        const { error: chunkError } = await supabase
+          .from('chunks')
+          .insert({
+            document_id: doc.id,
+            text: chunk.text,
+            page_number: chunk.pageNumber,
+            chunk_index: i,
+            embedding: embedding,
+            token_count: chunk.tokenCount
+          });
+
+        if (chunkError) {
+          console.error(`Chunk ${i} insert error:`, chunkError);
+          throw new Error(`Failed to insert chunk ${i}: ${chunkError.message}`);
+        }
+
+        // Progress logging
+        if ((i + 1) % 10 === 0 || i === chunks.length - 1) {
+          console.log(`  Embedded ${i + 1}/${chunks.length} chunks`);
+        }
       }
 
-      // Progress logging
-      if ((i + 1) % 10 === 0 || i === chunks.length - 1) {
-        console.log(`  Embedded ${i + 1}/${chunks.length} chunks`);
+      console.log(`✓ All ${chunks.length} chunks embedded and stored`);
+      return doc.id;
+
+    } catch (chunkError) {
+      // ROLLBACK: Delete document we just inserted (chunks auto-delete via CASCADE)
+      console.error('❌ Chunk insertion failed, rolling back document...');
+      const { error: rollbackError } = await supabase
+        .from('documents')
+        .delete()
+        .eq('id', doc.id);
+
+      if (rollbackError) {
+        console.error('Rollback failed:', rollbackError);
+        // Still throw original error
+      } else {
+        console.log(`✓ Rolled back document ${citationKey}`);
       }
+
+      // Re-throw original chunk error
+      throw chunkError;
     }
-
-    console.log(`✓ All ${chunks.length} chunks embedded and stored`);
-
-    return doc.id;
   } catch (error) {
     console.error('Store document error:', error);
     throw new Error(

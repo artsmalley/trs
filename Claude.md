@@ -25,29 +25,14 @@ npm run dev
 - Manual metadata entry via Edit Metadata button ✅
 - 50MB warning notice displayed on Upload page ✅
 
-**Migration Status (Session 26 - PHASE 3 COMPLETE ✅)**:
-- ✅ **Phase 1: Infrastructure Setup** (Session 24)
-  - Project created: "TRS" with pgvector enabled
-  - Database schema deployed (documents + chunks tables)
-  - Vector embeddings: 1536 dimensions (gemini-embedding-001)
-  - Security hardened: RLS enabled, 0 errors, 0 warnings
-  - Connection tested and verified
-  - `lib/supabase-client.ts` created
-- ✅ **Phase 2: Backend API Integration** (Session 25)
-  - `lib/supabase-rag.ts` created - RAG functions (chunking, embeddings, search, citations)
-  - `/api/process-blob` - Dual-path support (File Search + Supabase)
-  - `/api/process-url` - Dual-path support (File Search + Supabase)
-  - `/api/summary` - Dual-path query with **100% reliable SQL JOIN citations**
-  - Build verified: 0 TypeScript errors ✅
-- ✅ **Phase 3: UI Toggles** (Session 26)
-  - Upload Agent: Backend selector radio buttons (File Search | Supabase)
-  - Query Corpus Agent: Backend selector with document counts
-  - Backend badges in Pending Review and Query results
-  - Clear visual indicators prevent accidental wrong-backend usage
-  - Build verified: 0 TypeScript errors ✅
-- ✅ **Citation System Working** - Direct SQL JOINs (no fragile string parsing!)
-- 🔨 **Next**: Phase 4 - User Testing (upload test docs, compare quality, make decision)
-- See: `supabase-migration-plan.md` for comprehensive 4-phase plan
+**Future V2 Architecture (Planned)**:
+- **Current V1**: File Search Store (Google managed service) - stable, working, 241 documents
+- **Future V2**: Railway + Supabase + LlamaParse - full control over chunking, embeddings, citations
+- **Reason for V2**: Serverless incompatible with traditional PDF parsing libraries (need Node.js runtime)
+- **Key learnings**: LLMs unsuitable for deterministic text extraction (probabilistic models will summarize/truncate)
+- **Migration pattern**: "Strangler Fig" - keep V1 running while building V2, gradually shift traffic
+- **Timeline**: Planned for future implementation
+- **See**: `docs/transition_plan.md` for comprehensive V2 migration plan (600+ lines, 7-phase roadmap)
 
 ## Environment Setup
 
@@ -61,11 +46,6 @@ Required keys:
 - `GOOGLE_CUSTOM_SEARCH_ENGINE_ID` - For Research Agent
 - `KV_REDIS_URL` - Auto-created when connecting Vercel Redis database
 - `BLOB_READ_WRITE_TOKEN` - Auto-created when connecting Vercel Blob storage
-
-Supabase keys (Session 24 - for parallel RAG system):
-- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anon/public key
-- `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key (backend only)
 
 Optional features (see `.env.example`):
 - `JINA_API_KEY` - Jina.ai Reader API key for URL ingestion (free: 20 req/min, with key: 500 req/min)
@@ -344,7 +324,7 @@ Download → Redis (get blobUrl) → Fetch from Blob → Browser
 ## ✅ Session 16 - Research Agent Redesign + URL Ingestion
 
 ### Problem Discovered
-- **Research Agent Issues**: Dropdown structure didn't match research_terms.md
+- **Research Agent Issues**: Dropdown structure didn't match docs/reference/research_terms.md
   - Categories appeared "hallucinated"
   - Missing ~50+ terms (only ~170 of 228 included)
   - PE Tooling Engineering reduced to 7 terms (should be 36 across 6 sub-areas)
@@ -354,7 +334,7 @@ Download → Redis (get blobUrl) → Fetch from Blob → Browser
 ### Solution 1: Research Agent Redesign
 
 **1. Rebuilt Data Structure** (`lib/research-terms-data.ts`)
-- Parsed `research_terms.md` exactly as documented
+- Parsed `docs/reference/research_terms.md` exactly as documented
 - All 228 curated terms included
 - Proper 4-level hierarchy: Track → Subcategory → Sub-area → Terms
 - Fixed structure:
@@ -634,13 +614,12 @@ Errors:
   - Search for document where `fileId.includes(normalizedTitle)`
   - Works for all 241 existing documents ✅
 - **Limitation**: Fragile - depends on Google's fileId format staying consistent
-- **Future migration**: Considering Supabase PostgreSQL + pgvector (TBD)
-  - Would provide full control over chunk metadata
-  - Direct foreign key relationships (no string parsing)
+- **Future V2**: Railway + Supabase + LlamaParse
+  - Full control over chunk metadata with direct foreign key relationships
+  - Deterministic PDF text extraction (LlamaParse, not LLMs)
   - Better debugging and transparency
-  - Already have Supabase account ($25/month plan)
-  - Migration effort: ~4-6 hours
-- **Status**: Working with current workaround, migration planned for future
+  - See `docs/transition_plan.md` for comprehensive implementation roadmap
+- **Status**: V1 working with current workaround, V2 planned for future
 
 **2. ~50MB Gemini Metadata Extraction Limit**
 - Issue: Gemini API has undocumented ~50-52MB limit for PDF processing
@@ -659,20 +638,6 @@ Errors:
   - Skip metadata extraction for 50MB+ files, mark for manual review
   - Add bulk metadata editor in Browse tab
 
-**3. Supabase Migration Plan (Session 23 - APPROVED ✅)**
-- **Current Status**: Supabase account cleanup complete, migration approved for this weekend
-- **Cost**: +$10/month for TRS project ($65 total monthly cost, saves $20 vs. pre-cleanup $85)
-- **Timeline**: 4-6 hours implementation (Session 24)
-- **Benefits**: Direct foreign key relationships, no fragile string parsing, better debugging
-- **Migration steps**:
-  1. Create new Supabase project ("TRS")
-  2. Set up PostgreSQL tables (documents, chunks) with pgvector
-  3. Re-process 241 documents (chunk + embed)
-  4. Update API routes (replace File Search calls with Supabase queries)
-  5. Test citation extraction
-  6. Deploy and verify
-- **See**: `citation.md` for comprehensive migration plan
-
 ## Key Design Decisions
 
 - No authentication (single user on desktop)
@@ -684,19 +649,23 @@ Errors:
   - Redis: Metadata + approval status + references
 - **Semantic RAG with File Search Store**: Managed service handles chunking, embeddings, retrieval
   - Tradeoff: Less transparency, more simplicity
-  - Future: Can migrate to Pinecone/Supabase pgvector if more control needed
+  - V1 (Current): File Search Store - stable, working, 241 documents
+  - V2 (Planned): Railway + Supabase + LlamaParse - full control over chunking/embeddings
+  - See `docs/transition_plan.md` for V2 architecture and migration roadmap
 - **Client-side Blob upload** (Session 10): Bypasses 4.5MB limit, supports up to 100MB
 - **PDF-only corpus** (User decision): Eliminates image complexity, focuses on documents
 - Session-based conversations (no persistence)
 
 ## Documentation
 
-- `TRS_Concept.md` - Original specification
-- `Next_steps.md` - Current work queue and priorities
-- `research_terms.md` - Master list of Japanese/English search terms for Research Agent
+- `docs/TRS_Concept.md` - Original specification
+- `docs/Next_steps.md` - Current work queue and priorities
+- `docs/reference/research_terms.md` - Master list of Japanese/English search terms for Research Agent
+- `docs/transition_plan.md` - V2 migration plan (Railway + Supabase + LlamaParse)
 - `docs/progress/` - Session logs by date (completed work)
 - `docs/implementation/` - **Implementation guides for complex features** (step-by-step plans)
   - `client-side-blob-upload.md` - Fix large file upload (HTTP 413)
+- `docs/archive/` - Obsolete/completed documentation (Supabase V1 attempts, old migration plans)
 - `README.md` - Full project documentation
 
 ## Common Commands

@@ -3,6 +3,7 @@ import { deleteDocumentMetadata, getDocumentMetadata } from "@/lib/kv";
 import { deleteFromBlob } from "@/lib/blob-storage";
 import { GoogleAIFileManager } from "@google/generative-ai/server";
 import { deleteDocumentFromStore } from "@/lib/file-search-store";
+import { deleteDocument as deleteFromSupabase } from "@/lib/supabase-rag";
 import { checkRateLimit, getClientIdentifier, rateLimitPresets } from "@/lib/rate-limit";
 
 // POST /api/corpus/delete - Delete a file from Blob, File Search, and Redis
@@ -49,10 +50,19 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2. Delete from File Search Store or Files API
-    // - File Search Store documents: fileId starts with "corpora/" (permanent storage)
-    // - Files API uploads (images): fileId starts with "files/" (48-hour expiry)
-    if (doc.fileUri) {
+    // 2. Delete from storage backend (File Search Store, Files API, or Supabase)
+    if (doc.storageBackend === 'supabase') {
+      // === SUPABASE PATH ===
+      try {
+        await deleteFromSupabase(doc.fileId); // fileId is Supabase UUID
+        deletionResults.fileSearch = true; // Reuse field for consistency
+        console.log(`✅ Deleted from Supabase: ${doc.fileId}`);
+      } catch (error) {
+        console.warn(`⚠️ Failed to delete from Supabase: ${error}`);
+        // Continue even if Supabase deletion fails
+      }
+    } else if (doc.fileUri) {
+      // === FILE SEARCH / FILES API PATH ===
       try {
         if (doc.fileId.startsWith("corpora/")) {
           // File Search Store document (permanent semantic RAG)

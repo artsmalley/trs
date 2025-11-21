@@ -29,7 +29,16 @@
       "Bash(taskkill //F //PID 8592)",
       "Bash(timeout /t 3 /nobreak)",
       "Bash(taskkill:*)",
-      "Bash(timeout /t 5 /nobreak)"
+      "Bash(timeout /t 5 /nobreak)",
+      "Bash(node find-braid-docs.mjs:*)",
+      "Bash(node check-schema.js:*)",
+      "Bash(node check-redis-metadata.js:*)",
+      "Bash(node test-chunks.js:*)",
+      "Bash(node test-upload-flow.js:*)",
+      "Bash(node clean-bad-upload.js:*)",
+      "Bash(node delete-braid-file-search.js:*)",
+      "Bash(git mv:*)",
+      "Bash(test:*)"
     ],
     "deny": [],
     "ask": []

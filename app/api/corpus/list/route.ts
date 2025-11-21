@@ -90,6 +90,7 @@ export async function GET(req: NextRequest) {
           tierLabel: doc.tierLabel,
           autoClassified: doc.autoClassified,
           classifiedAt: doc.classifiedAt,
+          storageBackend: doc.storageBackend, // Track which backend stores this document
         };
       }),
       total: documents.length,

@@ -24,7 +24,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { type QualityTier } from "@/lib/classify-documents";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface UploadedFile {
   id: string;
@@ -35,7 +34,6 @@ interface UploadedFile {
   progress: number;
   metadata?: any;
   fileId?: string; // Gemini File API ID for approval
-  backend?: "file_search" | "supabase"; // Track which backend was used
 }
 
 interface UrlQueueItem {
@@ -66,9 +64,6 @@ export function UploadAgent() {
   // URL ingestion state
   const [urlInput, setUrlInput] = useState("");
   const [urlQueue, setUrlQueue] = useState<UrlQueueItem[]>([]);
-
-  // Backend selection state
-  const [selectedBackend, setSelectedBackend] = useState<"file_search" | "supabase">("file_search");
 
   // Sync filesRef with files state (so processQueue can access current state)
   useEffect(() => {
@@ -188,7 +183,6 @@ export function UploadAgent() {
           blobUrl: blob.url,
           fileName: file.name,
           mimeType: file.type,
-          backend: selectedBackend,
         }),
       });
 
@@ -211,7 +205,6 @@ export function UploadAgent() {
                 progress: 100,
                 metadata: data.extractedMetadata,
                 fileId: data.fileId,
-                backend: selectedBackend, // Track which backend was used
                 rawFile: undefined, // Clear raw file to save memory
               }
             : f
@@ -448,7 +441,6 @@ export function UploadAgent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           url: item.url,
-          backend: selectedBackend,
         }),
       });
 
@@ -473,7 +465,6 @@ export function UploadAgent() {
           progress: 100,
           metadata: data.extractedMetadata,
           fileId: data.fileId,
-          backend: selectedBackend, // Track which backend was used
         };
 
         setFiles((prev) => [...prev, newFile]);
@@ -561,44 +552,6 @@ export function UploadAgent() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Backend Selection */}
-      <Card className="border-blue-200 bg-blue-50/50">
-        <CardHeader>
-          <CardTitle className="text-lg">Storage Backend</CardTitle>
-          <CardDescription>
-            Select which database to use for uploaded documents
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <RadioGroup
-            value={selectedBackend}
-            onValueChange={(value) => setSelectedBackend(value as "file_search" | "supabase")}
-            className="space-y-3"
-          >
-            <div className="flex items-center space-x-3 rounded-lg border p-4 hover:bg-accent cursor-pointer">
-              <RadioGroupItem value="file_search" id="file_search" />
-              <Label htmlFor="file_search" className="flex-1 cursor-pointer">
-                <div className="font-semibold">File Search Store (Current Production)</div>
-                <div className="text-sm text-muted-foreground">
-                  Google managed service • 241 documents • Automatic chunking & embeddings
-                </div>
-              </Label>
-              <Badge variant="default">Current</Badge>
-            </div>
-            <div className="flex items-center space-x-3 rounded-lg border p-4 hover:bg-accent cursor-pointer">
-              <RadioGroupItem value="supabase" id="supabase" />
-              <Label htmlFor="supabase" className="flex-1 cursor-pointer">
-                <div className="font-semibold">Supabase PostgreSQL + pgvector</div>
-                <div className="text-sm text-muted-foreground">
-                  Self-hosted • Testing phase • 100% reliable SQL JOIN citations • Full control
-                </div>
-              </Label>
-              <Badge variant="secondary">Testing</Badge>
-            </div>
-          </RadioGroup>
-        </CardContent>
-      </Card>
 
       {/* Upload Zone */}
       <Card>
@@ -875,11 +828,6 @@ export function UploadAgent() {
                           <div className="flex items-center gap-2 mb-2">
                             <span className="text-xl">{file.metadata.fileType === "image" ? "🖼️" : "📄"}</span>
                             <h4 className="font-semibold">{file.metadata.title}</h4>
-                            {file.backend && (
-                              <Badge variant={file.backend === "supabase" ? "secondary" : "outline"} className="ml-2">
-                                {file.backend === "supabase" ? "Supabase" : "File Search"}
-                              </Badge>
-                            )}
                           </div>
                           <p className="text-sm text-muted-foreground mt-1">
                             {file.metadata.summary}
